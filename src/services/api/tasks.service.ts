@@ -1,0 +1,130 @@
+import { apiClient } from './client';
+
+export interface Task {
+  id: string;
+  title: string;
+  workPeriod?: {
+    startDate: string;
+    endDate: string;
+  };
+  assignedMembers?: string[];
+  status: 'not_started' | 'in_progress' | 'completed';
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface NotionTestResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+}
+
+export const tasksService = {
+  // Get all tasks (when the endpoint is ready)
+  async getTasks(): Promise<Task[]> {
+    try {
+      // Try to get tasks from the API (future endpoint)
+      const { data } = await apiClient.get<Task[]>('/notion/traffic/tasks');
+      return data;
+    } catch (error) {
+      // Fallback: try the test endpoint
+      try {
+        const { data } = await apiClient.get<NotionTestResponse>('/notion/test');
+        console.log('Notion test response:', data);
+        
+        // Return mock data for now
+        return getMockTasks();
+      } catch (testError) {
+        console.error('API error, using mock data:', testError);
+        // Return mock data if API fails
+        return getMockTasks();
+      }
+    }
+  },
+
+  // Test Notion connection
+  async testNotion(): Promise<NotionTestResponse> {
+    const { data } = await apiClient.get<NotionTestResponse>('/notion/test');
+    return data;
+  },
+
+  // Get a single task by ID (future implementation)
+  async getTask(id: string): Promise<Task> {
+    const { data } = await apiClient.get<Task>(`/notion/traffic/tasks/${id}`);
+    return data;
+  },
+
+  // Create a new task (future implementation)
+  async createTask(task: Partial<Task>): Promise<Task> {
+    const { data } = await apiClient.post<Task>('/notion/traffic/tasks', task);
+    return data;
+  },
+
+  // Update a task (future implementation)
+  async updateTask(id: string, task: Partial<Task>): Promise<Task> {
+    const { data } = await apiClient.put<Task>(`/notion/traffic/tasks/${id}`, task);
+    return data;
+  },
+
+  // Delete a task (future implementation)
+  async deleteTask(id: string): Promise<void> {
+    await apiClient.delete(`/notion/traffic/tasks/${id}`);
+  }
+};
+
+// Mock data for demonstration
+function getMockTasks(): Task[] {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const nextWeek = new Date(now);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+
+  return [
+    {
+      id: '1',
+      title: 'Intégration API Notion',
+      workPeriod: {
+        startDate: now.toISOString(),
+        endDate: new Date(now.getTime() + 2 * 3600000).toISOString(), // +2 hours
+      },
+      assignedMembers: ['Dev Team'],
+      status: 'in_progress',
+      description: 'Connecter l\'application avec l\'API Notion'
+    },
+    {
+      id: '2',
+      title: 'Review Code Frontend',
+      workPeriod: {
+        startDate: tomorrow.toISOString(),
+        endDate: new Date(tomorrow.getTime() + 1.5 * 3600000).toISOString(), // +1.5 hours
+      },
+      assignedMembers: ['John Doe'],
+      status: 'not_started',
+      description: 'Révision du code React et TypeScript'
+    },
+    {
+      id: '3',
+      title: 'Déploiement Production',
+      workPeriod: {
+        startDate: nextWeek.toISOString(),
+        endDate: new Date(nextWeek.getTime() + 3 * 3600000).toISOString(), // +3 hours
+      },
+      assignedMembers: ['DevOps Team'],
+      status: 'not_started',
+      description: 'Déployer sur Azure'
+    },
+    {
+      id: '4',
+      title: 'Tests E2E Playwright',
+      workPeriod: {
+        startDate: new Date(now.getTime() - 24 * 3600000).toISOString(), // yesterday
+        endDate: new Date(now.getTime() - 22 * 3600000).toISOString(),
+      },
+      assignedMembers: ['QA Team'],
+      status: 'completed',
+      description: 'Tests automatisés complets'
+    }
+  ];
+}
