@@ -23,24 +23,19 @@ export interface NotionTestResponse {
 export const tasksService = {
   // Get all tasks (when the endpoint is ready)
   async getTasks(): Promise<Task[]> {
+    // For now, directly return mock data since the endpoint is not ready
+    // This avoids the 401 error loop
+    return getMockTasks();
+    
+    /* Will be enabled when backend endpoint is ready:
     try {
-      // Try to get tasks from the API (future endpoint)
       const { data } = await apiClient.get<Task[]>('/notion/traffic/tasks');
       return data;
     } catch (error) {
-      // Fallback: try the test endpoint
-      try {
-        const { data } = await apiClient.get<NotionTestResponse>('/notion/test');
-        console.log('Notion test response:', data);
-        
-        // Return mock data for now
-        return getMockTasks();
-      } catch (testError) {
-        console.error('API error, using mock data:', testError);
-        // Return mock data if API fails
-        return getMockTasks();
-      }
+      console.error('API error, using mock data:', error);
+      return getMockTasks();
     }
+    */
   },
 
   // Test Notion connection

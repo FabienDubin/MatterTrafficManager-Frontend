@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksService, Task } from '@/services/api/tasks.service';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 // Query keys
 const TASKS_KEY = ['tasks'];
@@ -38,22 +38,18 @@ export function useNotionTest() {
 // Hook to create a task
 export function useCreateTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: tasksService.createTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
-      toast({
-        title: "Succès",
+      toast.success("Succès", {
         description: "Tâche créée avec succès",
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: error.message || "Impossible de créer la tâche",
-        variant: "destructive",
       });
     },
   });
@@ -62,23 +58,19 @@ export function useCreateTask() {
 // Hook to update a task
 export function useUpdateTask(id: string) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: (task: Partial<Task>) => tasksService.updateTask(id, task),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
       queryClient.invalidateQueries({ queryKey: TASK_KEY(id) });
-      toast({
-        title: "Succès",
+      toast.success("Succès", {
         description: "Tâche mise à jour avec succès",
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: error.message || "Impossible de mettre à jour la tâche",
-        variant: "destructive",
       });
     },
   });
@@ -87,22 +79,18 @@ export function useUpdateTask(id: string) {
 // Hook to delete a task
 export function useDeleteTask() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: tasksService.deleteTask,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: TASKS_KEY });
-      toast({
-        title: "Succès",
+      toast.success("Succès", {
         description: "Tâche supprimée avec succès",
       });
     },
     onError: (error: any) => {
-      toast({
-        title: "Erreur",
+      toast.error("Erreur", {
         description: error.message || "Impossible de supprimer la tâche",
-        variant: "destructive",
       });
     },
   });

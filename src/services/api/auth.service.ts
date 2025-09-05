@@ -25,13 +25,14 @@ export interface User {
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const { data } = await apiClient.post<AuthResponse>('/auth/login', credentials);
+    const response = await apiClient.post<{ success: boolean; data: AuthResponse }>('/auth/login', credentials);
+    const authData = response.data.data; // Extract nested data
     
     // Store tokens
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('accessToken', authData.accessToken);
+    localStorage.setItem('refreshToken', authData.refreshToken);
     
-    return data;
+    return authData;
   },
 
   async logout(): Promise<void> {
@@ -53,15 +54,16 @@ export const authService = {
   },
 
   async refreshToken(refreshToken: string): Promise<AuthResponse> {
-    const { data } = await apiClient.post<AuthResponse>('/auth/refresh', {
+    const response = await apiClient.post<{ success: boolean; data: AuthResponse }>('/auth/refresh', {
       refreshToken
     });
+    const authData = response.data.data; // Extract nested data
     
     // Update stored tokens
-    localStorage.setItem('accessToken', data.accessToken);
-    localStorage.setItem('refreshToken', data.refreshToken);
+    localStorage.setItem('accessToken', authData.accessToken);
+    localStorage.setItem('refreshToken', authData.refreshToken);
     
-    return data;
+    return authData;
   },
 
   isAuthenticated(): boolean {

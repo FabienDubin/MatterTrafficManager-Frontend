@@ -108,6 +108,17 @@ export function CalendarView({ events = [], onDateClick, onEventClick }: Calenda
       <style>{`
         .fc {
           font-family: inherit;
+          color: hsl(var(--foreground));
+        }
+        
+        .fc-toolbar-title {
+          color: hsl(var(--foreground));
+        }
+        
+        .fc-col-header-cell-cushion,
+        .fc-daygrid-day-number,
+        .fc-timegrid-slot-label-cushion {
+          color: hsl(var(--foreground));
         }
         
         .fc-theme-standard td,
@@ -151,6 +162,14 @@ export function CalendarView({ events = [], onDateClick, onEventClick }: Calenda
         
         .fc-event:hover {
           filter: brightness(0.9);
+        }
+        
+        /* Dark mode specific text fixes */
+        .dark .fc-col-header-cell-cushion,
+        .dark .fc-daygrid-day-number,
+        .dark .fc-timegrid-slot-label-cushion,
+        .dark .fc-toolbar-title {
+          color: hsl(var(--foreground));
         }
       `}</style>
     </div>

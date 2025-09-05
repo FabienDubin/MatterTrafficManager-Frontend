@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth.store";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,6 @@ interface LoginFormProps extends React.ComponentProps<"form"> {}
 
 export function LoginForm({ className, ...props }: LoginFormProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const login = useAuthStore(state => state.login);
 
@@ -43,8 +42,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
     try {
       await login(data.email, data.password);
       
-      toast({
-        title: "Connexion réussie",
+      toast.success("Connexion réussie", {
         description: "Bienvenue sur MatterTraffic",
       });
       
@@ -53,10 +51,8 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
     } catch (error: any) {
       console.error("Login error:", error);
       
-      toast({
-        title: "Erreur de connexion",
+      toast.error("Erreur de connexion", {
         description: error.response?.data?.message || "Email ou mot de passe incorrect",
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -70,7 +66,7 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       {...props}
     >
       <div className="flex flex-col items-center gap-2 text-center">
-        <h1 className="text-2xl font-bold">Connexion à MatterTraffic</h1>
+        <h1 className="text-2xl font-bold text-foreground">Connexion à MatterTraffic</h1>
         <p className="text-muted-foreground text-sm text-balance">
           Entrez vos identifiants pour accéder à votre compte
         </p>
