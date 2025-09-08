@@ -1,7 +1,15 @@
 {
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*", "/api/*", "/*.json", "/*.xml", "/*.txt"]
+    "exclude": [
+      "/images/*.{png,jpg,gif}",
+      "/css/*",
+      "/js/*",
+      "/api/*",
+      "/*.json",
+      "/*.xml",
+      "/*.txt"
+    ]
   },
   "routes": [
     {
@@ -23,9 +31,9 @@
   "globalHeaders": {
     "X-Frame-Options": "DENY",
     "X-Content-Type-Options": "nosniff",
-    "X-XSS-Protection": "1; mode=block",
-    "Referrer-Policy": "no-referrer-when-downgrade",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
     "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://staging.mattertrafficmanager.com https://api.mattertrafficmanager.com https://localhost:3001"
+    "Permissions-Policy": "browsing-topics=()",
+    "Content-Security-Policy": "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https: data:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' https://staging.mattertrafficmanager.com https://www.mattertrafficmanager.com https://api.mattertrafficmanager.com https://staging-api.mattertrafficmanager.com blob:;"
   }
 }
