@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import LoginPage from '@/pages/auth/Login';
 import CalendarPage from '@/pages/calendar/CalendarPage';
+import NotionConfigPage from '@/pages/admin/NotionConfigPage';
 
 export function AppRouter() {
   return (
@@ -15,6 +16,16 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <CalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Admin routes */}
+      <Route
+        path="/admin/notion-config"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <NotionConfigPage />
           </ProtectedRoute>
         }
       />
