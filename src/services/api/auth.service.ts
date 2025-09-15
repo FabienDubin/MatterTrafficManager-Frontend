@@ -49,8 +49,8 @@ export const authService = {
   },
 
   async getCurrentUser(): Promise<User> {
-    const { data } = await apiClient.get<User>('/auth/me');
-    return data;
+    const response = await apiClient.get<{ success: boolean; data: User }>('/auth/me');
+    return response.data.data;
   },
 
   async refreshToken(refreshToken: string): Promise<AuthResponse> {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { AppConfig } from '../config/app.config';
 
 // Interface pour l'état global de l'application
 interface AppState {
@@ -36,7 +37,7 @@ const useAppStore = create<AppState>()(
       error: null,
       user: null,
       isAuthenticated: false,
-      token: localStorage.getItem(import.meta.env.VITE_JWT_LOCAL_STORAGE_KEY || 'matter_traffic_token'),
+      token: localStorage.getItem(AppConfig.JWT_STORAGE_KEY),
       
       // Actions pour gérer l'état de chargement
       setLoading: (loading: boolean) =>
@@ -55,7 +56,7 @@ const useAppStore = create<AppState>()(
       
       // Actions pour l'authentification
       setAuth: (token: string, user: AppState['user']) => {
-        localStorage.setItem(import.meta.env.VITE_JWT_LOCAL_STORAGE_KEY || 'matter_traffic_token', token);
+        localStorage.setItem(AppConfig.JWT_STORAGE_KEY, token);
         set(
           {
             token,
@@ -70,7 +71,7 @@ const useAppStore = create<AppState>()(
       
       // Action de déconnexion
       logout: () => {
-        localStorage.removeItem(import.meta.env.VITE_JWT_LOCAL_STORAGE_KEY || 'matter_traffic_token');
+        localStorage.removeItem(AppConfig.JWT_STORAGE_KEY);
         set(
           {
             token: null,
@@ -85,7 +86,7 @@ const useAppStore = create<AppState>()(
     }),
     {
       name: 'matter-traffic-store',
-      enabled: import.meta.env.VITE_DEV_TOOLS === 'true',
+      enabled: AppConfig.ENABLE_DEV_TOOLS,
     }
   )
 );

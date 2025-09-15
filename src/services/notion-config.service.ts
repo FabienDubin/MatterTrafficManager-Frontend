@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+import { apiClient } from '@/services/api/client';
 
 interface DatabaseConfig {
   id: string;
@@ -45,24 +43,11 @@ interface TestConnectionResponse {
 }
 
 class NotionConfigService {
-  private apiUrl = `${API_BASE_URL}/admin/notion-config`;
-  
-  private getAuthHeaders() {
-    const token = localStorage.getItem('authToken');
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  }
+  private apiUrl = '/admin/notion-config';
   
   async getConfig(): Promise<NotionConfig> {
     try {
-      const response = await axios.get(
-        this.apiUrl,
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.get(this.apiUrl);
       return response.data.data;
     } catch (error) {
       console.error('Error getting Notion config:', error);
@@ -72,11 +57,7 @@ class NotionConfigService {
   
   async saveConfig(config: SaveConfigPayload): Promise<any> {
     try {
-      const response = await axios.post(
-        this.apiUrl,
-        config,
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.post(this.apiUrl, config);
       return response.data;
     } catch (error) {
       console.error('Error saving Notion config:', error);
@@ -86,11 +67,7 @@ class NotionConfigService {
   
   async testConnection(databaseName: string): Promise<TestConnectionResponse> {
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/test`,
-        { databaseName },
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.post(`${this.apiUrl}/test`, { databaseName });
       return response.data;
     } catch (error) {
       console.error('Error testing Notion connection:', error);

@@ -1,8 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { AppConfig, devLog } from '../config/app.config';
 
 // Configuration de base pour l'API
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5005';
-const API_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT) || 10000;
+const API_BASE_URL = AppConfig.API_URL;
+const API_TIMEOUT = AppConfig.API_TIMEOUT;
 
 // Interface pour les réponses API
 interface ApiResponse<T = any> {
@@ -30,15 +31,15 @@ const apiClient: AxiosInstance = axios.create({
 // Intercepteur de requête pour ajouter le token d'authentification
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    const token = localStorage.getItem(import.meta.env.VITE_JWT_LOCAL_STORAGE_KEY || 'matter_traffic_token');
+    const token = localStorage.getItem(AppConfig.JWT_STORAGE_KEY);
     
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
 
     // Log des requêtes en développement
-    if (import.meta.env.VITE_MODE === 'development') {
-      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`, config.data);
+    if (AppConfig.IS_DEV) {
+      devLog(`[API] ${config.method?.toUpperCase()} ${config.url}`, config.data);
     }
 
     return config;
@@ -53,8 +54,8 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Log des réponses en développement
-    if (import.meta.env.VITE_MODE === 'development') {
-      console.log(`[API] Response from ${response.config.url}:`, response.data);
+    if (AppConfig.IS_DEV) {
+      devLog(`[API] Response from ${response.config.url}:`, response.data);
     }
 
     return response;
@@ -65,7 +66,7 @@ apiClient.interceptors.response.use(
     // Gestion des erreurs d'authentification
     if (error.response?.status === 401) {
       // Supprimer le token invalide
-      localStorage.removeItem(import.meta.env.VITE_JWT_LOCAL_STORAGE_KEY || 'matter_traffic_token');
+      localStorage.removeItem(AppConfig.JWT_STORAGE_KEY);
       
       // Rediriger vers la page de connexion
       window.location.href = '/login';

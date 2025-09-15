@@ -1,6 +1,4 @@
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1';
+import { apiClient } from '@/services/api/client';
 
 interface FieldMapping {
   applicationField: string;
@@ -52,25 +50,11 @@ interface PreviewResponse {
 }
 
 class NotionMappingService {
-  private apiUrl = `${API_BASE_URL}/admin/notion-mapping`;
-  
-  private getAuthHeaders() {
-    const token = localStorage.getItem('authToken');
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    };
-  }
+  private apiUrl = '/admin/notion-mapping';
   
   async autoDetect(databaseName: string): Promise<AutoDetectResponse> {
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/auto-detect`,
-        { databaseName },
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.post(`${this.apiUrl}/auto-detect`, { databaseName });
       return response.data;
     } catch (error) {
       console.error('Error auto-detecting mapping:', error);
@@ -84,10 +68,7 @@ class NotionMappingService {
         ? `${this.apiUrl}?databaseName=${databaseName}`
         : this.apiUrl;
       
-      const response = await axios.get(
-        url,
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.get(url);
       return response.data;
     } catch (error) {
       console.error('Error getting mapping:', error);
@@ -97,11 +78,7 @@ class NotionMappingService {
   
   async saveMapping(databaseName: string, fields: FieldMapping[]): Promise<any> {
     try {
-      const response = await axios.post(
-        this.apiUrl,
-        { databaseName, fields },
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.post(this.apiUrl, { databaseName, fields });
       return response.data;
     } catch (error) {
       console.error('Error saving mapping:', error);
@@ -111,11 +88,7 @@ class NotionMappingService {
   
   async previewMapping(databaseName: string, limit: number = 5): Promise<PreviewResponse> {
     try {
-      const response = await axios.post(
-        `${this.apiUrl}/preview`,
-        { databaseName, limit },
-        this.getAuthHeaders()
-      );
+      const response = await apiClient.post(`${this.apiUrl}/preview`, { databaseName, limit });
       return response.data;
     } catch (error) {
       console.error('Error previewing mapping:', error);

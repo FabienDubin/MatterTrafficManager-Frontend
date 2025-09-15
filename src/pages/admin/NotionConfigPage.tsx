@@ -47,7 +47,7 @@ const NotionConfigPage: React.FC = () => {
     databases: {
       teams: { id: '268a12bfa99281f886bbd9ffc36be65f', name: 'Teams' },
       users: { id: '268a12bfa99281bf9101ebacbae3e39a', name: 'Users' },
-      clients: { id: '268a12bfa99281fb8566e7917a7f8b8e7', name: 'Clients' },
+      clients: { id: '268a12bfa99281fb8566e7917a7f8b8e', name: 'Clients' },
       projects: { id: '268a12bfa9928105a95fde79cea0f6ff', name: 'Projects' },
       traffic: { id: '268a12bfa99281809af5f6a9d2fccbe3', name: 'Traffic' }
     }

@@ -8,33 +8,33 @@ export function AppRouter() {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/login" element={<LoginPage />} />
-      
+      <Route path='/login' element={<LoginPage />} />
+
       {/* Protected routes */}
       <Route
-        path="/calendar"
+        path='/calendar'
         element={
           <ProtectedRoute>
             <CalendarPage />
           </ProtectedRoute>
         }
       />
-      
+
       {/* Admin routes */}
       <Route
-        path="/admin/notion-config"
+        path='/admin/notion-config'
         element={
           <ProtectedRoute requiredRole="admin">
             <NotionConfigPage />
           </ProtectedRoute>
         }
       />
-      
+
       {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/calendar" replace />} />
-      
+      <Route path='/' element={<Navigate to='/calendar' replace />} />
+
       {/* Catch all - redirect to calendar */}
-      <Route path="*" element={<Navigate to="/calendar" replace />} />
+      <Route path='*' element={<Navigate to='/calendar' replace />} />
     </Routes>
   );
 }
