@@ -10,6 +10,7 @@ import { Loader2, CheckCircle, XCircle, AlertCircle, Database, Link, Settings } 
 import { notionConfigService } from '@/services/notion-config.service';
 import { notionMappingService } from '@/services/notion-mapping.service';
 import { useToast } from '@/hooks/use-toast';
+import NotionMappingTab from '@/components/admin/NotionMappingTab';
 
 interface DatabaseConfig {
   id: string;
@@ -345,19 +346,7 @@ const NotionConfigPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="mapping">
-          <Card>
-            <CardHeader>
-              <CardTitle>Mapping des champs</CardTitle>
-              <CardDescription>
-                Configuration du mapping entre Notion et l'application
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Le mapping des champs sera implémenté dans la prochaine étape.
-              </p>
-            </CardContent>
-          </Card>
+          <NotionMappingTab onRefresh={loadConfiguration} />
         </TabsContent>
       </Tabs>
     </div>
