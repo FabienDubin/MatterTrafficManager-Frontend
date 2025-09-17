@@ -3,6 +3,7 @@ import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import LoginPage from '@/pages/auth/Login';
 import CalendarPage from '@/pages/calendar/CalendarPage';
 import NotionConfigPage from '@/pages/admin/NotionConfigPage';
+import SyncMonitoring from '@/pages/admin/SyncMonitoring';
 
 export function AppRouter() {
   return (
@@ -26,6 +27,15 @@ export function AppRouter() {
         element={
           <ProtectedRoute requiredRole="admin">
             <NotionConfigPage />
+          </ProtectedRoute>
+        }
+      />
+      
+      <Route
+        path='/admin/monitoring'
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <SyncMonitoring />
           </ProtectedRoute>
         }
       />
