@@ -1,27 +1,41 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar } from 'lucide-react';
+import { LogOut, Calendar, RefreshCw } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
-import { useTasks } from '@/hooks/api/useTasks';
+import { useCalendarTasks } from '@/hooks/useCalendarTasks';
 import { toast } from 'sonner';
 import { tasksToCalendarEvents, formatTaskForDisplay } from '@/utils/taskMapper';
+import { addDays, startOfMonth, endOfMonth } from 'date-fns';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const { data: tasks, isLoading, error } = useTasks();
-  const [events, setEvents] = useState<EventInput[]>([]);
+  
+  // Date range for calendar - default to current month with some buffer
+  const [dateRange] = useState(() => {
+    const now = new Date();
+    return {
+      startDate: addDays(startOfMonth(now), -7), // 7 days before month start
+      endDate: addDays(endOfMonth(now), 7) // 7 days after month end
+    };
+  });
+  
+  // Fetch tasks for calendar
+  const { tasks, isLoading, error, cacheHit, refetch } = useCalendarTasks({
+    startDate: dateRange.startDate,
+    endDate: dateRange.endDate
+  });
 
   // Convert tasks to calendar events
-  useEffect(() => {
+  const events = useMemo(() => {
     if (tasks && tasks.length > 0) {
-      const calendarEvents = tasksToCalendarEvents(tasks);
-      setEvents(calendarEvents);
+      return tasksToCalendarEvents(tasks);
     }
+    return [];
   }, [tasks]);
 
   const handleLogout = async () => {
@@ -48,15 +62,20 @@ export default function CalendarPage() {
       title: arg.event.title,
       status: arg.event.extendedProps.status,
       description: arg.event.extendedProps.description,
+      notes: arg.event.extendedProps.notes,
       assignedMembers: arg.event.extendedProps.assignedMembers,
+      projectId: arg.event.extendedProps.projectId,
+      clientId: arg.event.extendedProps.clientId,
       workPeriod: {
         startDate: arg.event.startStr,
         endDate: arg.event.endStr,
       }
     };
     
-    toast(arg.event.title, {
+    // Utiliser toast comme tooltip pour afficher les détails
+    toast.info(arg.event.title, {
       description: formatTaskForDisplay(task),
+      duration: 5000, // Afficher 5 secondes
     });
   };
 
@@ -108,11 +127,49 @@ export default function CalendarPage() {
               </div>
             </div>
           ) : (
-            <CalendarView 
-              events={events}
-              onDateClick={handleDateClick}
-              onEventClick={handleEventClick}
-            />
+            <>
+              {/* Afficher indicateur de cache et nombre de tâches */}
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-muted-foreground">
+                    {tasks.length} tâche{tasks.length > 1 ? 's' : ''} trouvée{tasks.length > 1 ? 's' : ''}
+                  </span>
+                  {cacheHit && (
+                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                      Depuis le cache
+                    </span>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => refetch()}
+                  className="gap-2"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Actualiser
+                </Button>
+              </div>
+              
+              {/* Calendrier ou message si aucune tâche */}
+              {tasks.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-lg font-medium">Aucune tâche pour cette période</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Les tâches apparaîtront ici une fois synchronisées avec Notion
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <CalendarView 
+                  events={events}
+                  onDateClick={handleDateClick}
+                  onEventClick={handleEventClick}
+                />
+              )}
+            </>
           )}
         </div>
       </main>
