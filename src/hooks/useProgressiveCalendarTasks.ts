@@ -3,6 +3,11 @@ import { tasksService, Task } from '@/services/api/tasks.service';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 
+interface UseProgressiveCalendarTasksOptions {
+  enablePolling?: boolean;
+  pollingInterval?: number; // in milliseconds
+}
+
 interface UseProgressiveCalendarTasksReturn {
   tasks: Task[];
   isLoadingBackground: boolean;
@@ -10,22 +15,42 @@ interface UseProgressiveCalendarTasksReturn {
   loadedRanges: Array<{ start: Date; end: Date }>;
   fetchAdditionalRange: (start: Date, end: Date) => Promise<void>;
   clearCache: () => void;
+  lastRefresh: Date | null;
+  nextRefresh: Date | null;
 }
 
 /**
  * Hook for progressive loading of calendar tasks
  * Maintains all loaded tasks in memory and fetches additional ranges on demand
+ * Supports automatic refresh with polling
  */
-export function useProgressiveCalendarTasks(): UseProgressiveCalendarTasksReturn {
+export function useProgressiveCalendarTasks(
+  options: UseProgressiveCalendarTasksOptions = {}
+): UseProgressiveCalendarTasksReturn {
+  const { 
+    enablePolling = true,
+    pollingInterval = 2 * 60 * 1000 // Default: 2 minutes when active
+  } = options;
+
+  // Polling intervals
+  const ACTIVE_INTERVAL = pollingInterval; // 2 minutes when active
+  const INACTIVE_INTERVAL = 10 * 60 * 1000; // 10 minutes when inactive
+  const REACTIVATION_THRESHOLD = 2 * 60 * 1000; // 2 minutes - refresh if inactive for this long
+
   // Map to store all tasks by ID for efficient deduplication
   const tasksMapRef = useRef<Map<string, Task>>(new Map());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoadingBackground, setIsLoadingBackground] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [loadedRanges, setLoadedRanges] = useState<Array<{ start: Date; end: Date }>>([]);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+  const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
   
   // Track ongoing fetches to prevent duplicate requests
   const ongoingFetchesRef = useRef<Set<string>>(new Set());
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastActivityRef = useRef<Date>(new Date());
+  const isTabActiveRef = useRef<boolean>(true);
 
   /**
    * Create a unique key for a date range
@@ -53,17 +78,17 @@ export function useProgressiveCalendarTasks(): UseProgressiveCalendarTasksReturn
   /**
    * Fetch tasks for a specific date range and merge with existing
    */
-  const fetchAdditionalRange = useCallback(async (start: Date, end: Date) => {
+  const fetchAdditionalRange = useCallback(async (start: Date, end: Date, forceRefresh = false) => {
     const rangeKey = getRangeKey(start, end);
     
     // Prevent duplicate fetches
-    if (ongoingFetchesRef.current.has(rangeKey)) {
+    if (!forceRefresh && ongoingFetchesRef.current.has(rangeKey)) {
       console.log('[Progressive] Fetch already in progress for', rangeKey);
       return;
     }
     
-    // Check if range is already loaded
-    if (isRangeLoaded(start, end)) {
+    // Check if range is already loaded (skip check if forcing refresh)
+    if (!forceRefresh && isRangeLoaded(start, end)) {
       console.log('[Progressive] Range already loaded', rangeKey);
       return;
     }
@@ -97,6 +122,9 @@ export function useProgressiveCalendarTasks(): UseProgressiveCalendarTasksReturn
           return mergeOverlappingRanges(newRanges);
         });
         
+        // Update last refresh time
+        setLastRefresh(new Date());
+        
         console.log(`[Progressive] Loaded ${response.data.tasks.length} tasks, total: ${allTasks.length}`);
       } else {
         throw new Error('Failed to fetch calendar tasks');
@@ -118,6 +146,101 @@ export function useProgressiveCalendarTasks(): UseProgressiveCalendarTasksReturn
   }, [isRangeLoaded]);
 
   /**
+   * Refresh all loaded ranges (for polling)
+   */
+  const refreshAllRanges = useCallback(async () => {
+    if (loadedRanges.length === 0) return;
+    
+    console.log('[Progressive] Refreshing all loaded ranges...');
+    
+    // DON'T clear visible tasks - keep them displayed during refresh
+    // We'll replace them when new data arrives
+    
+    // Create a new map for fresh data
+    const newTasksMap = new Map<string, Task>();
+    
+    // Clear the ongoing fetches to force new requests
+    ongoingFetchesRef.current.clear();
+    
+    // Refresh each loaded range with forceRefresh flag
+    for (const range of loadedRanges) {
+      // Temporarily swap the map reference to collect fresh data
+      const originalMap = tasksMapRef.current;
+      tasksMapRef.current = newTasksMap;
+      
+      await fetchAdditionalRange(range.start, range.end, true); // Force refresh
+      
+      // Restore original map reference (will be updated below)
+      tasksMapRef.current = originalMap;
+    }
+    
+    // Now replace all data at once with the fresh data
+    tasksMapRef.current = newTasksMap;
+    setTasks(Array.from(newTasksMap.values()));
+  }, [loadedRanges, fetchAdditionalRange]);
+
+  /**
+   * Schedule next polling
+   */
+  const scheduleNextPoll = useCallback(() => {
+    if (!enablePolling) return;
+    
+    // Clear existing timeout
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current);
+    }
+    
+    // Determine interval based on tab activity
+    const interval = isTabActiveRef.current ? ACTIVE_INTERVAL : INACTIVE_INTERVAL;
+    const nextTime = new Date(Date.now() + interval);
+    setNextRefresh(nextTime);
+    
+    pollingTimeoutRef.current = setTimeout(() => {
+      refreshAllRanges();
+      scheduleNextPoll(); // Reschedule
+    }, interval);
+    
+    console.log(`[Progressive] Next refresh scheduled in ${interval / 1000}s (${isTabActiveRef.current ? 'active' : 'inactive'} mode)`);
+  }, [enablePolling, ACTIVE_INTERVAL, INACTIVE_INTERVAL, refreshAllRanges]);
+
+  /**
+   * Handle tab visibility change
+   */
+  useEffect(() => {
+    if (!enablePolling) return;
+    
+    const handleVisibilityChange = () => {
+      const wasActive = isTabActiveRef.current;
+      isTabActiveRef.current = !document.hidden;
+      
+      if (!wasActive && isTabActiveRef.current) {
+        // Tab became active
+        const inactiveDuration = Date.now() - lastActivityRef.current.getTime();
+        
+        if (inactiveDuration >= REACTIVATION_THRESHOLD) {
+          // Inactive for 2+ minutes, refresh immediately (but smoothly)
+          console.log('[Progressive] Tab reactivated after', Math.round(inactiveDuration / 1000), 'seconds - smooth refresh now');
+          refreshAllRanges(); // This now keeps UI stable during refresh
+        }
+        
+        // Reschedule with active interval
+        scheduleNextPoll();
+      } else if (wasActive && !isTabActiveRef.current) {
+        // Tab became inactive
+        lastActivityRef.current = new Date();
+        // Reschedule with inactive interval
+        scheduleNextPoll();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [enablePolling, REACTIVATION_THRESHOLD, refreshAllRanges, scheduleNextPoll]);
+
+  /**
    * Initial load: current view + margins
    */
   useEffect(() => {
@@ -125,8 +248,24 @@ export function useProgressiveCalendarTasks(): UseProgressiveCalendarTasksReturn
     const initialStart = addDays(now, -30);
     const initialEnd = addDays(now, 30);
     
-    fetchAdditionalRange(initialStart, initialEnd);
+    fetchAdditionalRange(initialStart, initialEnd).then(() => {
+      // Start polling after initial load
+      if (enablePolling) {
+        scheduleNextPoll();
+      }
+    });
   }, []); // Run once on mount
+  
+  /**
+   * Cleanup polling on unmount
+   */
+  useEffect(() => {
+    return () => {
+      if (pollingTimeoutRef.current) {
+        clearTimeout(pollingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   /**
    * Clear all cached data
@@ -145,6 +284,8 @@ export function useProgressiveCalendarTasks(): UseProgressiveCalendarTasksReturn
     loadedRanges,
     fetchAdditionalRange,
     clearCache,
+    lastRefresh,
+    nextRefresh,
   };
 }
 

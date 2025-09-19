@@ -18,15 +18,20 @@ export default function CalendarPage() {
   // Période actuellement visible dans le calendrier (pour debug seulement)
   const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
   
-  // Use progressive loading hook
+  // Use progressive loading hook with polling
   const { 
     tasks, 
     isLoadingBackground, 
     error, 
     loadedRanges, 
     fetchAdditionalRange, 
-    clearCache 
-  } = useProgressiveCalendarTasks();
+    clearCache,
+    lastRefresh,
+    nextRefresh
+  } = useProgressiveCalendarTasks({
+    enablePolling: true,
+    pollingInterval: 2 * 60 * 1000 // 2 minutes when active
+  });
   
   // Track if initial load is complete
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -196,6 +201,11 @@ export default function CalendarPage() {
                   {loadedRanges.length > 0 && (
                     <span className="text-xs text-muted-foreground">
                       {loadedRanges.length} période{loadedRanges.length > 1 ? 's' : ''} chargée{loadedRanges.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                  {lastRefresh && (
+                    <span className="text-xs text-muted-foreground" title={`Prochaine actualisation: ${nextRefresh?.toLocaleTimeString('fr-FR') || 'N/A'}`}>
+                      Dernière MAJ: {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </span>
                   )}
                 </div>
