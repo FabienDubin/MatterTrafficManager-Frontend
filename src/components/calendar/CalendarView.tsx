@@ -10,9 +10,17 @@ interface CalendarViewProps {
   events?: EventInput[];
   onDateClick?: (info: any) => void;
   onEventClick?: (info: any) => void;
+  onDatesChange?: (start: Date, end: Date) => void;
+  currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
 }
 
-export function CalendarView({ events = [], onDateClick, onEventClick }: CalendarViewProps) {
+export function CalendarView({ 
+  events = [], 
+  onDateClick, 
+  onEventClick, 
+  onDatesChange,
+  currentView = 'timeGridWeek'
+}: CalendarViewProps) {
   const calendarRef = useRef<FullCalendar>(null);
 
   // Apply theme-aware styling
@@ -67,7 +75,7 @@ export function CalendarView({ events = [], onDateClick, onEventClick }: Calenda
       <FullCalendar
         ref={calendarRef}
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView="timeGridWeek"
+        initialView={currentView}
         locale={frLocale}
         headerToolbar={{
           left: 'prev,next today',
@@ -94,6 +102,16 @@ export function CalendarView({ events = [], onDateClick, onEventClick }: Calenda
         dateClick={onDateClick}
         eventClick={onEventClick}
         eventDisplay="block"
+        // Callbacks pour détecter les changements de vue et de dates
+        datesSet={(dateInfo) => {
+          // Appelé quand les dates visibles changent (navigation ou changement de vue)
+          if (onDatesChange) {
+            onDatesChange(dateInfo.start, dateInfo.end);
+          }
+        }}
+        // Options pour améliorer l'affichage
+        weekNumbers={false}
+        navLinks={true} // Permet de cliquer sur les jours/semaines pour naviguer
         eventTimeFormat={{
           hour: '2-digit',
           minute: '2-digit',

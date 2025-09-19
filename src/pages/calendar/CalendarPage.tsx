@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
@@ -9,20 +9,23 @@ import { EventInput } from '@fullcalendar/core';
 import { useCalendarTasks } from '@/hooks/useCalendarTasks';
 import { toast } from 'sonner';
 import { tasksToCalendarEvents, formatTaskForDisplay } from '@/utils/taskMapper';
-import { addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { addDays, startOfMonth, endOfMonth, format } from 'date-fns';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   
-  // Date range for calendar - charge 60 jours pour couvrir toutes les vues
-  const [dateRange] = useState(() => {
+  // Date range for calendar - état dynamique pour refetch
+  const [dateRange, setDateRange] = useState(() => {
     const now = new Date();
     return {
       startDate: addDays(now, -30), // 30 jours avant
       endDate: addDays(now, 30) // 30 jours après
     };
   });
+  
+  // Période actuellement visible dans le calendrier
+  const [visiblePeriod, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
   
   // Fetch tasks for calendar
   const { tasks, isLoading, error, cacheHit, refetch } = useCalendarTasks({
@@ -78,6 +81,34 @@ export default function CalendarPage() {
       duration: 5000, // Afficher 5 secondes
     });
   };
+
+  // Gérer le changement de période visible dans le calendrier
+  const handleDatesChange = useCallback((start: Date, end: Date) => {
+    setVisiblePeriod({ start, end });
+    
+    // Vérifier si on doit refetch (si on sort de la plage chargée)
+    const needsRefetch = 
+      start < dateRange.startDate || 
+      end > dateRange.endDate;
+    
+    if (needsRefetch && !isLoading) {
+      // Calculer la nouvelle plage avec une marge
+      const newStartDate = addDays(start, -30);
+      const newEndDate = addDays(end, 30);
+      
+      // Mettre à jour la plage et déclencher un refetch
+      setDateRange({
+        startDate: newStartDate,
+        endDate: newEndDate
+      });
+      
+      // Informer l'utilisateur
+      toast.info("Chargement des tâches", {
+        description: "Récupération des données pour cette période...",
+        duration: 2000,
+      });
+    }
+  }, [dateRange, isLoading]);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -139,15 +170,21 @@ export default function CalendarPage() {
                       Depuis le cache
                     </span>
                   )}
+                  {visiblePeriod && (
+                    <span className="text-xs text-muted-foreground">
+                      Période chargée: {format(dateRange.startDate, 'dd/MM')} - {format(dateRange.endDate, 'dd/MM')}
+                    </span>
+                  )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => refetch()}
                   className="gap-2"
+                  disabled={isLoading}
                 >
-                  <RefreshCw className="h-3 w-3" />
-                  Actualiser
+                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  {isLoading ? 'Chargement...' : 'Actualiser'}
                 </Button>
               </div>
               
@@ -167,6 +204,7 @@ export default function CalendarPage() {
                   events={events}
                   onDateClick={handleDateClick}
                   onEventClick={handleEventClick}
+                  onDatesChange={handleDatesChange}
                 />
               )}
             </>

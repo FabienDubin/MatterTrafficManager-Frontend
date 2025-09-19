@@ -62,6 +62,14 @@ export function useCalendarTasks({
   useEffect(() => {
     fetchTasks();
   }, [startDate.getTime(), endDate.getTime(), enabled]);
+  
+  // Log pour debug des changements de période
+  useEffect(() => {
+    console.log('[useCalendarTasks] Date range changed:', {
+      startDate: format(startDate, 'yyyy-MM-dd'),
+      endDate: format(endDate, 'yyyy-MM-dd')
+    });
+  }, [startDate, endDate]);
 
   return {
     tasks,
