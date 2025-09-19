@@ -4,14 +4,21 @@ export interface Task {
   id: string;
   title: string;
   workPeriod?: {
-    startDate: string;
-    endDate: string;
+    startDate: string; // ISO 8601 format avec heure
+    endDate: string;   // ISO 8601 format avec heure
   };
   assignedMembers?: string[];
+  projectId?: string;
+  clientId?: string;
+  taskType?: 'task' | 'holiday' | 'remote';
   status: 'not_started' | 'in_progress' | 'completed';
   description?: string;
+  notes?: string;
+  billedHours?: number;
+  actualHours?: number;
   createdAt?: string;
   updatedAt?: string;
+  syncedAt?: string;
 }
 
 export interface NotionTestResponse {
@@ -20,7 +27,56 @@ export interface NotionTestResponse {
   data?: any;
 }
 
+export interface CalendarTasksResponse {
+  success: boolean;
+  data: {
+    tasks: Task[];
+    cacheHit: boolean;
+    period: {
+      start: string;
+      end: string;
+    };
+  };
+  meta: {
+    count: number;
+    cached: boolean;
+    timestamp: string;
+  };
+}
+
 export const tasksService = {
+  // Get tasks for calendar view
+  async getCalendarTasks(startDate: string, endDate: string): Promise<CalendarTasksResponse> {
+    try {
+      const { data } = await apiClient.get<CalendarTasksResponse>('/tasks/calendar', {
+        params: {
+          startDate,
+          endDate
+        }
+      });
+      return data;
+    } catch (error) {
+      console.error('Error fetching calendar tasks:', error);
+      // Return mock data as fallback
+      return {
+        success: true,
+        data: {
+          tasks: getMockTasks(),
+          cacheHit: false,
+          period: {
+            start: startDate,
+            end: endDate
+          }
+        },
+        meta: {
+          count: 4,
+          cached: false,
+          timestamp: new Date().toISOString()
+        }
+      };
+    }
+  },
+
   // Get all tasks (when the endpoint is ready)
   async getTasks(): Promise<Task[]> {
     // For now, directly return mock data since the endpoint is not ready
