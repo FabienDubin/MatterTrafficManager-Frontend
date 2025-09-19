@@ -15,12 +15,12 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   
-  // Date range for calendar - default to current month with some buffer
+  // Date range for calendar - charge 60 jours pour couvrir toutes les vues
   const [dateRange] = useState(() => {
     const now = new Date();
     return {
-      startDate: addDays(startOfMonth(now), -7), // 7 days before month start
-      endDate: addDays(endOfMonth(now), 7) // 7 days after month end
+      startDate: addDays(now, -30), // 30 jours avant
+      endDate: addDays(now, 30) // 30 jours après
     };
   });
   

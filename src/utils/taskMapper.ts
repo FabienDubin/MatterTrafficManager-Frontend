@@ -47,7 +47,7 @@ export function tasksToCalendarEvents(tasks: Task[]): EventInput[] {
  * Get color based on task status
  * For MVP: Using single blue color for all tasks
  */
-export function getStatusColor(status: Task['status']): string {
+export function getStatusColor(_status: Task['status']): string {
   // MVP: Couleur bleue simple pour toutes les tâches
   return '#3b82f6'; // Blue 500
   

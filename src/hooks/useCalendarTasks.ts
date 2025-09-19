@@ -20,10 +20,10 @@ interface UseCalendarTasksReturn {
  * Custom hook to fetch tasks for calendar view
  * Handles loading state, error state, and automatic refetch on date change
  */
-export function useCalendarTasks({ 
-  startDate, 
-  endDate, 
-  enabled = true 
+export function useCalendarTasks({
+  startDate,
+  endDate,
+  enabled = true,
 }: UseCalendarTasksParams): UseCalendarTasksReturn {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -41,10 +41,7 @@ export function useCalendarTasks({
       const formattedStartDate = format(startDate, 'yyyy-MM-dd');
       const formattedEndDate = format(endDate, 'yyyy-MM-dd');
 
-      const response = await tasksService.getCalendarTasks(
-        formattedStartDate,
-        formattedEndDate
-      );
+      const response = await tasksService.getCalendarTasks(formattedStartDate, formattedEndDate);
 
       if (response.success) {
         setTasks(response.data.tasks);
@@ -71,7 +68,7 @@ export function useCalendarTasks({
     isLoading,
     error,
     cacheHit,
-    refetch: fetchTasks
+    refetch: fetchTasks,
   };
 }
 
@@ -86,7 +83,7 @@ export function useCurrentWeekTasks() {
   const diff = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Ajuster si dimanche
   startOfWeek.setDate(diff);
   startOfWeek.setHours(0, 0, 0, 0);
-  
+
   // Dimanche à 23:59:59
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6);
@@ -94,7 +91,7 @@ export function useCurrentWeekTasks() {
 
   return useCalendarTasks({
     startDate: startOfWeek,
-    endDate: endOfWeek
+    endDate: endOfWeek,
   });
 }
 
@@ -106,13 +103,13 @@ export function useCurrentMonthTasks() {
   // Premier jour du mois à 00:00:00
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   startOfMonth.setHours(0, 0, 0, 0);
-  
+
   // Dernier jour du mois à 23:59:59
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   endOfMonth.setHours(23, 59, 59, 999);
 
   return useCalendarTasks({
     startDate: startOfMonth,
-    endDate: endOfMonth
+    endDate: endOfMonth,
   });
 }
