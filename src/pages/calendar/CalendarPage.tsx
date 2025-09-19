@@ -4,34 +4,39 @@ import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, RefreshCw } from 'lucide-react';
+import { LogOut, Calendar, RefreshCw, Loader2 } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
-import { useCalendarTasks } from '@/hooks/useCalendarTasks';
+import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { toast } from 'sonner';
 import { tasksToCalendarEvents, formatTaskForDisplay } from '@/utils/taskMapper';
-import { addDays, startOfMonth, endOfMonth, format } from 'date-fns';
+import { addDays } from 'date-fns';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   
-  // Date range for calendar - état dynamique pour refetch
-  const [dateRange, setDateRange] = useState(() => {
-    const now = new Date();
-    return {
-      startDate: addDays(now, -30), // 30 jours avant
-      endDate: addDays(now, 30) // 30 jours après
-    };
-  });
+  // Période actuellement visible dans le calendrier (pour debug seulement)
+  const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
   
-  // Période actuellement visible dans le calendrier
-  const [visiblePeriod, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
+  // Use progressive loading hook
+  const { 
+    tasks, 
+    isLoadingBackground, 
+    error, 
+    loadedRanges, 
+    fetchAdditionalRange, 
+    clearCache 
+  } = useProgressiveCalendarTasks();
   
-  // Fetch tasks for calendar
-  const { tasks, isLoading, error, cacheHit, refetch } = useCalendarTasks({
-    startDate: dateRange.startDate,
-    endDate: dateRange.endDate
-  });
+  // Track if initial load is complete
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  useEffect(() => {
+    // Mark initial load as complete after first data arrives
+    if (tasks.length > 0 && isInitialLoad) {
+      setIsInitialLoad(false);
+    }
+  }, [tasks.length, isInitialLoad]);
 
   // Convert tasks to calendar events
   const events = useMemo(() => {
@@ -86,29 +91,46 @@ export default function CalendarPage() {
   const handleDatesChange = useCallback((start: Date, end: Date) => {
     setVisiblePeriod({ start, end });
     
-    // Vérifier si on doit refetch (si on sort de la plage chargée)
-    const needsRefetch = 
-      start < dateRange.startDate || 
-      end > dateRange.endDate;
+    // Check if we're getting close to the edge of loaded data
+    // We want to preload before user reaches the edge for smooth experience
+    const marginDays = 7; // Preload when within 7 days of edge
     
-    if (needsRefetch && !isLoading) {
-      // Calculer la nouvelle plage avec une marge
-      const newStartDate = addDays(start, -30);
-      const newEndDate = addDays(end, 30);
-      
-      // Mettre à jour la plage et déclencher un refetch
-      setDateRange({
-        startDate: newStartDate,
-        endDate: newEndDate
-      });
-      
-      // Informer l'utilisateur
-      toast.info("Chargement des tâches", {
-        description: "Récupération des données pour cette période...",
-        duration: 2000,
-      });
+    // Check if any loaded range covers the visible period
+    const isCurrentlyCovered = loadedRanges.some(range => 
+      start >= range.start && end <= range.end
+    );
+    
+    if (!isCurrentlyCovered) {
+      // Need to load data for current view
+      const extendedStart = addDays(start, -marginDays);
+      const extendedEnd = addDays(end, marginDays);
+      fetchAdditionalRange(extendedStart, extendedEnd);
+      return;
     }
-  }, [dateRange, isLoading]);
+    
+    // Check if we're approaching the edges
+    const earliestLoaded = loadedRanges.reduce((min, range) => 
+      !min || range.start < min ? range.start : min, null as Date | null
+    );
+    
+    const latestLoaded = loadedRanges.reduce((max, range) => 
+      !max || range.end > max ? range.end : max, null as Date | null
+    );
+    
+    if (earliestLoaded && start < addDays(earliestLoaded, marginDays)) {
+      // Approaching the beginning, load more past data
+      const newStart = addDays(earliestLoaded, -30); // Load 30 more days before
+      const newEnd = earliestLoaded;
+      fetchAdditionalRange(newStart, newEnd);
+    }
+    
+    if (latestLoaded && end > addDays(latestLoaded, -marginDays)) {
+      // Approaching the end, load more future data
+      const newStart = latestLoaded;
+      const newEnd = addDays(latestLoaded, 30); // Load 30 more days after
+      fetchAdditionalRange(newStart, newEnd);
+    }
+  }, [loadedRanges, fetchAdditionalRange]);
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -143,7 +165,7 @@ export default function CalendarPage() {
       {/* Calendar Container */}
       <main className="flex-1 p-6 overflow-auto">
         <div className="h-full max-w-[1600px] mx-auto">
-          {isLoading ? (
+          {isInitialLoad && tasks.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
@@ -165,26 +187,32 @@ export default function CalendarPage() {
                   <span className="text-sm text-muted-foreground">
                     {tasks.length} tâche{tasks.length > 1 ? 's' : ''} trouvée{tasks.length > 1 ? 's' : ''}
                   </span>
-                  {cacheHit && (
-                    <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
-                      Depuis le cache
+                  {isLoadingBackground && (
+                    <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Chargement en arrière-plan
                     </span>
                   )}
-                  {visiblePeriod && (
+                  {loadedRanges.length > 0 && (
                     <span className="text-xs text-muted-foreground">
-                      Période chargée: {format(dateRange.startDate, 'dd/MM')} - {format(dateRange.endDate, 'dd/MM')}
+                      {loadedRanges.length} période{loadedRanges.length > 1 ? 's' : ''} chargée{loadedRanges.length > 1 ? 's' : ''}
                     </span>
                   )}
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => refetch()}
+                  onClick={() => {
+                    clearCache();
+                    // Reload initial range
+                    const now = new Date();
+                    fetchAdditionalRange(addDays(now, -30), addDays(now, 30));
+                  }}
                   className="gap-2"
-                  disabled={isLoading}
+                  disabled={isLoadingBackground}
                 >
-                  <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
-                  {isLoading ? 'Chargement...' : 'Actualiser'}
+                  <RefreshCw className={`h-3 w-3 ${isLoadingBackground ? 'animate-spin' : ''}`} />
+                  {isLoadingBackground ? 'Chargement...' : 'Actualiser'}
                 </Button>
               </div>
               
