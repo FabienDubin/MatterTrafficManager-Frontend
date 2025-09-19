@@ -1,19 +1,23 @@
-# Development image for React frontend
+# Dockerfile.dev pour le frontend Matter Traffic
 FROM node:20-alpine
 
+# Créer le répertoire de travail
 WORKDIR /app
 
-# Copy package files
+# Installer les dépendances système
+RUN apk add --no-cache git
+
+# Copier les fichiers de configuration package
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Installer les dépendances
+RUN npm ci
 
-# Copy source code
+# Copier le code source
 COPY . .
 
-# Expose port
+# Exposer le port Vite
 EXPOSE 5173
 
-# Start dev server
+# Commande de développement avec hot reload
 CMD ["npm", "run", "dev"]
