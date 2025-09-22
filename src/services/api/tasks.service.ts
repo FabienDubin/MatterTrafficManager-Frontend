@@ -8,10 +8,35 @@ export interface Task {
     endDate: string;   // ISO 8601 format avec heure
   };
   assignedMembers?: string[];
+  assignedMembersData?: Array<{
+    id: string;
+    name: string;
+    email: string;
+    teams?: string[];
+  }>;
   projectId?: string;
+  projectData?: {
+    id: string;
+    name: string;
+    status: string;
+  };
   clientId?: string;
+  clientData?: {
+    id: string;
+    name: string;
+  };
+  teams?: string[];
+  teamsData?: Array<{
+    id: string;
+    name: string;
+  }>;
+  involvedTeamIds?: string[];
+  involvedTeamsData?: Array<{
+    id: string;
+    name: string;
+  }>;
   taskType?: 'task' | 'holiday' | 'remote';
-  status: 'not_started' | 'in_progress' | 'completed';
+  status: 'not_started' | 'in_progress' | 'completed' | 'Pas Commencé' | 'A valider' | 'Terminé' | string;
   description?: string;
   notes?: string;
   billedHours?: number;

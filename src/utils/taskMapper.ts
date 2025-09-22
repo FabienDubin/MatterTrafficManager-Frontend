@@ -24,7 +24,17 @@ export function taskToCalendarEvent(task: Task): EventInput {
     extendedProps: {
       status: task.status,
       description: task.description || '',
+      notes: task.notes || '',
       assignedMembers: task.assignedMembers || [],
+      assignedMembersData: task.assignedMembersData || [],
+      projectId: task.projectId,
+      projectData: task.projectData,
+      clientId: task.clientId,
+      clientData: task.clientData,
+      teams: task.teams || [],
+      teamsData: task.teamsData || [],
+      involvedTeamIds: task.involvedTeamIds || [],
+      involvedTeamsData: task.involvedTeamsData || [],
       createdAt: task.createdAt,
       updatedAt: task.updatedAt
     },
@@ -45,38 +55,45 @@ export function tasksToCalendarEvents(tasks: Task[]): EventInput[] {
 
 /**
  * Get color based on task status
- * For MVP: Using single blue color for all tasks
  */
-export function getStatusColor(_status: Task['status']): string {
-  // MVP: Couleur bleue simple pour toutes les tâches
-  return '#3b82f6'; // Blue 500
+export function getStatusColor(status: string | undefined | null): string {
+  // Handle case insensitive status values
+  const normalizedStatus = status?.toLowerCase();
   
-  /* Phase 2: Couleurs par statut
-  switch (status) {
+  switch (normalizedStatus) {
+    case 'terminé':
     case 'completed':
       return '#10b981'; // Emerald 500 - Green for completed
+    case 'a valider':
     case 'in_progress':
-      return '#3b82f6'; // Blue 500 - Blue for in progress
+      return '#f59e0b'; // Amber 500 - Orange for validation needed
+    case 'pas commencé':
     case 'not_started':
-    default:
       return '#6b7280'; // Gray 500 - Gray for not started
+    default:
+      return '#3b82f6'; // Blue 500 - Default blue
   }
-  */
 }
 
 /**
  * Get status label in French
  */
-export function getStatusLabel(status: Task['status']): string {
-  switch (status) {
+export function getStatusLabel(status: string | undefined | null): string {
+  // Handle Notion status values (in French) - case insensitive
+  const normalizedStatus = status?.toLowerCase();
+  
+  switch (normalizedStatus) {
+    case 'terminé':
     case 'completed':
       return 'Terminé';
+    case 'a valider':
     case 'in_progress':
-      return 'En cours';
+      return 'A valider';
+    case 'pas commencé':
     case 'not_started':
-      return 'Non commencé';
+      return 'Pas commencé';
     default:
-      return 'Inconnu';
+      return status || 'Inconnu';
   }
 }
 
@@ -93,8 +110,28 @@ export function formatTaskForDisplay(task: Task): string {
     parts.push(`Description: ${task.description}`);
   }
   
-  if (task.assignedMembers && task.assignedMembers.length > 0) {
+  // Use enriched member data if available, fallback to IDs
+  if (task.assignedMembersData && task.assignedMembersData.length > 0) {
+    const memberNames = task.assignedMembersData.map(m => m.name).join(', ');
+    parts.push(`Assigné à: ${memberNames}`);
+  } else if (task.assignedMembers && task.assignedMembers.length > 0) {
     parts.push(`Assigné à: ${task.assignedMembers.join(', ')}`);
+  }
+  
+  // Show project name if available
+  if (task.projectData) {
+    parts.push(`Projet: ${task.projectData.name}`);
+  }
+  
+  // Show client name if available
+  if (task.clientData) {
+    parts.push(`Client: ${task.clientData.name}`);
+  }
+  
+  // Show team names if available
+  if (task.teamsData && task.teamsData.length > 0) {
+    const teamNames = task.teamsData.map(t => t.name).join(', ');
+    parts.push(`Équipes: ${teamNames}`);
   }
   
   if (task.workPeriod) {
