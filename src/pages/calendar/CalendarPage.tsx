@@ -4,7 +4,7 @@ import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, RefreshCw, Loader2 } from 'lucide-react';
+import { LogOut, Calendar, RefreshCw, Loader2, Settings } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
@@ -176,6 +176,20 @@ export default function CalendarPage() {
               </span>
             )}
             <ThemeToggle />
+            
+            {/* Admin button - only visible for admin users */}
+            {user?.role === 'admin' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/admin')}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                <span>Administration</span>
+              </Button>
+            )}
+            
             <Button
               variant="outline"
               size="sm"

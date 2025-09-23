@@ -2,7 +2,14 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import LoginPage from '@/pages/auth/Login';
 import CalendarPage from '@/pages/calendar/CalendarPage';
+import AdminLayout from '@/layouts/AdminLayout';
+import AdminDashboard from '@/pages/admin/Dashboard';
+import UsersPage from '@/pages/admin/UsersPage';
+import CacheDashboard from '@/pages/admin/CacheDashboard';
 import NotionConfigPage from '@/pages/admin/NotionConfigPage';
+import { AdminMemoryPage } from '@/pages/admin/AdminMemoryPage';
+import { AdminHealthPage } from '@/pages/admin/AdminHealthPage';
+import { AdminMetricsPage } from '@/pages/admin/AdminMetricsPage';
 
 export function AppRouter() {
   return (
@@ -20,15 +27,23 @@ export function AppRouter() {
         }
       />
 
-      {/* Admin routes */}
+      {/* Admin routes with layout */}
       <Route
-        path='/admin/notion-config'
+        path='/admin'
         element={
           <ProtectedRoute requiredRole="admin">
-            <NotionConfigPage />
+            <AdminLayout />
           </ProtectedRoute>
         }
-      />
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path='users' element={<UsersPage />} />
+        <Route path='cache' element={<CacheDashboard />} />
+        <Route path='notion-config' element={<NotionConfigPage />} />
+        <Route path='memory' element={<AdminMemoryPage />} />
+        <Route path='health' element={<AdminHealthPage />} />
+        <Route path='metrics' element={<AdminMetricsPage />} />
+      </Route>
 
       {/* Default redirect */}
       <Route path='/' element={<Navigate to='/calendar' replace />} />
