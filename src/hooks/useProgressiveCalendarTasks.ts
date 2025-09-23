@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, MutableRefObject } from 'react';
 import { tasksService, Task } from '@/services/api/tasks.service';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
@@ -17,6 +17,10 @@ interface UseProgressiveCalendarTasksReturn {
   clearCache: () => void;
   lastRefresh: Date | null;
   nextRefresh: Date | null;
+  // Exposed for optimistic updates integration
+  tasksMapRef: MutableRefObject<Map<string, Task>>;
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
+  refreshAllRanges: () => Promise<void>;
 }
 
 /**
@@ -286,6 +290,10 @@ export function useProgressiveCalendarTasks(
     clearCache,
     lastRefresh,
     nextRefresh,
+    // Expose internals for optimistic updates
+    tasksMapRef,
+    setTasks,
+    refreshAllRanges
   };
 }
 

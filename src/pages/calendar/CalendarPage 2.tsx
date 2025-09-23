@@ -29,20 +29,10 @@ export default function CalendarPage() {
     fetchAdditionalRange, 
     clearCache,
     lastRefresh,
-    nextRefresh,
-    // Exposed for optimistic updates
-    tasksMapRef,
-    setTasks,
-    refreshAllRanges
+    nextRefresh
   } = useProgressiveCalendarTasks({
     enablePolling: true,
     pollingInterval: 2 * 60 * 1000 // 2 minutes when active
-  });
-  
-  // Initialize optimistic update hook
-  const taskUpdate = useOptimisticTaskUpdate(tasks, setTasks, {
-    tasksMapRef,
-    onMutationSuccess: refreshAllRanges
   });
   
   // Track if initial load is complete
@@ -167,9 +157,6 @@ export default function CalendarPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Sync indicator for optimistic updates */}
-            <SyncIndicator showDetails />
-            
             {user && (
               <span className="text-sm text-muted-foreground">
                 {user.email}
@@ -218,11 +205,6 @@ export default function CalendarPage() {
                     <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded flex items-center gap-1">
                       <Loader2 className="h-3 w-3 animate-spin" />
                       Chargement en arrière-plan
-                    </span>
-                  )}
-                  {taskUpdate.hasPendingUpdates && (
-                    <span className="text-xs text-orange-600 dark:text-orange-400">
-                      Synchronisation des modifications...
                     </span>
                   )}
                   {loadedRanges.length > 0 && (

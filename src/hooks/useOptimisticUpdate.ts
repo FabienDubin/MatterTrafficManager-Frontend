@@ -1,0 +1,222 @@
+/**
+ * Generic hook for optimistic updates with TanStack Query
+ * Provides immediate UI updates with automatic rollback on error
+ */
+
+import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useCallback, useState } from 'react';
+
+export interface OptimisticUpdateOptions<TData, TVariables, TContext = unknown> {
+  mutationKey?: string[];
+  mutationFn: (variables: TVariables) => Promise<TData>;
+  onOptimisticUpdate?: (variables: TVariables) => void;
+  onSuccess?: (data: TData, variables: TVariables, context: TContext | undefined) => void;
+  onError?: (error: Error, variables: TVariables, context: TContext | undefined) => void;
+  onSettled?: () => void;
+  queryKeysToInvalidate?: string[][];
+  showToast?: boolean;
+  toastMessages?: {
+    loading?: string;
+    success?: string;
+    error?: string;
+  };
+}
+
+export interface OptimisticUpdateState {
+  isSyncing: boolean;
+  syncError: Error | null;
+  lastSyncAt: Date | null;
+}
+
+/**
+ * Generic hook for optimistic updates
+ */
+export function useOptimisticUpdate<TData = unknown, TVariables = void, TContext = unknown>(
+  options: OptimisticUpdateOptions<TData, TVariables, TContext>
+) {
+  const queryClient = useQueryClient();
+  const [syncState, setSyncState] = useState<OptimisticUpdateState>({
+    isSyncing: false,
+    syncError: null,
+    lastSyncAt: null,
+  });
+
+  const {
+    mutationKey = ['optimistic-update'],
+    mutationFn,
+    onOptimisticUpdate,
+    onSuccess,
+    onError,
+    onSettled,
+    queryKeysToInvalidate = [],
+    showToast = true,
+    toastMessages = {
+      loading: 'Synchronisation...',
+      success: 'Modifications enregistrées',
+      error: 'Erreur de synchronisation',
+    },
+  } = options;
+
+  const mutation = useMutation<TData, Error, TVariables, TContext>({
+    mutationKey,
+    mutationFn,
+    
+    onMutate: async (variables) => {
+      // Set syncing state
+      setSyncState(prev => ({ ...prev, isSyncing: true, syncError: null }));
+      
+      // Cancel outgoing refetches
+      await Promise.all(
+        queryKeysToInvalidate.map(key => queryClient.cancelQueries({ queryKey: key }))
+      );
+      
+      // Perform optimistic update
+      if (onOptimisticUpdate) {
+        onOptimisticUpdate(variables);
+      }
+      
+      // Create context for potential rollback
+      const previousData: Record<string, unknown> = {};
+      for (const key of queryKeysToInvalidate) {
+        previousData[key.join('-')] = queryClient.getQueryData(key);
+      }
+      
+      return previousData as TContext;
+    },
+    
+    onSuccess: (data, variables, context) => {
+      setSyncState({
+        isSyncing: false,
+        syncError: null,
+        lastSyncAt: new Date(),
+      });
+      
+      if (showToast) {
+        toast.success(toastMessages.success);
+      }
+      
+      if (onSuccess) {
+        onSuccess(data, variables, context);
+      }
+    },
+    
+    onError: (error, variables, context) => {
+      setSyncState(prev => ({
+        ...prev,
+        isSyncing: false,
+        syncError: error,
+      }));
+      
+      // Rollback optimistic updates
+      if (context) {
+        const previousData = context as Record<string, unknown>;
+        for (const key of queryKeysToInvalidate) {
+          const dataKey = key.join('-');
+          if (previousData[dataKey] !== undefined) {
+            queryClient.setQueryData(key, previousData[dataKey]);
+          }
+        }
+      }
+      
+      if (showToast) {
+        toast.error(toastMessages.error, {
+          description: error.message,
+          action: {
+            label: 'Réessayer',
+            onClick: () => mutation.mutate(variables),
+          },
+        });
+      }
+      
+      if (onError) {
+        onError(error, variables, context);
+      }
+    },
+    
+    onSettled: () => {
+      // Refetch affected queries
+      queryKeysToInvalidate.forEach(key => {
+        queryClient.invalidateQueries({ queryKey: key });
+      });
+      
+      if (onSettled) {
+        onSettled();
+      }
+    },
+  });
+
+  const mutateAsync = useCallback(
+    async (variables: TVariables) => {
+      return mutation.mutateAsync(variables);
+    },
+    [mutation]
+  );
+
+  const mutate = useCallback(
+    (variables: TVariables) => {
+      mutation.mutate(variables);
+    },
+    [mutation]
+  );
+
+  return {
+    mutate,
+    mutateAsync,
+    isPending: mutation.isPending,
+    isSuccess: mutation.isSuccess,
+    isError: mutation.isError,
+    error: mutation.error,
+    data: mutation.data,
+    reset: mutation.reset,
+    syncState,
+  };
+}
+
+/**
+ * Hook to track global sync state across all optimistic updates
+ */
+export function useGlobalSyncState() {
+  const queryClient = useQueryClient();
+  const mutations = queryClient.getMutationCache().getAll();
+  
+  const isSyncing = mutations.some(m => m.state.status === 'pending');
+  const hasErrors = mutations.some(m => m.state.status === 'error');
+  
+  return {
+    isSyncing,
+    hasErrors,
+    pendingCount: mutations.filter(m => m.state.status === 'pending').length,
+  };
+}
+
+/**
+ * Hook to detect online/offline status
+ */
+export function useOnlineStatus() {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useCallback(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success('Connexion rétablie');
+    };
+    
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.warning('Mode hors ligne', {
+        description: 'Les modifications seront synchronisées à la reconnexion',
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  return isOnline;
+}
