@@ -9,6 +9,8 @@ import {
   Home,
   ChevronRight,
   LogOut,
+  GitBranch,
+  Settings,
 } from "lucide-react"
 
 import {
@@ -53,11 +55,15 @@ const adminNavigation = [
     items: [
       {
         title: "Métriques Cache",
-        url: "/admin/cache", // À créer dans Task 6
+        url: "/admin/cache",
       },
       {
         title: "Monitoring Mémoire",
-        url: "/admin/memory", // À créer dans Task 6
+        url: "/admin/memory",
+      },
+      {
+        title: "Performance",
+        url: "/admin/performance",
       },
     ],
   },
@@ -73,6 +79,21 @@ const adminNavigation = [
       {
         title: "Metrics API",
         url: "/admin/metrics", // À créer
+      },
+    ],
+  },
+  {
+    title: "Synchronisation",
+    url: "#",
+    icon: Settings,
+    items: [
+      {
+        title: "Configuration Sync",
+        url: "/admin/sync-config",
+      },
+      {
+        title: "Résolution Conflits",
+        url: "/admin/conflicts",
       },
     ],
   },

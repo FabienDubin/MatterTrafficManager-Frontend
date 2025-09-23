@@ -10,6 +10,9 @@ import NotionConfigPage from '@/pages/admin/NotionConfigPage';
 import { AdminMemoryPage } from '@/pages/admin/AdminMemoryPage';
 import { AdminHealthPage } from '@/pages/admin/AdminHealthPage';
 import { AdminMetricsPage } from '@/pages/admin/AdminMetricsPage';
+import { AdminPerformancePage } from '@/pages/admin/AdminPerformancePage';
+import SyncConfigPage from '@/pages/admin/SyncConfigPage';
+import ConflictsPage from '@/pages/admin/ConflictsPage';
 
 export function AppRouter() {
   return (
@@ -43,6 +46,9 @@ export function AppRouter() {
         <Route path='memory' element={<AdminMemoryPage />} />
         <Route path='health' element={<AdminHealthPage />} />
         <Route path='metrics' element={<AdminMetricsPage />} />
+        <Route path='performance' element={<AdminPerformancePage />} />
+        <Route path='sync-config' element={<SyncConfigPage />} />
+        <Route path='conflicts' element={<ConflictsPage />} />
       </Route>
 
       {/* Default redirect */}

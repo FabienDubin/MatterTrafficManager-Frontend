@@ -60,7 +60,7 @@ export const cacheService = {
   },
 
   async getCacheMetrics(): Promise<ApiResponse<{ cache: CacheMetrics }>> {
-    const response = await apiClient.get<ApiResponse<{ cache: CacheMetrics }>>('/admin/cache/metrics');
+    const response = await apiClient.get<ApiResponse<{ cache: CacheMetrics }>>('/admin/metrics/cache');
     return response.data;
   },
 

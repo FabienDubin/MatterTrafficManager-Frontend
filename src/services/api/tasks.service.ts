@@ -1,4 +1,5 @@
 import { apiClient } from './client';
+import { configService } from './config.service';
 
 export interface Task {
   id: string;
@@ -131,21 +132,40 @@ export const tasksService = {
     return data;
   },
 
-  // Create a new task (future implementation)
+  // Create a new task
   async createTask(task: Partial<Task>): Promise<Task> {
-    const { data } = await apiClient.post<Task>('/notion/traffic/tasks', task);
+    // Check if async mode is enabled for create operations
+    const asyncConfig = await configService.getAsyncModeConfig();
+    
+    const { data } = await apiClient.post<Task>('/tasks', {
+      ...task,
+      async: asyncConfig.create
+    });
     return data;
   },
 
-  // Update a task (future implementation)
+  // Update a task
   async updateTask(id: string, task: Partial<Task>): Promise<Task> {
-    const { data } = await apiClient.put<Task>(`/notion/traffic/tasks/${id}`, task);
+    // Check if async mode is enabled for update operations
+    const asyncConfig = await configService.getAsyncModeConfig();
+    
+    const { data } = await apiClient.put<Task>(`/tasks/${id}`, {
+      ...task,
+      async: asyncConfig.update
+    });
     return data;
   },
 
-  // Delete a task (future implementation)
+  // Delete a task
   async deleteTask(id: string): Promise<void> {
-    await apiClient.delete(`/notion/traffic/tasks/${id}`);
+    // Check if async mode is enabled for delete operations
+    const asyncConfig = await configService.getAsyncModeConfig();
+    
+    await apiClient.delete(`/tasks/${id}`, {
+      params: {
+        async: asyncConfig.delete
+      }
+    });
   }
 };
 
