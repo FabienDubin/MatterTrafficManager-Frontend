@@ -184,6 +184,23 @@ export const tasksService = {
         async: asyncMode.delete
       }
     });
+  },
+
+  // Get today's task statistics
+  async getTodayStats(): Promise<{
+    total: number;
+    completed: number;
+    inProgress: number;
+    notStarted: number;
+    byType: {
+      task: number;
+      holiday: number;
+      school: number;
+      remote: number;
+    };
+  }> {
+    const response = await apiClient.get('/tasks/stats/today');
+    return response.data.data;
   }
 };
 

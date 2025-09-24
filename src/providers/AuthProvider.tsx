@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect } from 'react';
 import { useAuthStore } from '@/store/auth.store';
+import { useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -13,11 +14,15 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user, login, logout, checkAuth, isLoading } = useAuthStore();
+  const location = useLocation();
 
   useEffect(() => {
-    // Check auth status on mount
-    checkAuth();
-  }, []);
+    // Only check auth status if we're not on the login page
+    // This prevents infinite loops when the auth check fails
+    if (location.pathname !== '/login') {
+      checkAuth();
+    }
+  }, [location.pathname]);
 
   return (
     <AuthContext.Provider 

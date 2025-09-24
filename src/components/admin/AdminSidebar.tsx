@@ -11,6 +11,7 @@ import {
   LogOut,
   GitBranch,
   Settings,
+  RefreshCw,
 } from "lucide-react"
 
 import {
@@ -36,7 +37,7 @@ import {
 import { useAuthStore } from "@/store/auth.store"
 import { Button } from "@/components/ui/button"
 
-// Navigation data for admin - only existing pages
+// Navigation data for admin - reorganized structure
 const adminNavigation = [
   {
     title: "Dashboard",
@@ -44,26 +45,21 @@ const adminNavigation = [
     icon: Home,
   },
   {
-    title: "Utilisateurs",
-    url: "/admin/users", 
-    icon: Users,
-  },
-  {
-    title: "Cache & Performance",
+    title: "Configuration",
     url: "#",
-    icon: Database,
+    icon: Settings,
     items: [
       {
-        title: "Métriques Cache",
-        url: "/admin/cache",
+        title: "Notion Config",
+        url: "/admin/configuration/notion-config",
       },
       {
-        title: "Monitoring Mémoire",
-        url: "/admin/memory",
+        title: "Mapping Bases",
+        url: "/admin/configuration/mapping",
       },
       {
-        title: "Performance",
-        url: "/admin/performance",
+        title: "Discovery Tool",
+        url: "/admin/configuration/discovery",
       },
     ],
   },
@@ -73,29 +69,42 @@ const adminNavigation = [
     icon: Activity,
     items: [
       {
-        title: "Health Check",
-        url: "/admin/health", // À créer
+        title: "Vue Globale",
+        url: "/admin/monitoring/global-metrics",
       },
       {
-        title: "Metrics API",
-        url: "/admin/metrics", // À créer
+        title: "Health & Memory",
+        url: "/admin/monitoring/health-memory",
+      },
+      {
+        title: "Cache Analytics",
+        url: "/admin/monitoring/cache-analytics",
       },
     ],
   },
   {
     title: "Synchronisation",
     url: "#",
-    icon: Settings,
+    icon: RefreshCw,
     items: [
       {
-        title: "Configuration Sync",
-        url: "/admin/sync-config",
+        title: "Sync Control",
+        url: "/admin/synchronisation/sync-control",
       },
       {
-        title: "Résolution Conflits",
-        url: "/admin/conflicts",
+        title: "Conflicts Manager",
+        url: "/admin/synchronisation/conflicts",
+      },
+      {
+        title: "Webhook Logs",
+        url: "/admin/synchronisation/webhook-logs",
       },
     ],
+  },
+  {
+    title: "Utilisateurs",
+    url: "/admin/users",
+    icon: Users,
   },
 ]
 

@@ -92,5 +92,20 @@ export const metricsService = {
     const query = type ? `?type=${type}` : '';
     const response = await apiClient.post<ApiResponse<void>>(`/admin/metrics/reset${query}`, {});
     return response.data;
+  },
+
+  async getActiveUsers(): Promise<ApiResponse<{ count: number; users: string[] }>> {
+    const response = await apiClient.get<ApiResponse<{ count: number; users: string[] }>>('/admin/metrics/active-users');
+    return response.data;
+  },
+
+  async getRequestRate(): Promise<ApiResponse<{ requestsPerMinute: number; requestsPerSecond: number }>> {
+    const response = await apiClient.get<ApiResponse<{ requestsPerMinute: number; requestsPerSecond: number }>>('/admin/metrics/request-rate');
+    return response.data;
+  },
+
+  async getRecentErrors(): Promise<ApiResponse<{ recent: any[]; total24h: number }>> {
+    const response = await apiClient.get<ApiResponse<{ recent: any[]; total24h: number }>>('/admin/metrics/errors');
+    return response.data;
   }
 };
