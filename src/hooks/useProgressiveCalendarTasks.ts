@@ -101,12 +101,14 @@ export function useProgressiveCalendarTasks(
     setIsLoadingBackground(true);
     setError(null);
 
+    // Start time to ensure minimum visible duration
+    const startTime = Date.now();
+
     try {
       const formattedStartDate = format(start, 'yyyy-MM-dd');
       const formattedEndDate = format(end, 'yyyy-MM-dd');
       
       console.log('[Progressive] Fetching range:', formattedStartDate, 'to', formattedEndDate);
-      
       const response = await tasksService.getCalendarTasks(formattedStartDate, formattedEndDate);
 
       if (response.success) {
@@ -144,6 +146,12 @@ export function useProgressiveCalendarTasks(
         });
       }
     } finally {
+      // Ensure minimum visible duration for loading state (300ms)
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 300) {
+        await new Promise(resolve => setTimeout(resolve, 300 - elapsed));
+      }
+      
       ongoingFetchesRef.current.delete(rangeKey);
       setIsLoadingBackground(false);
     }

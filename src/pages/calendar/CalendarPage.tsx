@@ -5,7 +5,7 @@ import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Calendar, RefreshCw, Loader2, Settings } from 'lucide-react';
+import { LogOut, Calendar, Settings } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
@@ -199,9 +199,6 @@ export default function CalendarPage() {
           </div>
           
           <div className="flex items-center gap-4">
-            {/* Sync indicator for optimistic updates */}
-            <SyncIndicator showDetails />
-            
             {user && (
               <span className="text-sm text-muted-foreground">
                 {user.email}
@@ -254,49 +251,23 @@ export default function CalendarPage() {
             </div>
           ) : (
             <>
-              {/* Afficher indicateur de cache et nombre de tâches */}
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-muted-foreground">
-                    {tasks.length} tâche{tasks.length > 1 ? 's' : ''} trouvée{tasks.length > 1 ? 's' : ''}
-                  </span>
-                  {isLoadingBackground && (
-                    <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Chargement en arrière-plan
-                    </span>
-                  )}
-                  {taskUpdate.hasPendingUpdates && (
-                    <span className="text-xs text-orange-600 dark:text-orange-400">
-                      Synchronisation des modifications...
-                    </span>
-                  )}
-                  {loadedRanges.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {loadedRanges.length} période{loadedRanges.length > 1 ? 's' : ''} chargée{loadedRanges.length > 1 ? 's' : ''}
-                    </span>
-                  )}
-                  {lastRefresh && (
-                    <span className="text-xs text-muted-foreground" title={`Prochaine actualisation: ${nextRefresh?.toLocaleTimeString('fr-FR') || 'N/A'}`}>
-                      Dernière MAJ: {lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  )}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
+              {/* Unified sync indicator with all status info */}
+              <div className="mb-4">
+                <SyncIndicator 
+                  showDetails
+                  tasksCount={tasks.length}
+                  isLoadingBackground={isLoadingBackground}
+                  hasPendingLocalUpdates={taskUpdate.hasPendingUpdates}
+                  lastRefresh={lastRefresh}
+                  nextRefresh={nextRefresh}
+                  loadedRangesCount={loadedRanges.length}
+                  onRefresh={() => {
                     clearCache();
                     // Reload initial range
                     const now = new Date();
                     fetchAdditionalRange(addDays(now, -30), addDays(now, 30));
                   }}
-                  className="gap-2"
-                  disabled={isLoadingBackground}
-                >
-                  <RefreshCw className={`h-3 w-3 ${isLoadingBackground ? 'animate-spin' : ''}`} />
-                  {isLoadingBackground ? 'Chargement...' : 'Actualiser'}
-                </Button>
+                />
               </div>
               
               {/* Calendrier ou message si aucune tâche */}

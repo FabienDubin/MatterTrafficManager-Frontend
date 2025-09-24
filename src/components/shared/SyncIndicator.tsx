@@ -6,7 +6,7 @@
 import { useGlobalSyncState, useOnlineStatus } from '@/hooks/useOptimisticUpdate';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, WifiOff, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, WifiOff, AlertCircle, AlertTriangle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Tooltip,
@@ -14,17 +14,35 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { useMemo } from 'react';
 
 interface SyncIndicatorProps {
   className?: string;
   showDetails?: boolean;
+  // Additional props for unified indicator
+  tasksCount?: number;
+  isLoadingBackground?: boolean;
+  hasPendingLocalUpdates?: boolean;
+  lastRefresh?: Date | null;
+  nextRefresh?: Date | null;
+  loadedRangesCount?: number;
+  onRefresh?: () => void;
 }
 
 /**
- * Component that shows the current sync state
- * Can be integrated into existing UI elements or used standalone
+ * Component that shows the current sync state with carousel animation
  */
-export function SyncIndicator({ className, showDetails = false }: SyncIndicatorProps) {
+export function SyncIndicator({ 
+  className,
+  tasksCount,
+  isLoadingBackground,
+  hasPendingLocalUpdates,
+  lastRefresh,
+  nextRefresh,
+  loadedRangesCount,
+  onRefresh
+}: SyncIndicatorProps) {
   const { isSyncing: localSyncing, hasErrors: localErrors, pendingCount } = useGlobalSyncState();
   const isOnline = useOnlineStatus();
   const { syncStatus, hasConflicts, hasErrors, isSyncing, isServerDown } = useSyncStatus();
@@ -35,143 +53,192 @@ export function SyncIndicator({ className, showDetails = false }: SyncIndicatorP
   const actualPending = syncStatus?.pending || pendingCount;
   const conflictCount = syncStatus?.conflicts || 0;
 
-  // Don't show anything if everything is synced and online
-  if (!actualSyncing && !actualErrors && !hasConflicts && isOnline && actualPending === 0 && !isServerDown) {
+  // Unified display mode - always show something if we have data
+  const hasAnyData = tasksCount !== undefined || lastRefresh || loadedRangesCount;
+  
+  // Don't show anything if everything is synced and online (legacy mode)
+  if (!hasAnyData && !actualSyncing && !actualErrors && !hasConflicts && isOnline && actualPending === 0 && !isServerDown) {
     return null;
   }
+  
+  // Determine if we should show a badge (priority status) or carousel (normal mode)
+  const hasActiveBadge = isServerDown || !isOnline || hasConflicts || actualErrors || actualSyncing || hasPendingLocalUpdates;
+  
+  // Build carousel messages
+  const carouselMessages = useMemo(() => {
+    const messages: string[] = [];
+    
+    // Show loading first if it's happening
+    if (isLoadingBackground) {
+      messages.push('Chargement en cours...');
+    }
+    
+    if (tasksCount !== undefined) {
+      messages.push(`${tasksCount} tâche${tasksCount !== 1 ? 's' : ''} trouvée${tasksCount !== 1 ? 's' : ''}`);
+    }
+    if (lastRefresh) {
+      messages.push(`Dernière MAJ: ${lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`);
+    }
+    
+    return messages.length > 0 ? messages : ['Aucune donnée'];
+  }, [tasksCount, lastRefresh, isLoadingBackground]);
 
-  // Server down - highest priority
-  if (isServerDown) {
-    return (
-      <Badge 
-        variant="destructive" 
-        className={cn("flex items-center gap-1", className)}
-      >
-        <AlertCircle className="h-3 w-3" />
-        Serveur inaccessible
-        {showDetails && (
-          <span className="text-xs ml-1">(Connexion impossible)</span>
-        )}
-      </Badge>
-    );
-  }
+  // Build tooltip content for badges
+  const badgeTooltipContent = useMemo(() => {
+    const lines: string[] = [];
+    if (tasksCount !== undefined) {
+      lines.push(`${tasksCount} tâche${tasksCount !== 1 ? 's' : ''} trouvée${tasksCount !== 1 ? 's' : ''}`);
+    }
+    if (lastRefresh) {
+      lines.push(`Dernière MAJ: ${lastRefresh.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`);
+    }
+    if (nextRefresh) {
+      lines.push(`Prochaine sync: ${nextRefresh.toLocaleTimeString('fr-FR')}`);
+    }
+    if (actualPending > 0) {
+      lines.push(`${actualPending} opération${actualPending > 1 ? 's' : ''} en attente`);
+    }
+    if (conflictCount > 0) {
+      lines.push(`${conflictCount} conflit${conflictCount > 1 ? 's' : ''} à résoudre`);
+    }
+    return lines;
+  }, [tasksCount, lastRefresh, nextRefresh, actualPending, conflictCount]);
 
-  // Network offline - high priority
-  if (!isOnline) {
-    return (
-      <Badge 
-        variant="destructive" 
-        className={cn("flex items-center gap-1", className)}
-      >
-        <WifiOff className="h-3 w-3" />
-        Mode hors ligne
-        {showDetails && (
-          <span className="text-xs ml-1">(Lecture seule)</span>
-        )}
-      </Badge>
-    );
-  }
+  // Render badge for active states
+  const renderBadge = () => {
+    let badge = null;
+    
+    // Server down - highest priority
+    if (isServerDown) {
+      badge = (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Serveur inaccessible
+        </Badge>
+      );
+    }
+    // Network offline
+    else if (!isOnline) {
+      badge = (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <WifiOff className="h-3 w-3" />
+          Mode hors ligne
+        </Badge>
+      );
+    }
+    // Conflicts
+    else if (hasConflicts) {
+      badge = (
+        <Badge variant="destructive" className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600">
+          <AlertTriangle className="h-3 w-3" />
+          {conflictCount} conflit{conflictCount > 1 ? 's' : ''}
+        </Badge>
+      );
+    }
+    // Errors
+    else if (actualErrors) {
+      badge = (
+        <Badge variant="destructive" className="flex items-center gap-1">
+          <AlertCircle className="h-3 w-3" />
+          Erreur de sync
+        </Badge>
+      );
+    }
+    // Syncing
+    else if (actualSyncing || hasPendingLocalUpdates) {
+      badge = (
+        <Badge variant="secondary" className="flex items-center gap-1">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          Synchronisation
+          {actualPending > 1 && (
+            <span className="text-xs ml-1">({actualPending})</span>
+          )}
+        </Badge>
+      );
+    }
+    
+    if (badge && badgeTooltipContent.length > 0) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>{badge}</div>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <div className="space-y-1">
+                {badgeTooltipContent.map((line, i) => (
+                  <div key={i} className="text-xs">{line}</div>
+                ))}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    return badge;
+  };
 
-  // Build tooltip content with full details
-  const tooltipContent = (
-    <div className="space-y-1 text-xs">
-      <div className="font-medium">État de synchronisation</div>
-      {actualPending > 0 && <div>• {actualPending} en attente</div>}
-      {syncStatus?.queueDetails?.processed && <div>• {syncStatus.queueDetails.processed} traités</div>}
-      {conflictCount > 0 && <div className="text-orange-400">• {conflictCount} conflits</div>}
-      {actualErrors && <div className="text-red-400">• {syncStatus?.failed || 0} erreurs</div>}
-      {syncStatus?.lastSync && (
-        <div className="text-gray-400">
-          Dernière sync: {new Date(syncStatus.lastSync).toLocaleTimeString()}
+  // Render carousel for normal state
+  const renderCarousel = () => {
+    const messageCount = carouselMessages.length;
+    const carouselClass = messageCount === 2 ? 'sync-carousel-2' : 'sync-carousel-3';
+    
+    // Duplicate first message at the end for smooth loop (if we have 2 messages)
+    const displayMessages = messageCount === 2 
+      ? [...carouselMessages, carouselMessages[0]] // For 2 messages, add the first one at the end
+      : [...carouselMessages]; // For 3 messages, use as is
+    
+    const carouselContent = (
+      <div className="h-7 overflow-hidden relative cursor-default select-none">
+        <div className={carouselClass}>
+          {displayMessages.map((message, i) => (
+            <div key={i} className="h-7 flex items-center text-sm text-muted-foreground whitespace-nowrap">
+              {message || '\u00A0'} {/* Non-breaking space for empty messages */}
+            </div>
+          ))}
         </div>
+      </div>
+    );
+    
+    if (nextRefresh) {
+      return (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>{carouselContent}</div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-xs">Prochaine actualisation: {nextRefresh.toLocaleTimeString('fr-FR')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+    
+    return carouselContent;
+  };
+
+  // Main render
+  return (
+    <div className={cn("flex items-center gap-3", className)}>
+      {/* Show badge or carousel based on state */}
+      {hasActiveBadge ? renderBadge() : renderCarousel()}
+      
+      {/* Refresh button - always visible */}
+      {onRefresh && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onRefresh}
+          disabled={isLoadingBackground}
+          className="h-7 w-7"
+        >
+          <RefreshCw className={cn("h-3.5 w-3.5", isLoadingBackground && "animate-spin")} />
+          <span className="sr-only">Actualiser</span>
+        </Button>
       )}
     </div>
-  );
-
-  // Conflicts - highest priority
-  if (hasConflicts) {
-    const badge = (
-      <Badge 
-        variant="destructive" 
-        className={cn("flex items-center gap-1 bg-orange-500 hover:bg-orange-600 cursor-pointer", className)}
-      >
-        <AlertTriangle className="h-3 w-3" />
-        {conflictCount} conflit{conflictCount > 1 ? 's' : ''}
-        {showDetails && (
-          <span className="text-xs ml-1">(Résolution requise)</span>
-        )}
-      </Badge>
-    );
-
-    return showDetails ? (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{badge}</TooltipTrigger>
-          <TooltipContent>{tooltipContent}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ) : badge;
-  }
-
-  // Has errors
-  if (actualErrors) {
-    const badge = (
-      <Badge 
-        variant="destructive" 
-        className={cn("flex items-center gap-1 cursor-pointer", className)}
-      >
-        <AlertCircle className="h-3 w-3" />
-        Erreur de sync
-        {showDetails && syncStatus?.failed && (
-          <span className="text-xs ml-1">({syncStatus.failed} échecs)</span>
-        )}
-      </Badge>
-    );
-
-    return showDetails ? (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{badge}</TooltipTrigger>
-          <TooltipContent>{tooltipContent}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ) : badge;
-  }
-
-  // Syncing in progress
-  if (actualSyncing) {
-    const badge = (
-      <Badge 
-        variant="secondary" 
-        className={cn("flex items-center gap-1 cursor-pointer", className)}
-      >
-        <Loader2 className="h-3 w-3 animate-spin" />
-        Synchronisation
-        {actualPending > 1 && showDetails && (
-          <span className="text-xs ml-1">({actualPending} en attente)</span>
-        )}
-      </Badge>
-    );
-
-    return showDetails ? (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>{badge}</TooltipTrigger>
-          <TooltipContent>{tooltipContent}</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ) : badge;
-  }
-
-  // All synced (briefly show success)
-  return (
-    <Badge 
-      variant="default" 
-      className={cn("flex items-center gap-1 bg-green-500", className)}
-    >
-      <CheckCircle2 className="h-3 w-3" />
-      Synchronisé
-    </Badge>
   );
 }
 

@@ -85,3 +85,47 @@
   }
 }
 
+/* Sync Indicator Carousel Animation - 2 messages */
+@keyframes slideUp2 {
+  0%, 45% {
+    transform: translateY(0);
+  }
+  50%, 95% {
+    transform: translateY(-1.75rem); /* -h-7 */
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* Sync Indicator Carousel Animation - 3 messages */
+@keyframes slideUp3 {
+  0%, 30% {
+    transform: translateY(0);
+  }
+  33%, 63% {
+    transform: translateY(-1.75rem); /* -h-7 */
+  }
+  66%, 96% {
+    transform: translateY(-3.5rem); /* -h-14 */
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.sync-carousel-2 {
+  animation: slideUp2 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+.sync-carousel-3 {
+  animation: slideUp3 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+.sync-carousel-2:hover,
+.sync-carousel-3:hover {
+  animation-play-state: paused;
+}
+
