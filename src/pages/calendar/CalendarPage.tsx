@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { CalendarView } from '@/components/calendar/CalendarView';
+import { TaskEditSheet } from '@/components/calendar/TaskEditSheet';
 import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
@@ -10,12 +11,17 @@ import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
 import { SyncIndicator } from '@/components/shared/SyncIndicator';
 import { toast } from 'sonner';
-import { tasksToCalendarEvents, formatTaskForDisplay } from '@/utils/taskMapper';
+import { tasksToCalendarEvents } from '@/utils/taskMapper';
 import { addDays } from 'date-fns';
+import { tasksService, Task } from '@/services/api/tasks.service';
 
 export default function CalendarPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
+  
+  // État pour le sheet d'édition
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
   
   // Période actuellement visible dans le calendrier (pour debug seulement)
   const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
@@ -32,17 +38,17 @@ export default function CalendarPage() {
     nextRefresh,
     // Exposed for optimistic updates
     tasksMapRef,
-    setTasks,
-    refreshAllRanges
+    setTasks
   } = useProgressiveCalendarTasks({
     enablePolling: true,
     pollingInterval: 2 * 60 * 1000 // 2 minutes when active
   });
   
-  // Initialize optimistic update hook
+  // Initialize optimistic update hook WITHOUT automatic refresh
+  // The polling handles syncing with Notion every 2 minutes
   const taskUpdate = useOptimisticTaskUpdate(tasks, setTasks, {
-    tasksMapRef,
-    onMutationSuccess: refreshAllRanges
+    tasksMapRef
+    // NO onMutationSuccess - we don't want to refresh everything after each update
   });
   
   // Track if initial load is complete
@@ -82,7 +88,7 @@ export default function CalendarPage() {
   };
 
   const handleEventClick = (arg: any) => {
-    const task = {
+    const task: Task = {
       id: arg.event.id,
       title: arg.event.title,
       status: arg.event.extendedProps.status,
@@ -104,14 +110,40 @@ export default function CalendarPage() {
       }
     };
     
-    // Utiliser toast comme tooltip pour afficher les détails
-    toast.info(arg.event.title, {
-      description: formatTaskForDisplay(task),
-      duration: 5000, // Afficher 5 secondes
-    });
+    // Ouvrir le sheet d'édition avec la tâche sélectionnée
+    setSelectedTask(task);
+    setSheetOpen(true);
   };
 
   // Gérer le changement de période visible dans le calendrier
+  // Handlers pour le sheet d'édition - Use optimistic updates
+  const handleTaskUpdate = async (id: string, data: Partial<Task>) => {
+    // Use optimistic update for INSTANT UI feedback
+    // No need to await - the update is immediate in the UI
+    taskUpdate.mutate({
+      id,
+      updates: data
+    });
+    // That's it! No refresh needed - polling handles sync every 2 min
+  };
+
+  const handleTaskDelete = async (id: string) => {
+    try {
+      // For delete, we still call the service directly
+      // TODO: Create optimistic delete hook if needed
+      await tasksService.deleteTask(id);
+      
+      // Remove from local state immediately for better UX
+      tasksMapRef.current.delete(id);
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+      
+      // No full refresh - let polling handle any other changes
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      throw error;
+    }
+  };
+
   const handleDatesChange = useCallback((start: Date, end: Date) => {
     setVisiblePeriod({ start, end });
     
@@ -290,6 +322,18 @@ export default function CalendarPage() {
           )}
         </div>
       </main>
+      
+      {/* Sheet d'édition de tâche */}
+      <TaskEditSheet
+        task={selectedTask}
+        open={sheetOpen}
+        onClose={() => {
+          setSheetOpen(false);
+          setSelectedTask(null);
+        }}
+        onUpdate={handleTaskUpdate}
+        onDelete={handleTaskDelete}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { configService } from './config.service';
+import { useConfigStore } from '@/store/config.store';
 
 export interface Task {
   id: string;
@@ -134,36 +134,54 @@ export const tasksService = {
 
   // Create a new task
   async createTask(task: Partial<Task>): Promise<Task> {
-    // Check if async mode is enabled for create operations
-    const asyncConfig = await configService.getAsyncModeConfig();
+    // Get async mode from store (no API call needed!)
+    const asyncMode = useConfigStore.getState().getAsyncMode();
     
-    const { data } = await apiClient.post<Task>('/tasks', {
-      ...task,
-      async: asyncConfig.create
+    const response = await apiClient.post('/tasks', task, {
+      params: {
+        async: asyncMode.create
+      }
     });
-    return data;
+    
+    // Backend returns { success: true, data: {...task} }
+    // Extract the actual task from the wrapped response
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      return response.data.data;
+    }
+    
+    // Fallback if response structure is different
+    return response.data;
   },
 
   // Update a task
   async updateTask(id: string, task: Partial<Task>): Promise<Task> {
-    // Check if async mode is enabled for update operations
-    const asyncConfig = await configService.getAsyncModeConfig();
+    // Get async mode from store (no API call needed!)
+    const asyncMode = useConfigStore.getState().getAsyncMode();
     
-    const { data } = await apiClient.put<Task>(`/tasks/${id}`, {
-      ...task,
-      async: asyncConfig.update
+    const response = await apiClient.put(`/tasks/${id}`, task, {
+      params: {
+        async: asyncMode.update
+      }
     });
-    return data;
+    
+    // Backend returns { success: true, data: {...task} }
+    // Extract the actual task from the wrapped response
+    if (response.data && typeof response.data === 'object' && 'data' in response.data) {
+      return response.data.data;
+    }
+    
+    // Fallback if response structure is different
+    return response.data;
   },
 
   // Delete a task
   async deleteTask(id: string): Promise<void> {
-    // Check if async mode is enabled for delete operations
-    const asyncConfig = await configService.getAsyncModeConfig();
+    // Get async mode from store (no API call needed!)
+    const asyncMode = useConfigStore.getState().getAsyncMode();
     
     await apiClient.delete(`/tasks/${id}`, {
       params: {
-        async: asyncConfig.delete
+        async: asyncMode.delete
       }
     });
   }

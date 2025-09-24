@@ -6,6 +6,7 @@
 import { useOptimisticUpdate } from './useOptimisticUpdate';
 import { tasksService, Task } from '@/services/api/tasks.service';
 import { useCallback, useRef, MutableRefObject } from 'react';
+import { toast } from 'sonner';
 
 export interface TaskUpdatePayload {
   id: string;
@@ -80,23 +81,37 @@ export function useOptimisticTaskUpdate(
     
     mutationFn: async ({ id, updates }) => {
       // Call the backend API
-      return await tasksService.updateTask(id, updates);
+      const response = await tasksService.updateTask(id, updates);
+      console.log('[Optimistic] Raw API response:', response);
+      return response;
     },
     
     onOptimisticUpdate: ({ id, updates }) => {
+      console.log('[Optimistic] Starting update for task:', id);
+      console.log('[Optimistic] Updates to apply:', updates);
+      
       // Mark task as having pending update
       pendingUpdatesRef.current.add(id);
       
       // Save original task for potential rollback
       const originalTask = tasks.find(t => t.id === id);
+      console.log('[Optimistic] Original task found:', originalTask);
+      
       if (originalTask) {
         originalTasksRef.current.set(id, { ...originalTask });
       }
       
       // Create updated task - THIS IS IMMEDIATE!
+      // Merge only the provided updates with the original task
       const updatedTask = originalTask 
-        ? { ...originalTask, ...updates, updatedAt: new Date().toISOString() }
+        ? {
+            ...originalTask,
+            ...updates,
+            updatedAt: new Date().toISOString()
+          }
         : null;
+      
+      console.log('[Optimistic] Updated task created:', updatedTask);
       
       if (updatedTask) {
         // IMMEDIATE UPDATE #1: Update the internal map (survives polling)
@@ -137,29 +152,39 @@ export function useOptimisticTaskUpdate(
     },
     
     onSuccess: (data, { id }) => {
+      console.log('[Optimistic] Server response received for task:', id);
+      console.log('[Optimistic] Server data:', data);
+      
       // Remove from pending
       pendingUpdatesRef.current.delete(id);
       
       // Clear the original task from ref
       originalTasksRef.current.delete(id);
       
-      // Update with fresh server data (might have computed fields)
-      if (tasksMapRef?.current) {
-        tasksMapRef.current.set(id, data);
+      // Check if response has _pendingSync flag (async mode indicator)
+      const isAsyncResponse = data && '_pendingSync' in data;
+      
+      if (!isAsyncResponse && data) {
+        console.log('[Optimistic] SYNC mode - updating with server data');
+        // SYNC mode: Update with fresh server data (complete task from Notion)
+        if (tasksMapRef?.current) {
+          tasksMapRef.current.set(id, data);
+        }
+        
+        setTasks(prevTasks =>
+          prevTasks.map(task =>
+            task.id === id ? data : task
+          )
+        );
+      } else {
+        console.log('[Optimistic] ASYNC mode - keeping optimistic update');
+        // ASYNC mode: Keep our optimistic update, don't replace with incomplete data
+        // The polling will bring the real data from Notion later
       }
       
-      setTasks(prevTasks =>
-        prevTasks.map(task =>
-          task.id === id ? data : task
-        )
-      );
-      
-      // Optional: Trigger smooth refresh to get any other changes from Notion
-      // This won't flash or show "no tasks" because of the smooth polling implementation
+      // Optional: Trigger callback if provided
       if (onMutationSuccess) {
-        setTimeout(() => {
-          onMutationSuccess();
-        }, 1000); // 1 second delay to let Notion fully process
+        onMutationSuccess();
       }
     },
     
@@ -188,9 +213,14 @@ export function useOptimisticTaskUpdate(
 
 /**
  * Hook for quick date/time updates (most common calendar operation)
+ * NOTE: This hook needs to be used within a component that has access to tasks and setTasks
  */
-export function useOptimisticTaskDateUpdate() {
-  const { mutate, mutateAsync, syncState, isPending } = useOptimisticTaskUpdate();
+export function useOptimisticTaskDateUpdate(
+  tasks: Task[],
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
+  options: UseOptimisticTaskUpdateOptions = {}
+) {
+  const { mutate, mutateAsync, syncState, isPending } = useOptimisticTaskUpdate(tasks, setTasks, options);
   
   const updateTaskDates = useCallback(
     (taskId: string, startDate: string, endDate: string) => {
@@ -227,8 +257,12 @@ export function useOptimisticTaskDateUpdate() {
 /**
  * Hook for quick assignee updates
  */
-export function useOptimisticTaskAssigneeUpdate() {
-  const { mutate, mutateAsync, syncState, isPending } = useOptimisticTaskUpdate();
+export function useOptimisticTaskAssigneeUpdate(
+  tasks: Task[],
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
+  options: UseOptimisticTaskUpdateOptions = {}
+) {
+  const { mutate, mutateAsync, syncState, isPending } = useOptimisticTaskUpdate(tasks, setTasks, options);
   
   const updateTaskAssignees = useCallback(
     (taskId: string, assignedMembers: string[]) => {
@@ -261,9 +295,12 @@ export function useOptimisticTaskAssigneeUpdate() {
 /**
  * Hook for batch task updates (multiple fields at once)
  */
-export function useOptimisticTaskBatchUpdate() {
-  const queryClient = useQueryClient();
-  const { mutate, mutateAsync, syncState, isPending } = useOptimisticTaskUpdate();
+export function useOptimisticTaskBatchUpdate(
+  tasks: Task[],
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
+  options: UseOptimisticTaskUpdateOptions = {}
+) {
+  const { mutate, syncState, isPending } = useOptimisticTaskUpdate(tasks, setTasks, options);
   
   const batchUpdateTask = useCallback(
     (taskId: string, updates: TaskUpdatePayload['updates']) => {

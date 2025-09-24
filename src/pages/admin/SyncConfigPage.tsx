@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { useSyncStatus } from '@/hooks/useSyncStatus';
 import { configService } from '@/services/api/config.service';
+import { useConfigStore } from '@/store/config.store';
 
 interface AsyncModeConfig {
   create: boolean;
