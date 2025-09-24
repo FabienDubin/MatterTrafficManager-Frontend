@@ -97,10 +97,6 @@ export function TaskEditSheet({
       updatePayload.title = title;
     }
     
-    // Debug: log the current state
-    console.log('Current state:', { startDate, endDate, startTime, endTime });
-    console.log('Original task dates:', task.workPeriod);
-    
     // Only process dates if user has dates in the form
     if (startDate && endDate) {
       // Combine date and time

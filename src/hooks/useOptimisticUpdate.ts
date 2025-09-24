@@ -5,7 +5,7 @@
 
 import { useMutation, useQueryClient, UseMutationOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 
 export interface OptimisticUpdateOptions<TData, TVariables, TContext = unknown> {
   mutationKey?: string[];
@@ -180,13 +180,32 @@ export function useGlobalSyncState() {
   const queryClient = useQueryClient();
   const mutations = queryClient.getMutationCache().getAll();
   
-  const isSyncing = mutations.some(m => m.state.status === 'pending');
-  const hasErrors = mutations.some(m => m.state.status === 'error');
+  // Only track mutations related to tasks/sync operations
+  // Exclude queries like status checks that might be retrying
+  const relevantMutations = mutations.filter(m => {
+    const mutationKey = m.options.mutationKey;
+    // Check if it's a task-related mutation
+    // mutationKey is an array like ['update-task'] or ['create-task']
+    if (!mutationKey || !Array.isArray(mutationKey)) return false;
+    
+    const keyString = mutationKey.join('-');
+    return (
+      keyString.includes('task') || 
+      keyString.includes('sync') ||
+      keyString.includes('create') ||
+      keyString.includes('update') ||
+      keyString.includes('delete')
+    );
+  });
+  
+  const pendingMutations = relevantMutations.filter(m => m.state.status === 'pending');
+  const isSyncing = pendingMutations.length > 0;
+  const hasErrors = relevantMutations.some(m => m.state.status === 'error');
   
   return {
     isSyncing,
     hasErrors,
-    pendingCount: mutations.filter(m => m.state.status === 'pending').length,
+    pendingCount: pendingMutations.length,
   };
 }
 
@@ -196,7 +215,7 @@ export function useGlobalSyncState() {
 export function useOnlineStatus() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  useCallback(() => {
+  useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       toast.success('Connexion rétablie');

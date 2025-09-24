@@ -27,20 +27,36 @@ interface SyncIndicatorProps {
 export function SyncIndicator({ className, showDetails = false }: SyncIndicatorProps) {
   const { isSyncing: localSyncing, hasErrors: localErrors, pendingCount } = useGlobalSyncState();
   const isOnline = useOnlineStatus();
-  const { syncStatus, hasConflicts, hasErrors, isSyncing } = useSyncStatus();
+  const { syncStatus, hasConflicts, hasErrors, isSyncing, isServerDown } = useSyncStatus();
 
-  // Use server sync status if available, fallback to local state
-  const actualSyncing = syncStatus ? isSyncing : localSyncing;
-  const actualErrors = syncStatus ? hasErrors : localErrors;
+  // Determine actual states considering server availability
+  const actualSyncing = !isServerDown && (syncStatus ? isSyncing : localSyncing);
+  const actualErrors = !isServerDown && (syncStatus ? hasErrors : localErrors);
   const actualPending = syncStatus?.pending || pendingCount;
   const conflictCount = syncStatus?.conflicts || 0;
 
   // Don't show anything if everything is synced and online
-  if (!actualSyncing && !actualErrors && !hasConflicts && isOnline && actualPending === 0) {
+  if (!actualSyncing && !actualErrors && !hasConflicts && isOnline && actualPending === 0 && !isServerDown) {
     return null;
   }
 
-  // Offline mode - high priority
+  // Server down - highest priority
+  if (isServerDown) {
+    return (
+      <Badge 
+        variant="destructive" 
+        className={cn("flex items-center gap-1", className)}
+      >
+        <AlertCircle className="h-3 w-3" />
+        Serveur inaccessible
+        {showDetails && (
+          <span className="text-xs ml-1">(Connexion impossible)</span>
+        )}
+      </Badge>
+    );
+  }
+
+  // Network offline - high priority
   if (!isOnline) {
     return (
       <Badge 
@@ -165,16 +181,25 @@ export function SyncIndicator({ className, showDetails = false }: SyncIndicatorP
 export function SyncDot({ className }: { className?: string }) {
   const { isSyncing: localSyncing, hasErrors: localErrors } = useGlobalSyncState();
   const isOnline = useOnlineStatus();
-  const { syncStatus, hasConflicts, hasErrors, isSyncing } = useSyncStatus();
+  const { syncStatus, hasConflicts, hasErrors, isSyncing, isServerDown } = useSyncStatus();
 
-  // Use server status if available
-  const actualSyncing = syncStatus ? isSyncing : localSyncing;
-  const actualErrors = syncStatus ? hasErrors : localErrors;
+  // Determine actual states considering server availability
+  const actualSyncing = !isServerDown && (syncStatus ? isSyncing : localSyncing);
+  const actualErrors = !isServerDown && (syncStatus ? hasErrors : localErrors);
+
+  if (isServerDown) {
+    return (
+      <div 
+        className={cn("h-2 w-2 rounded-full bg-red-500", className)}
+        title="Serveur inaccessible"
+      />
+    );
+  }
 
   if (!isOnline) {
     return (
       <div 
-        className={cn("h-2 w-2 rounded-full bg-red-500", className)}
+        className={cn("h-2 w-2 rounded-full bg-orange-500", className)}
         title="Mode hors ligne"
       />
     );

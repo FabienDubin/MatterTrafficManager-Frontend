@@ -82,20 +82,15 @@ export function useOptimisticTaskUpdate(
     mutationFn: async ({ id, updates }) => {
       // Call the backend API
       const response = await tasksService.updateTask(id, updates);
-      console.log('[Optimistic] Raw API response:', response);
       return response;
     },
     
     onOptimisticUpdate: ({ id, updates }) => {
-      console.log('[Optimistic] Starting update for task:', id);
-      console.log('[Optimistic] Updates to apply:', updates);
-      
       // Mark task as having pending update
       pendingUpdatesRef.current.add(id);
       
       // Save original task for potential rollback
       const originalTask = tasks.find(t => t.id === id);
-      console.log('[Optimistic] Original task found:', originalTask);
       
       if (originalTask) {
         originalTasksRef.current.set(id, { ...originalTask });
@@ -110,8 +105,6 @@ export function useOptimisticTaskUpdate(
             updatedAt: new Date().toISOString()
           }
         : null;
-      
-      console.log('[Optimistic] Updated task created:', updatedTask);
       
       if (updatedTask) {
         // IMMEDIATE UPDATE #1: Update the internal map (survives polling)
@@ -152,9 +145,6 @@ export function useOptimisticTaskUpdate(
     },
     
     onSuccess: (data, { id }) => {
-      console.log('[Optimistic] Server response received for task:', id);
-      console.log('[Optimistic] Server data:', data);
-      
       // Remove from pending
       pendingUpdatesRef.current.delete(id);
       
@@ -165,7 +155,6 @@ export function useOptimisticTaskUpdate(
       const isAsyncResponse = data && '_pendingSync' in data;
       
       if (!isAsyncResponse && data) {
-        console.log('[Optimistic] SYNC mode - updating with server data');
         // SYNC mode: Update with fresh server data (complete task from Notion)
         if (tasksMapRef?.current) {
           tasksMapRef.current.set(id, data);
@@ -176,11 +165,9 @@ export function useOptimisticTaskUpdate(
             task.id === id ? data : task
           )
         );
-      } else {
-        console.log('[Optimistic] ASYNC mode - keeping optimistic update');
-        // ASYNC mode: Keep our optimistic update, don't replace with incomplete data
-        // The polling will bring the real data from Notion later
       }
+      // ASYNC mode: Keep our optimistic update, don't replace with incomplete data
+      // The polling will bring the real data from Notion later
       
       // Optional: Trigger callback if provided
       if (onMutationSuccess) {

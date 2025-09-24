@@ -14,19 +14,25 @@ export const useSyncStatus = (options: UseSyncStatusOptions = {}) => {
     data,
     isLoading,
     error,
-    refetch
+    refetch,
+    dataUpdatedAt
   } = useQuery({
     queryKey: ['sync-status'],
     queryFn: async () => {
       const response = await syncService.getStatus();
       if (!response.success) {
-        throw new Error(response.error || 'Failed to fetch sync status');
+        // Pass along network error info
+        const err = new Error(response.error || 'Failed to fetch sync status') as any;
+        err.isNetworkError = response.meta?.isNetworkError;
+        throw err;
       }
       return response.data;
     },
     enabled: options.enabled !== false && !!user,
     refetchInterval: options.refetchInterval || 5000, // Poll every 5 seconds by default
-    refetchIntervalInBackground: true
+    refetchIntervalInBackground: true,
+    retry: 1, // Don't retry too much when server is down
+    retryDelay: 1000 // Wait 1 second before retry
   });
 
   // Helper functions
@@ -52,6 +58,9 @@ export const useSyncStatus = (options: UseSyncStatusOptions = {}) => {
   const isSyncing = data?.status === 'syncing';
   const hasConflicts = data ? data.conflicts > 0 : false;
   const hasErrors = data ? data.failed > 0 : false;
+  const isServerDown = error ? (error as any).isNetworkError === true : false;
+  // Check if data is stale (more than 10 seconds old)
+  const isDataStale = dataUpdatedAt ? Date.now() - dataUpdatedAt > 10000 : false;
 
   return {
     syncStatus: data as SyncStatus | undefined,
@@ -65,6 +74,8 @@ export const useSyncStatus = (options: UseSyncStatusOptions = {}) => {
     isIdle,
     isSyncing,
     hasConflicts,
-    hasErrors
+    hasErrors,
+    isServerDown,
+    isDataStale
   };
 };

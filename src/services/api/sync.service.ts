@@ -40,9 +40,13 @@ export const syncService = {
       return response.data;
     } catch (error: any) {
       console.error('Error fetching sync status:', error);
+      // Include the error type for better handling
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to fetch sync status';
+      const isNetworkError = !error.response && (error.code === 'ERR_NETWORK' || error.code === 'ERR_CONNECTION_REFUSED');
       return {
         success: false,
-        error: error.response?.data?.error || 'Failed to fetch sync status'
+        error: errorMessage,
+        meta: { isNetworkError }
       };
     }
   },
