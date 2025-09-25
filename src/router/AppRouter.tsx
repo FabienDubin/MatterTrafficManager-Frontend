@@ -6,7 +6,8 @@ import AdminLayout from '@/layouts/AdminLayout';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import UsersPage from '@/pages/admin/UsersPage';
 import CacheDashboard from '@/pages/admin/CacheDashboard';
-import NotionConfigPage from '@/pages/admin/NotionConfigPage';
+import NotionConnectionPage from '@/pages/admin/NotionConnectionPage';
+import MappingBasesPage from '@/pages/admin/MappingBasesPage';
 import { AdminMemoryPage } from '@/pages/admin/AdminMemoryPage';
 import { AdminHealthPage } from '@/pages/admin/AdminHealthPage';
 import { AdminMetricsPage } from '@/pages/admin/AdminMetricsPage';
@@ -44,7 +45,8 @@ export function AppRouter() {
         <Route index element={<AdminDashboard />} />
         <Route path='users' element={<UsersPage />} />
         <Route path='cache' element={<CacheDashboard />} />
-        <Route path='notion-config' element={<NotionConfigPage />} />
+        <Route path='notion-config' element={<NotionConnectionPage />} />
+        <Route path='mapping-bases' element={<MappingBasesPage />} />
         <Route path='memory' element={<AdminMemoryPage />} />
         <Route path='health' element={<AdminHealthPage />} />
         <Route path='metrics' element={<AdminMetricsPage />} />

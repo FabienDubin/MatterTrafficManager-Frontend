@@ -51,15 +51,11 @@ const adminNavigation = [
     items: [
       {
         title: "Notion Config",
-        url: "/admin/configuration/notion-config",
+        url: "/admin/notion-config",
       },
       {
         title: "Mapping Bases",
-        url: "/admin/configuration/mapping",
-      },
-      {
-        title: "Discovery Tool",
-        url: "/admin/configuration/discovery",
+        url: "/admin/mapping-bases",
       },
     ],
   },
