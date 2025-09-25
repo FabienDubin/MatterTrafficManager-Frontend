@@ -143,6 +143,15 @@ export const tasksService = {
       }
     });
     
+    // LOG DES CONFLITS POUR DEBUG
+    if (response.data?.conflicts && response.data.conflicts.length > 0) {
+      console.log('🚨 CONFLITS DÉTECTÉS (création):', response.data.conflicts);
+      console.log('Response complète:', response.data);
+    } else {
+      console.log('✅ Pas de conflits détectés (création)');
+      console.log('Response:', response.data);
+    }
+    
     // Backend returns { success: true, data: {...task} }
     // Extract the actual task from the wrapped response
     if (response.data && typeof response.data === 'object' && 'data' in response.data) {
@@ -158,11 +167,18 @@ export const tasksService = {
     // Get async mode from store (no API call needed!)
     const asyncMode = useConfigStore.getState().getAsyncMode();
     
+    // Mode normal - Utilise la configuration async du store
     const response = await apiClient.put(`/tasks/${id}`, task, {
       params: {
         async: asyncMode.update
       }
     });
+    
+    // LOG DES CONFLITS POUR DEBUG (optionnel - enlever en production)
+    if (response.data?.conflicts && response.data.conflicts.length > 0) {
+      console.log('🚨 CONFLITS DÉTECTÉS:', response.data.conflicts);
+      console.log('Response complète:', response.data);
+    }
     
     // Backend returns { success: true, data: {...task} }
     // Extract the actual task from the wrapped response

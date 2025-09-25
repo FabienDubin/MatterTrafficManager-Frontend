@@ -55,7 +55,28 @@ export function useOptimisticTaskCreate(
     
     mutationFn: async (payload) => {
       // Call the backend API
-      return await tasksService.createTask(payload);
+      const response = await tasksService.createTask(payload);
+      
+      // Check for conflicts in the response
+      if (response && 'conflicts' in response && (response as any).conflicts?.length > 0) {
+        const conflicts = (response as any).conflicts;
+        console.warn('🚨 CONFLITS DÉTECTÉS lors de la création:', {
+          newTask: payload.title,
+          conflicts: conflicts,
+          conflictCount: conflicts.length
+        });
+        
+        // Log each conflict type for debugging
+        conflicts.forEach((conflict: any) => {
+          console.warn(`⚠️ Conflit ${conflict.type}:`, {
+            type: conflict.type,
+            message: conflict.message,
+            details: conflict.details
+          });
+        });
+      }
+      
+      return response;
     },
     
     onOptimisticUpdate: (payload) => {

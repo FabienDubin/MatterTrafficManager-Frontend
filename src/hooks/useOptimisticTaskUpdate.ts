@@ -82,6 +82,26 @@ export function useOptimisticTaskUpdate(
     mutationFn: async ({ id, updates }) => {
       // Call the backend API
       const response = await tasksService.updateTask(id, updates);
+      
+      // Check for conflicts in the response
+      if (response && 'conflicts' in response && (response as any).conflicts?.length > 0) {
+        const conflicts = (response as any).conflicts;
+        console.warn('🚨 CONFLITS DÉTECTÉS lors de la mise à jour:', {
+          taskId: id,
+          conflicts: conflicts,
+          conflictCount: conflicts.length
+        });
+        
+        // Log each conflict type for debugging
+        conflicts.forEach((conflict: any) => {
+          console.warn(`⚠️ Conflit ${conflict.type}:`, {
+            type: conflict.type,
+            message: conflict.message,
+            details: conflict.details
+          });
+        });
+      }
+      
       return response;
     },
     
