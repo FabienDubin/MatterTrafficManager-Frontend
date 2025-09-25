@@ -49,11 +49,9 @@ export function useRealtimeMetrics(pollingInterval = 5000) {
     queryKey: ['health-status'],
     queryFn: async () => {
       try {
-        const response = await fetch('/api/v1/health');
-        if (!response.ok) throw new Error('Failed to fetch health');
-        const data = await response.json();
-        return data.services || null;
-      } catch {
+        const data = await monitoringService.getHealthStatus();
+        return data || null;
+      } catch (error) {
         return null;
       }
     },
@@ -127,11 +125,11 @@ export function useRealtimeMetrics(pollingInterval = 5000) {
 
   // Compute derived health status
   const healthStatus = {
-    redis: health?.redis?.status === 'healthy' ? 'operational' : health?.redis?.status === 'unhealthy' ? 'down' : 'unknown',
+    redis: health?.services?.redis?.status === 'healthy' ? 'operational' : health?.services?.redis?.status === 'unhealthy' ? 'down' : 'unknown',
     notion: 'operational', // Hardcoded for now
     api: isServerDown ? 'down' : 'operational',
-    mongodb: health?.mongodb?.status === 'healthy' ? 'operational' : health?.mongodb?.status === 'unhealthy' ? 'down' : 'unknown',
-    webhooks: health?.webhooks?.status === 'healthy' ? 'active' : 'inactive'
+    mongodb: health?.services?.mongodb?.status === 'healthy' ? 'operational' : health?.services?.mongodb?.status === 'unhealthy' ? 'down' : 'unknown',
+    webhooks: health?.services?.webhooks?.status === 'healthy' ? 'active' : 'inactive'
   };
 
   // Compute performance metrics

@@ -36,10 +36,24 @@ export interface MemoryResponse {
 
 export interface HealthStatus {
   status: string;
-  message: string;
+  message?: string;
   timestamp?: string;
   version?: string;
   uptime?: number;
+  services?: {
+    mongodb?: {
+      status: string;
+      message?: string;
+    };
+    redis?: {
+      status: string;
+      message?: string;
+    };
+    webhooks?: {
+      status: string;
+      message?: string;
+    };
+  };
   database?: {
     status: string;
     connected: boolean;

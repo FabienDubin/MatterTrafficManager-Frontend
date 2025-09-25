@@ -13,6 +13,8 @@ import { AdminMetricsPage } from '@/pages/admin/AdminMetricsPage';
 import { AdminPerformancePage } from '@/pages/admin/AdminPerformancePage';
 import SyncConfigPage from '@/pages/admin/SyncConfigPage';
 import ConflictsPage from '@/pages/admin/ConflictsPage';
+import GlobalView from '@/pages/admin/GlobalView';
+import HealthMemoryPage from '@/pages/admin/HealthMemoryPage';
 
 export function AppRouter() {
   return (
@@ -49,6 +51,9 @@ export function AppRouter() {
         <Route path='performance' element={<AdminPerformancePage />} />
         <Route path='sync-config' element={<SyncConfigPage />} />
         <Route path='conflicts' element={<ConflictsPage />} />
+        <Route path='monitoring' element={<GlobalView />} />
+        <Route path='global-view' element={<GlobalView />} />
+        <Route path='health-memory' element={<HealthMemoryPage />} />
       </Route>
 
       {/* Default redirect */}

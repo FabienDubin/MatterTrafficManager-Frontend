@@ -65,20 +65,20 @@ const adminNavigation = [
   },
   {
     title: "Monitoring",
-    url: "#",
+    url: "/admin/monitoring",
     icon: Activity,
     items: [
       {
         title: "Vue Globale",
-        url: "/admin/monitoring/global-metrics",
+        url: "/admin/monitoring",
       },
       {
         title: "Health & Memory",
-        url: "/admin/monitoring/health-memory",
+        url: "/admin/health-memory",
       },
       {
         title: "Cache Analytics",
-        url: "/admin/monitoring/cache-analytics",
+        url: "/admin/cache",
       },
     ],
   },
