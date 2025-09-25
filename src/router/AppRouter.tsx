@@ -4,18 +4,23 @@ import LoginPage from '@/pages/auth/Login';
 import CalendarPage from '@/pages/calendar/CalendarPage';
 import AdminLayout from '@/layouts/AdminLayout';
 import AdminDashboard from '@/pages/admin/Dashboard';
-import UsersPage from '@/pages/admin/UsersPage';
-import CacheDashboard from '@/pages/admin/CacheDashboard';
-import NotionConnectionPage from '@/pages/admin/NotionConnectionPage';
-import MappingBasesPage from '@/pages/admin/MappingBasesPage';
-import { AdminMemoryPage } from '@/pages/admin/AdminMemoryPage';
-import { AdminHealthPage } from '@/pages/admin/AdminHealthPage';
-import { AdminMetricsPage } from '@/pages/admin/AdminMetricsPage';
-import { AdminPerformancePage } from '@/pages/admin/AdminPerformancePage';
-import SyncConfigPage from '@/pages/admin/SyncConfigPage';
-import ConflictsPage from '@/pages/admin/ConflictsPage';
-import GlobalView from '@/pages/admin/GlobalView';
-import HealthMemoryPage from '@/pages/admin/HealthMemoryPage';
+
+// Configuration pages
+import NotionConnectionPage from '@/pages/admin/configuration/NotionConnectionPage';
+import MappingBasesPage from '@/pages/admin/configuration/MappingBasesPage';
+
+// Monitoring pages
+import GlobalView from '@/pages/admin/monitoring/GlobalView';
+import HealthMemoryPage from '@/pages/admin/monitoring/HealthMemoryPage';
+import CacheDashboard from '@/pages/admin/monitoring/CacheDashboard';
+
+// Synchronisation pages
+import SyncControlPage from '@/pages/admin/synchronisation/SyncControlPage';
+import ConflictsPage from '@/pages/admin/synchronisation/ConflictsPage';
+import WebhookLogsPage from '@/pages/admin/synchronisation/WebhookLogsPage';
+
+// Users page
+import UsersPage from '@/pages/admin/users/UsersPage';
 
 export function AppRouter() {
   return (
@@ -43,19 +48,23 @@ export function AppRouter() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path='users' element={<UsersPage />} />
-        <Route path='cache' element={<CacheDashboard />} />
-        <Route path='notion-config' element={<NotionConnectionPage />} />
-        <Route path='mapping-bases' element={<MappingBasesPage />} />
-        <Route path='memory' element={<AdminMemoryPage />} />
-        <Route path='health' element={<AdminHealthPage />} />
-        <Route path='metrics' element={<AdminMetricsPage />} />
-        <Route path='performance' element={<AdminPerformancePage />} />
-        <Route path='sync-config' element={<SyncConfigPage />} />
-        <Route path='conflicts' element={<ConflictsPage />} />
-        <Route path='monitoring' element={<GlobalView />} />
-        <Route path='global-view' element={<GlobalView />} />
-        <Route path='health-memory' element={<HealthMemoryPage />} />
+        
+        {/* Configuration routes */}
+        <Route path='configuration/notion-connection' element={<NotionConnectionPage />} />
+        <Route path='configuration/mapping-bases' element={<MappingBasesPage />} />
+        
+        {/* Monitoring routes */}
+        <Route path='monitoring/global' element={<GlobalView />} />
+        <Route path='monitoring/health-memory' element={<HealthMemoryPage />} />
+        <Route path='monitoring/cache' element={<CacheDashboard />} />
+        
+        {/* Synchronisation routes */}
+        <Route path='synchronisation/sync-control' element={<SyncControlPage />} />
+        <Route path='synchronisation/conflicts' element={<ConflictsPage />} />
+        <Route path='synchronisation/webhook-logs' element={<WebhookLogsPage />} />
+        
+        {/* Users routes */}
+        <Route path='users/list' element={<UsersPage />} />
       </Route>
 
       {/* Default redirect */}

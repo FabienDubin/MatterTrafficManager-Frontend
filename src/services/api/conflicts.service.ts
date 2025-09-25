@@ -2,30 +2,43 @@ import { apiClient } from './client';
 
 export interface Conflict {
   id: string;
-  entityType: string;
+  entityType: 'Task' | 'Project' | 'Member' | 'Client' | 'Team';
   entityId: string;
+  status: 'pending' | 'resolved' | 'failed';
   severity: 'low' | 'medium' | 'high' | 'critical';
-  description: string;
   localData: any;
-  remoteData: any;
+  notionData: any;
   detectedAt: string;
-  metadata?: {
-    fieldsDifferent?: string[];
-    localVersion?: number;
-    remoteVersion?: number;
-  };
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionStrategy?: 'notion_wins' | 'local_wins' | 'merged';
+}
+
+export interface ConflictStats {
+  total: number;
+  byStatus: Record<string, number>;
+  bySeverity: Record<string, number>;
+  byEntityType: Record<string, number>;
+}
+
+export interface ConflictFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  severity?: string;
+  entityType?: string;
 }
 
 export type ResolutionStrategy = 'local_wins' | 'notion_wins' | 'merged';
 
 export const conflictsService = {
   /**
-   * Get all pending conflicts
+   * Get conflicts with filters
    */
-  async getConflicts(): Promise<Conflict[]> {
+  async getConflicts(filters?: ConflictFilters) {
     try {
-      const response = await apiClient.get('/admin/conflicts');
-      return response.data.data || [];
+      const response = await apiClient.get('/admin/conflicts', { params: filters });
+      return response.data;
     } catch (error) {
       console.error('Error fetching conflicts:', error);
       throw error;
@@ -33,13 +46,29 @@ export const conflictsService = {
   },
 
   /**
+   * Get conflict statistics
+   */
+  async getConflictStats() {
+    try {
+      const response = await apiClient.get('/admin/conflicts/stats');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching conflict stats:', error);
+      throw error;
+    }
+  },
+
+  /**
    * Resolve a single conflict
    */
-  async resolveConflict(conflictId: string, strategy: ResolutionStrategy): Promise<void> {
+  async resolveConflict(conflictId: string, strategy: ResolutionStrategy, mergedData?: any, reason?: string) {
     try {
-      await apiClient.post(`/admin/conflicts/${conflictId}/resolve`, {
-        strategy
+      const response = await apiClient.post(`/admin/conflicts/${conflictId}/resolve`, {
+        strategy,
+        mergedData,
+        reason: reason || 'Manual resolution by admin'
       });
+      return response.data;
     } catch (error) {
       console.error(`Error resolving conflict ${conflictId}:`, error);
       throw error;
@@ -47,15 +76,18 @@ export const conflictsService = {
   },
 
   /**
-   * Resolve all conflicts with a single strategy
+   * Batch resolve conflicts
    */
-  async resolveAllConflicts(strategy: ResolutionStrategy): Promise<void> {
+  async batchResolveConflicts(conflictIds: string[], strategy: ResolutionStrategy, reason?: string) {
     try {
-      await apiClient.post('/admin/conflicts/resolve-all', {
-        strategy
+      const response = await apiClient.post('/admin/conflicts/batch-resolve', {
+        conflictIds,
+        strategy,
+        reason: reason || 'Batch resolution by admin'
       });
+      return response.data;
     } catch (error) {
-      console.error('Error resolving all conflicts:', error);
+      console.error('Error batch resolving conflicts:', error);
       throw error;
     }
   }

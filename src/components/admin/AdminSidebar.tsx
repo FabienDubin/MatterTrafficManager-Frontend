@@ -1,5 +1,3 @@
-"use client"
-
 import * as React from "react"
 import { useLocation, Link } from "react-router-dom"
 import {
@@ -9,7 +7,6 @@ import {
   Home,
   ChevronRight,
   LogOut,
-  GitBranch,
   Settings,
   RefreshCw,
 } from "lucide-react"
@@ -37,7 +34,7 @@ import {
 import { useAuthStore } from "@/store/auth.store"
 import { Button } from "@/components/ui/button"
 
-// Navigation data for admin - reorganized structure
+// Navigation data for admin - organized structure
 const adminNavigation = [
   {
     title: "Dashboard",
@@ -50,31 +47,31 @@ const adminNavigation = [
     icon: Settings,
     items: [
       {
-        title: "Notion Config",
-        url: "/admin/notion-config",
+        title: "Connexion Notion",
+        url: "/admin/configuration/notion-connection",
       },
       {
         title: "Mapping Bases",
-        url: "/admin/mapping-bases",
+        url: "/admin/configuration/mapping-bases",
       },
     ],
   },
   {
     title: "Monitoring",
-    url: "/admin/monitoring",
+    url: "#",
     icon: Activity,
     items: [
       {
         title: "Vue Globale",
-        url: "/admin/monitoring",
+        url: "/admin/monitoring/global",
       },
       {
         title: "Health & Memory",
-        url: "/admin/health-memory",
+        url: "/admin/monitoring/health-memory",
       },
       {
         title: "Cache Analytics",
-        url: "/admin/cache",
+        url: "/admin/monitoring/cache",
       },
     ],
   },
@@ -84,22 +81,22 @@ const adminNavigation = [
     icon: RefreshCw,
     items: [
       {
-        title: "Sync Control",
+        title: "Contrôle Sync",
         url: "/admin/synchronisation/sync-control",
       },
       {
-        title: "Conflicts Manager",
+        title: "Gestion Conflits",
         url: "/admin/synchronisation/conflicts",
       },
       {
-        title: "Webhook Logs",
+        title: "Logs Webhook",
         url: "/admin/synchronisation/webhook-logs",
       },
     ],
   },
   {
     title: "Utilisateurs",
-    url: "/admin/users",
+    url: "/admin/users/list",
     icon: Users,
   },
 ]
