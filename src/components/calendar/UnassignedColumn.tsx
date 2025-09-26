@@ -53,7 +53,7 @@ export function UnassignedColumn({
   return (
     <div className="flex-1 min-w-[180px] border-r bg-muted/5">
       {/* Unassigned header */}
-      <div className="sticky top-0 z-10 bg-background border-b px-3 py-2">
+      <div className="sticky top-0 z-10 bg-muted/30 border-b px-3 py-2">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted">
             <UserX className="h-4 w-4 text-muted-foreground" />

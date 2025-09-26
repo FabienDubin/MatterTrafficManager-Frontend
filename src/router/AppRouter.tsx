@@ -9,6 +9,7 @@ import AdminDashboard from '@/pages/admin/Dashboard';
 // Configuration pages
 import NotionConnectionPage from '@/pages/admin/configuration/NotionConnectionPage';
 import MappingBasesPage from '@/pages/admin/configuration/MappingBasesPage';
+import { CalendarConfigPage } from '@/pages/admin/configuration/CalendarConfigPage';
 
 // Monitoring pages
 import GlobalView from '@/pages/admin/monitoring/GlobalView';
@@ -63,6 +64,7 @@ export function AppRouter() {
         {/* Configuration routes */}
         <Route path='configuration/notion-connection' element={<NotionConnectionPage />} />
         <Route path='configuration/mapping-bases' element={<MappingBasesPage />} />
+        <Route path='configuration/calendar' element={<CalendarConfigPage />} />
         
         {/* Monitoring routes */}
         <Route path='monitoring/global' element={<GlobalView />} />

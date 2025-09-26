@@ -54,6 +54,10 @@ const adminNavigation = [
         title: "Mapping Bases",
         url: "/admin/configuration/mapping-bases",
       },
+      {
+        title: "Configuration Calendrier",
+        url: "/admin/configuration/calendar",
+      },
     ],
   },
   {

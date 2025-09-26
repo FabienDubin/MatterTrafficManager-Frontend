@@ -70,7 +70,7 @@ export function MemberColumn({
   return (
     <div className='flex-1 min-w-[200px] border-r'>
       {/* Member header */}
-      <div className='sticky top-0 z-10 bg-background border-b px-3 py-2'>
+      <div className='sticky top-0 z-10 bg-muted/30 border-b px-3 py-2'>
         <div className='flex items-center gap-2'>
           <Avatar className='h-7 w-7'>
             <AvatarImage src={`/avatars/${member.id}.png`} alt={member.name} />

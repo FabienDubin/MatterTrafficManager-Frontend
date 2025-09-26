@@ -30,10 +30,10 @@ export const configService = {
   /**
    * Get a single config value
    */
-  async getConfig(key: string): Promise<any> {
+  async getConfig(key: string): Promise<{ value: any }> {
     try {
       const response = await apiClient.get(`/config/${key}`);
-      return response.data.data.value;
+      return response.data.data;
     } catch (error) {
       console.error(`Error fetching config ${key}:`, error);
       throw error;

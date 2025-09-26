@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, forwardRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -14,14 +14,15 @@ interface CalendarViewProps {
   currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
 }
 
-export function CalendarView({ 
+export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({ 
   events = [], 
   onDateClick, 
   onEventClick, 
   onDatesChange,
   currentView = 'timeGridWeek'
-}: CalendarViewProps) {
-  const calendarRef = useRef<FullCalendar>(null);
+}, ref) => {
+  const internalRef = useRef<FullCalendar>(null);
+  const calendarRef = ref || internalRef;
 
   // Apply theme-aware styling
   useEffect(() => {
@@ -77,11 +78,7 @@ export function CalendarView({
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView={currentView}
         locale={frLocale}
-        headerToolbar={{
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,timeGridWeek,timeGridDay'
-        }}
+        headerToolbar={false}
         businessHours={{
           daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
           startTime: '08:00',
@@ -133,53 +130,161 @@ export function CalendarView({
           color: hsl(var(--foreground));
         }
         
-        .fc-col-header-cell-cushion,
-        .fc-daygrid-day-number,
-        .fc-timegrid-slot-label-cushion {
-          color: hsl(var(--foreground));
+        /* Style headers like DayView */
+        .fc-col-header {
+          background: hsl(var(--muted) / 0.3);
+          border-bottom: 1px solid hsl(var(--border));
         }
         
+        .fc-col-header-cell {
+          padding: 0.75rem 0;
+          font-weight: 500;
+        }
+        
+        .fc-col-header-cell-cushion {
+          color: hsl(var(--foreground));
+          text-decoration: none;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.25rem;
+        }
+        
+        /* Style day headers in week view */
+        .fc-timeGrid-view .fc-col-header-cell-cushion {
+          font-size: 0.875rem;
+        }
+        
+        /* Style day numbers in month view */
+        .fc-daygrid-day-number {
+          color: hsl(var(--foreground));
+          padding: 0.5rem;
+          font-weight: 500;
+        }
+        
+        .fc-daygrid-day-top {
+          display: flex;
+          justify-content: flex-start;
+        }
+        
+        /* Style time labels */
+        .fc-timegrid-slot-label {
+          vertical-align: middle;
+        }
+        
+        .fc-timegrid-slot-label-cushion {
+          color: hsl(var(--muted-foreground));
+          font-size: 0.75rem;
+          padding-right: 0.5rem;
+        }
+        
+        /* Today highlight - subtle like DayView */
+        .fc-day-today {
+          background-color: hsl(var(--accent) / 0.1) !important;
+        }
+        
+        .fc-day-today .fc-col-header-cell-cushion,
+        .fc-day-today .fc-daygrid-day-number {
+          color: hsl(var(--primary));
+          font-weight: 600;
+        }
+        
+        /* Grid lines - softer */
         .fc-theme-standard td,
         .fc-theme-standard th,
         .fc-theme-standard .fc-scrollgrid {
-          border-color: var(--fc-border-color);
+          border-color: hsl(var(--border) / 0.5);
         }
         
-        .fc-button-primary {
-          background-color: var(--fc-button-bg-color);
-          border-color: var(--fc-button-bg-color);
-          color: var(--fc-button-text-color);
+        .fc-theme-standard .fc-scrollgrid {
+          border: 1px solid hsl(var(--border));
+          border-radius: 0.5rem;
+          overflow: hidden;
         }
         
-        .fc-button-primary:hover {
-          background-color: var(--fc-button-hover-bg-color);
-          border-color: var(--fc-button-hover-bg-color);
+        /* Remove extra borders */
+        .fc-scrollgrid-sync-table {
+          border: none;
         }
         
-        .fc-button-primary:disabled {
-          background-color: var(--fc-button-bg-color);
-          border-color: var(--fc-button-bg-color);
-          opacity: 0.5;
+        .fc-view {
+          border: none;
         }
         
-        .fc-button-active {
-          background-color: var(--fc-button-hover-bg-color) !important;
-        }
-        
-        .fc-day-today {
-          background-color: var(--fc-today-bg-color) !important;
+        /* Time grid lines - make them more subtle */
+        .fc-timegrid-slot {
+          height: 3rem;
         }
         
         .fc-timegrid-slot-minor {
           border-top-style: dotted;
+          border-color: hsl(var(--border) / 0.3);
         }
         
+        /* Events styling */
         .fc-event {
           cursor: pointer;
+          border: none;
+          font-size: 0.8125rem;
+          padding: 0.25rem 0.5rem;
+          border-radius: 0.375rem;
         }
         
         .fc-event:hover {
           filter: brightness(0.9);
+        }
+        
+        .fc-event-main {
+          padding: 0.125rem 0.25rem;
+        }
+        
+        /* Week view specific - align with DayView */
+        .fc-timegrid-axis {
+          width: 4rem;
+        }
+        
+        .fc-timegrid-axis-cushion {
+          color: hsl(var(--muted-foreground));
+          font-size: 0.75rem;
+        }
+        
+        /* Month view specific */
+        .fc-daygrid-day {
+          min-height: 5rem;
+        }
+        
+        .fc-daygrid-day-frame {
+          min-height: 100%;
+        }
+        
+        .fc-daygrid-day-events {
+          margin-top: 0.25rem;
+        }
+        
+        /* Weekend styling */
+        .fc-day-sat,
+        .fc-day-sun {
+          background: hsl(var(--muted) / 0.2);
+        }
+        
+        /* Scrollbar styling */
+        .fc-scroller::-webkit-scrollbar {
+          width: 0.5rem;
+          height: 0.5rem;
+        }
+        
+        .fc-scroller::-webkit-scrollbar-track {
+          background: hsl(var(--muted) / 0.3);
+          border-radius: 0.25rem;
+        }
+        
+        .fc-scroller::-webkit-scrollbar-thumb {
+          background: hsl(var(--muted-foreground) / 0.3);
+          border-radius: 0.25rem;
+        }
+        
+        .fc-scroller::-webkit-scrollbar-thumb:hover {
+          background: hsl(var(--muted-foreground) / 0.5);
         }
         
         /* Dark mode specific text fixes */
@@ -189,7 +294,11 @@ export function CalendarView({
         .dark .fc-toolbar-title {
           color: hsl(var(--foreground));
         }
+        
+        .dark .fc-timegrid-axis-cushion {
+          color: hsl(var(--muted-foreground));
+        }
       `}</style>
     </div>
   );
-}
+});
