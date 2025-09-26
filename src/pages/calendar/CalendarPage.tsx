@@ -13,7 +13,8 @@ import { SyncIndicator } from '@/components/shared/SyncIndicator';
 import { toast } from 'sonner';
 import { tasksToCalendarEvents } from '@/utils/taskMapper';
 import { addDays } from 'date-fns';
-import { tasksService, Task } from '@/services/api/tasks.service';
+import { tasksService } from '@/services/api/tasks.service';
+import { Task } from '@/types/task.types';
 
 export default function CalendarPage() {
   const navigate = useNavigate();

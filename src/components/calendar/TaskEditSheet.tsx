@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import type { Task } from '@/services/api/tasks.service';
+import type { Task } from '@/types/task.types';
 
 interface TaskEditSheetProps {
   task: Task | null;

@@ -1,74 +1,12 @@
 import { apiClient } from './client';
 import { useConfigStore } from '@/store/config.store';
-
-export interface Task {
-  id: string;
-  title: string;
-  workPeriod?: {
-    startDate: string; // ISO 8601 format avec heure
-    endDate: string;   // ISO 8601 format avec heure
-  };
-  assignedMembers?: string[];
-  assignedMembersData?: Array<{
-    id: string;
-    name: string;
-    email: string;
-    teams?: string[];
-  }>;
-  projectId?: string;
-  projectData?: {
-    id: string;
-    name: string;
-    status: string;
-  };
-  clientId?: string;
-  clientData?: {
-    id: string;
-    name: string;
-  };
-  teams?: string[];
-  teamsData?: Array<{
-    id: string;
-    name: string;
-  }>;
-  involvedTeamIds?: string[];
-  involvedTeamsData?: Array<{
-    id: string;
-    name: string;
-  }>;
-  taskType?: 'task' | 'holiday' | 'remote';
-  status: 'not_started' | 'in_progress' | 'completed' | 'Pas Commencé' | 'A valider' | 'Terminé' | string;
-  description?: string;
-  notes?: string;
-  billedHours?: number;
-  actualHours?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  syncedAt?: string;
-}
-
-export interface NotionTestResponse {
-  success: boolean;
-  message: string;
-  data?: any;
-}
-
-export interface CalendarTasksResponse {
-  success: boolean;
-  data: {
-    tasks: Task[];
-    cacheHit: boolean;
-    period: {
-      start: string;
-      end: string;
-    };
-  };
-  meta: {
-    count: number;
-    cached: boolean;
-    timestamp: string;
-  };
-}
+import { 
+  Task, 
+  TaskResponse,
+  CalendarTasksResponse, 
+  NotionTestResponse,
+  TaskStats 
+} from '@/types/task.types';
 
 export const tasksService = {
   // Get tasks for calendar view
@@ -203,18 +141,7 @@ export const tasksService = {
   },
 
   // Get today's task statistics
-  async getTodayStats(): Promise<{
-    total: number;
-    completed: number;
-    inProgress: number;
-    notStarted: number;
-    byType: {
-      task: number;
-      holiday: number;
-      school: number;
-      remote: number;
-    };
-  }> {
+  async getTodayStats(): Promise<TaskStats> {
     const response = await apiClient.get('/tasks/stats/today');
     return response.data.data;
   }

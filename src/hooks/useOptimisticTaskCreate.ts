@@ -4,7 +4,8 @@
  */
 
 import { useOptimisticUpdate } from './useOptimisticUpdate';
-import { tasksService, Task } from '@/services/api/tasks.service';
+import { tasksService } from '@/services/api/tasks.service';
+import { Task } from '@/types/task.types';
 import { useCallback, useRef, MutableRefObject } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { tasksService, Task, CalendarTasksResponse } from '@/services/api/tasks.service';
+import { tasksService } from '@/services/api/tasks.service';
+import { Task, CalendarTasksResponse } from '@/types/task.types';
 import { format } from 'date-fns';
 
 interface UseCalendarTasksParams {

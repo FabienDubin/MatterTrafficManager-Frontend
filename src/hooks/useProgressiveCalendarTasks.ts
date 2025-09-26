@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, MutableRefObject } from 'react';
-import { tasksService, Task } from '@/services/api/tasks.service';
+import { tasksService } from '@/services/api/tasks.service';
+import { Task } from '@/types/task.types';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
 

@@ -1,5 +1,5 @@
 import { EventInput } from '@fullcalendar/core';
-import { Task } from '@/services/api/tasks.service';
+import { Task } from '@/types/task.types';
 
 /**
  * Convert a Task object to a FullCalendar EventInput

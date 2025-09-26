@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { tasksService, Task } from '@/services/api/tasks.service';
+import { tasksService } from '@/services/api/tasks.service';
+import { Task } from '@/types/task.types';
 import { toast } from 'sonner';
 
 // Query keys
