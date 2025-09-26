@@ -23,6 +23,7 @@ interface CalendarConfig {
   dayView: CalendarViewConfig;
   weekView: CalendarViewConfig;
   monthView: CalendarViewConfig;
+  showWeekends: boolean;
 }
 
 interface CalendarConfigState {
@@ -50,6 +51,7 @@ const DEFAULT_CONFIG: CalendarConfig = {
     fields: ['title'],
     maxTitleLength: 15,
   },
+  showWeekends: true,
 };
 
 export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => ({
@@ -61,7 +63,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
     set({ isLoading: true, error: null });
     try {
       // Fetch all calendar config keys in parallel
-      const [dayFields, weekFields, monthFields, dayMaxLength, weekMaxLength, monthMaxLength] = 
+      const [dayFields, weekFields, monthFields, dayMaxLength, weekMaxLength, monthMaxLength, showWeekends] = 
         await Promise.allSettled([
           configService.getConfig('CALENDAR_DAY_VIEW_FIELDS'),
           configService.getConfig('CALENDAR_WEEK_VIEW_FIELDS'),
@@ -69,6 +71,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
           configService.getConfig('CALENDAR_TITLE_MAX_LENGTH_DAY'),
           configService.getConfig('CALENDAR_TITLE_MAX_LENGTH_WEEK'),
           configService.getConfig('CALENDAR_TITLE_MAX_LENGTH_MONTH'),
+          configService.getConfig('SHOW_WEEKENDS'),
         ]);
 
       // Helper function to parse value - handles both string and object
@@ -114,6 +117,9 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
               : monthMaxLength.value.value
             : DEFAULT_CONFIG.monthView.maxTitleLength,
         },
+        showWeekends: showWeekends.status === 'fulfilled' && showWeekends.value
+          ? showWeekends.value.value === true || showWeekends.value.value === 'true'
+          : DEFAULT_CONFIG.showWeekends,
       };
 
       set({ config, isLoading: false });
@@ -152,6 +158,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
         CALENDAR_TITLE_MAX_LENGTH_DAY: String(config.dayView.maxTitleLength || 30),
         CALENDAR_TITLE_MAX_LENGTH_WEEK: String(config.weekView.maxTitleLength || 20),
         CALENDAR_TITLE_MAX_LENGTH_MONTH: String(config.monthView.maxTitleLength || 15),
+        SHOW_WEEKENDS: config.showWeekends,
       });
 
       set({ isLoading: false });

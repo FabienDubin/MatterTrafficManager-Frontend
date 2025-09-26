@@ -12,6 +12,7 @@ interface CalendarViewProps {
   onEventClick?: (info: any) => void;
   onDatesChange?: (start: Date, end: Date) => void;
   currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
+  showWeekends?: boolean;
 }
 
 export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({ 
@@ -19,7 +20,8 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({
   onDateClick, 
   onEventClick, 
   onDatesChange,
-  currentView = 'timeGridWeek'
+  currentView = 'timeGridWeek',
+  showWeekends = true
 }, ref) => {
   const internalRef = useRef<FullCalendar>(null);
   const calendarRef = ref || internalRef;
@@ -90,7 +92,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({
         height="auto"
         contentHeight="auto"
         aspectRatio={1.8}
-        weekends={true}
+        weekends={showWeekends}
         editable={true}
         selectable={true}
         selectMirror={true}

@@ -9,6 +9,7 @@ import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useCalendarStore } from '@/store/calendar.store';
+import { useCalendarConfigStore } from '@/store/calendar-config.store';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Calendar, Settings } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
@@ -31,6 +32,9 @@ export default function CalendarPage() {
 
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
+  
+  // Get calendar configuration
+  const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
 
   // État pour le sheet d'édition
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -73,6 +77,13 @@ export default function CalendarPage() {
       setIsInitialLoad(false);
     }
   }, [tasks.length, isInitialLoad]);
+
+  // Load calendar configuration on mount
+  useEffect(() => {
+    if (!calendarConfig) {
+      fetchConfig();
+    }
+  }, [calendarConfig, fetchConfig]);
 
   // Sync FullCalendar with store on mount and when view/date changes
   useEffect(() => {
@@ -435,6 +446,7 @@ export default function CalendarPage() {
                   onEventClick={handleEventClick}
                   onDatesChange={handleDatesChange}
                   currentView={currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
+                  showWeekends={calendarConfig?.showWeekends ?? true}
                 />
               )}
             </>

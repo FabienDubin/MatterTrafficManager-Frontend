@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Save, RefreshCw, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
@@ -27,6 +28,7 @@ export function CalendarConfigPage() {
     dayView: { fields: [], maxTitleLength: 30 },
     weekView: { fields: [], maxTitleLength: 20 },
     monthView: { fields: [], maxTitleLength: 15 },
+    showWeekends: true,
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -91,6 +93,10 @@ export function CalendarConfigPage() {
       await updateConfig('dayView', localConfig.dayView);
       await updateConfig('weekView', localConfig.weekView);
       await updateConfig('monthView', localConfig.monthView);
+      
+      // Update store config directly for showWeekends
+      const store = useCalendarConfigStore.getState();
+      store.config = { ...store.config, ...localConfig };
       
       // Save to backend
       await saveConfig();
@@ -163,6 +169,36 @@ export function CalendarConfigPage() {
           </Button>
         </div>
       </div>
+
+      {/* Options générales */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Options générales</CardTitle>
+          <CardDescription>
+            Paramètres globaux d'affichage du calendrier
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-3">
+            <Switch
+              id="show-weekends"
+              checked={localConfig?.showWeekends ?? true}
+              onCheckedChange={(checked) => {
+                setLocalConfig({
+                  ...localConfig,
+                  showWeekends: checked,
+                });
+              }}
+            />
+            <Label htmlFor="show-weekends" className="cursor-pointer">
+              Afficher les weekends
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Affiche ou masque les samedis et dimanches dans les vues semaine et mois
+          </p>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="dayView" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
