@@ -1,10 +1,15 @@
 import { EventInput } from '@fullcalendar/core';
 import { Task } from '@/types/task.types';
+import { formatTaskTitle } from './taskFormatter';
+import { FieldType } from '@/store/calendar-config.store';
 
 /**
  * Convert a Task object to a FullCalendar EventInput
  */
-export function taskToCalendarEvent(task: Task): EventInput {
+export function taskToCalendarEvent(
+  task: Task,
+  viewConfig?: { fields: FieldType[]; maxTitleLength?: number }
+): EventInput {
   // Determine event color based on status
   const color = getStatusColor(task.status);
   
@@ -13,15 +18,21 @@ export function taskToCalendarEvent(task: Task): EventInput {
   const endDate = task.workPeriod?.endDate || 
     new Date(new Date(startDate).getTime() + 3600000).toISOString(); // Default 1 hour duration
   
+  // Format title based on view configuration
+  const title = viewConfig 
+    ? formatTaskTitle(task, viewConfig.fields, viewConfig.maxTitleLength)
+    : task.title;
+  
   return {
     id: task.id,
-    title: task.title,
+    title,
     start: startDate,
     end: endDate,
     backgroundColor: color,
     borderColor: color,
     textColor: '#ffffff',
     extendedProps: {
+      task, // Passer la tâche complète pour le rendu personnalisé
       status: task.status,
       description: task.description || '',
       notes: task.notes || '',
@@ -49,8 +60,11 @@ export function taskToCalendarEvent(task: Task): EventInput {
 /**
  * Convert an array of Tasks to FullCalendar EventInputs
  */
-export function tasksToCalendarEvents(tasks: Task[]): EventInput[] {
-  return tasks.map(taskToCalendarEvent);
+export function tasksToCalendarEvents(
+  tasks: Task[],
+  viewConfig?: { fields: FieldType[]; maxTitleLength?: number }
+): EventInput[] {
+  return tasks.map(task => taskToCalendarEvent(task, viewConfig));
 }
 
 /**

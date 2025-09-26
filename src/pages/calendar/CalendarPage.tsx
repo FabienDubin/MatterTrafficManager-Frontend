@@ -101,13 +101,28 @@ export default function CalendarPage() {
     }
   }, [currentView, currentDate]);
 
-  // Convert tasks to calendar events
+  // Convert tasks to calendar events with view configuration
   const events = useMemo(() => {
     if (tasks && tasks.length > 0) {
-      return tasksToCalendarEvents(tasks);
+      // Get the appropriate view config based on current view
+      let viewConfig = undefined;
+      if (calendarConfig) {
+        switch (currentView) {
+          case 'week':
+            viewConfig = calendarConfig.weekView;
+            break;
+          case 'month':
+            viewConfig = calendarConfig.monthView;
+            break;
+          case 'day':
+            viewConfig = calendarConfig.dayView;
+            break;
+        }
+      }
+      return tasksToCalendarEvents(tasks, viewConfig);
     }
     return [];
-  }, [tasks]);
+  }, [tasks, calendarConfig, currentView]);
 
   // Extract members from tasks for DayView
   const members: Member[] = useMemo(() => {
@@ -423,6 +438,7 @@ export default function CalendarPage() {
                   date={currentDate}
                   tasks={tasks}
                   members={members}
+                  viewConfig={calendarConfig?.dayView}
                   onTaskClick={task => {
                     setSelectedTask(task);
                     setSheetOpen(true);
@@ -447,6 +463,7 @@ export default function CalendarPage() {
                   onDatesChange={handleDatesChange}
                   currentView={currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
                   showWeekends={calendarConfig?.showWeekends ?? true}
+                  viewConfig={currentView === 'week' ? calendarConfig?.weekView : calendarConfig?.monthView}
                 />
               )}
             </>

@@ -1,11 +1,9 @@
 import { useMemo, useCallback } from 'react';
 import { Task } from '@/types/task.types';
 import { Member, MemberColumnProps, TaskPosition } from '@/types/calendar.types';
-import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { getStatusColor } from '@/utils/taskMapper';
-import { format } from 'date-fns';
+import { TaskCard } from './TaskCard';
 
 /**
  * Colonne pour un membre avec ses tâches positionnées
@@ -14,6 +12,7 @@ export function MemberColumn({
   member,
   tasks,
   date,
+  viewConfig,
   onTaskClick,
   onTimeSlotClick,
   onTaskDrop,
@@ -128,74 +127,28 @@ export function MemberColumn({
 
         {/* Positioned tasks */}
         {taskPositions.map((pos, index) => (
-          <TaskCard
+          <div
             key={pos.task.id}
-            task={pos.task}
-            position={pos}
-            onClick={() => onTaskClick?.(pos.task)}
-            index={index}
-          />
+            className="absolute"
+            style={{
+              top: `${pos.top}px`,
+              height: `${pos.height}px`,
+              left: `${pos.left}%`,
+              width: `${pos.width}%`,
+              zIndex: 10 + index,
+            }}
+          >
+            <TaskCard
+              task={pos.task}
+              viewConfig={viewConfig}
+              onClick={() => onTaskClick?.(pos.task)}
+              showTime={true}
+              compact={pos.height < 50}
+              draggable={true}
+              className="h-full hover:scale-[1.02]"
+            />
+          </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Task card component
- */
-function TaskCard({
-  task,
-  position,
-  onClick,
-  index,
-}: {
-  task: Task;
-  position: TaskPosition;
-  onClick?: () => void;
-  index: number;
-}) {
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('task', JSON.stringify(task));
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const statusColor = getStatusColor(task.status);
-
-  return (
-    <div
-      className={cn(
-        'absolute px-2 py-1 rounded-md border cursor-pointer transition-all',
-        'hover:shadow-md hover:z-50 hover:scale-[1.02]',
-        'bg-background'
-      )}
-      style={{
-        top: `${position.top}px`,
-        height: `${position.height}px`,
-        left: `${position.left}%`,
-        width: `${position.width}%`,
-        borderLeftWidth: '3px',
-        borderLeftColor: statusColor,
-        zIndex: 10 + index,
-      }}
-      draggable
-      onDragStart={handleDragStart}
-      onClick={onClick}
-      title={`${task.title}\n${format(new Date(task.workPeriod!.startDate), 'HH:mm')} - ${format(new Date(task.workPeriod!.endDate), 'HH:mm')}`}
-    >
-      <div className='flex flex-col h-full overflow-hidden'>
-        <p className='text-xs font-medium truncate'>{task.title}</p>
-        <p className='text-[10px] text-muted-foreground'>
-          {format(new Date(task.workPeriod!.startDate), 'HH:mm')} -
-          {format(new Date(task.workPeriod!.endDate), 'HH:mm')}
-        </p>
-
-        {/* Show project if available and space permits */}
-        {position.height > 50 && task.projectData && (
-          <p className='text-[10px] text-muted-foreground truncate mt-auto'>
-            {task.projectData.name}
-          </p>
-        )}
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ export function DayView({
   date,
   tasks,
   members,
+  viewConfig,
   onTaskClick,
   onTimeSlotClick,
   onTaskDrop,
@@ -98,9 +99,10 @@ export function DayView({
                     member={member}
                     tasks={assignedTasks.get(member.id) || []}
                     date={date}
+                    viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
-                    onTimeSlotClick={onTimeSlotClick}
-                    onTaskDrop={onTaskDrop}
+                    onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
+                    onTaskDrop={(task, newDate) => onTaskDrop?.(task, member.id, newDate)}
                   />
                 ))}
 
@@ -109,9 +111,10 @@ export function DayView({
                   <UnassignedColumn
                     tasks={unassignedTasks}
                     date={date}
+                    viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
-                    onTimeSlotClick={onTimeSlotClick}
-                    onTaskDrop={onTaskDrop}
+                    onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
+                    onTaskDrop={(task, newDate) => onTaskDrop?.(task, null, newDate)}
                   />
                 )}
               </div>

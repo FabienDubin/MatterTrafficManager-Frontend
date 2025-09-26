@@ -1,10 +1,12 @@
-import { useEffect, useRef, forwardRef } from 'react';
+import { useEffect, useRef, forwardRef, createElement } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import frLocale from '@fullcalendar/core/locales/fr';
-import { EventInput } from '@fullcalendar/core';
+import { EventInput, EventContentArg } from '@fullcalendar/core';
+import { ViewConfig } from '@/types/calendar.types';
+import { FullCalendarTaskCard } from './FullCalendarTaskCard';
 
 interface CalendarViewProps {
   events?: EventInput[];
@@ -13,6 +15,7 @@ interface CalendarViewProps {
   onDatesChange?: (start: Date, end: Date) => void;
   currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
   showWeekends?: boolean;
+  viewConfig?: ViewConfig;
 }
 
 export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({ 
@@ -21,7 +24,8 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({
   onEventClick, 
   onDatesChange,
   currentView = 'timeGridWeek',
-  showWeekends = true
+  showWeekends = true,
+  viewConfig
 }, ref) => {
   const internalRef = useRef<FullCalendar>(null);
   const calendarRef = ref || internalRef;
@@ -101,6 +105,11 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({
         dateClick={onDateClick}
         eventClick={onEventClick}
         eventDisplay="block"
+        // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
+        // eventContent={(eventInfo) => createElement(FullCalendarTaskCard, {
+        //   eventInfo,
+        //   viewConfig
+        // })}
         // Callbacks pour détecter les changements de vue et de dates
         datesSet={(dateInfo) => {
           // Appelé quand les dates visibles changent (navigation ou changement de vue)

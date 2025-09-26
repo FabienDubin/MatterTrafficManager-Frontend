@@ -1,11 +1,9 @@
 import { useMemo, useCallback } from 'react';
 import { Task } from '@/types/task.types';
 import { UnassignedColumnProps, TaskPosition } from '@/types/calendar.types';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { UserX } from 'lucide-react';
-import { getStatusColor } from '@/utils/taskMapper';
-import { format } from 'date-fns';
+import { TaskCard } from './TaskCard';
 
 /**
  * Colonne pour les tâches non assignées
@@ -13,6 +11,7 @@ import { format } from 'date-fns';
 export function UnassignedColumn({
   tasks,
   date,
+  viewConfig,
   onTaskClick,
   onTimeSlotClick,
   onTaskDrop
@@ -88,88 +87,39 @@ export function UnassignedColumn({
 
         {/* Positioned tasks */}
         {taskPositions.map((pos, index) => (
-          <UnassignedTaskCard
+          <div
             key={pos.task.id}
-            task={pos.task}
-            position={pos}
-            onClick={() => onTaskClick?.(pos.task)}
-            index={index}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/**
- * Unassigned task card component with visual distinction
- */
-function UnassignedTaskCard({
-  task,
-  position,
-  onClick,
-  index
-}: {
-  task: Task;
-  position: TaskPosition;
-  onClick?: () => void;
-  index: number;
-}) {
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('task', JSON.stringify(task));
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const statusColor = getStatusColor(task.status);
-  
-  return (
-    <div
-      className={cn(
-        "absolute px-2 py-1 rounded-md border-2 border-dashed cursor-pointer transition-all",
-        "hover:shadow-md hover:z-50 hover:scale-[1.02]",
-        "bg-background/80 backdrop-blur-sm",
-        "opacity-90 hover:opacity-100"
-      )}
-      style={{
-        top: `${position.top}px`,
-        height: `${position.height}px`,
-        left: `${position.left}%`,
-        width: `${position.width}%`,
-        borderColor: statusColor,
-        zIndex: 10 + index
-      }}
-      draggable
-      onDragStart={handleDragStart}
-      onClick={onClick}
-      title={`${task.title} (Non assigné)\n${format(new Date(task.workPeriod!.startDate), 'HH:mm')} - ${format(new Date(task.workPeriod!.endDate), 'HH:mm')}`}
-    >
-      <div className="flex flex-col h-full overflow-hidden">
-        <div className="flex items-start gap-1">
-          <UserX className="h-3 w-3 text-muted-foreground mt-0.5 flex-shrink-0" />
-          <p className="text-xs font-medium truncate flex-1">{task.title}</p>
-        </div>
-        
-        <p className="text-[10px] text-muted-foreground">
-          {format(new Date(task.workPeriod!.startDate), 'HH:mm')} - 
-          {format(new Date(task.workPeriod!.endDate), 'HH:mm')}
-        </p>
-        
-        {/* Show client if available */}
-        {position.height > 50 && task.clientData && (
-          <p className="text-[10px] text-muted-foreground truncate mt-auto">
-            Client: {task.clientData.name}
-          </p>
-        )}
-        
-        {/* Warning badge for unassigned */}
-        {position.height > 60 && (
-          <Badge 
-            variant="outline" 
-            className="text-[9px] py-0 px-1 mt-1 w-fit"
+            className="absolute"
+            style={{
+              top: `${pos.top}px`,
+              height: `${pos.height}px`,
+              left: `${pos.left}%`,
+              width: `${pos.width}%`,
+              zIndex: 10 + index,
+            }}
           >
-            À assigner
-          </Badge>
-        )}
+            <div className="relative h-full">
+              <TaskCard
+                task={pos.task}
+                viewConfig={viewConfig}
+                onClick={() => onTaskClick?.(pos.task)}
+                showTime={true}
+                compact={pos.height < 50}
+                draggable={true}
+                className="h-full border-dashed opacity-90 hover:opacity-100 hover:scale-[1.02] bg-background/80 backdrop-blur-sm"
+              />
+              {pos.height > 70 && (
+                <Badge 
+                  variant="outline" 
+                  className="absolute bottom-1 left-2 text-[9px] py-0 px-1"
+                >
+                  À assigner
+                </Badge>
+              )}
+              <UserX className="absolute top-1 left-2 h-3 w-3 text-muted-foreground" />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
