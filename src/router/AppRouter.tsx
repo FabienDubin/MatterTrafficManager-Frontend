@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import LoginPage from '@/pages/auth/Login';
 import CalendarPage from '@/pages/calendar/CalendarPage';
+import DayViewTest from '@/pages/calendar/DayViewTest';
 import AdminLayout from '@/layouts/AdminLayout';
 import AdminDashboard from '@/pages/admin/Dashboard';
 
@@ -34,6 +35,16 @@ export function AppRouter() {
         element={
           <ProtectedRoute>
             <CalendarPage />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* Test route for DayView */}
+      <Route
+        path='/calendar/day-test'
+        element={
+          <ProtectedRoute>
+            <DayViewTest />
           </ProtectedRoute>
         }
       />

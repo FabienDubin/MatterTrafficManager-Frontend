@@ -6,7 +6,8 @@ export interface Member {
   id: string;
   name: string;
   email?: string;
-  teams?: string[];
+  teams?: string[] | Array<{ id: string; name: string }>;
+  teamsData?: Array<{ id: string; name: string }>;
 }
 
 export interface TimeSlot {
