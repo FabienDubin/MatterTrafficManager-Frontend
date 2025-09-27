@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import frLocale from '@fullcalendar/core/locales/fr';
-import { EventInput, EventContentArg } from '@fullcalendar/core';
+import { EventInput } from '@fullcalendar/core';
 import { ViewConfig } from '@/types/calendar.types';
 import { FullCalendarTaskCard } from './FullCalendarTaskCard';
 
@@ -18,120 +18,126 @@ interface CalendarViewProps {
   viewConfig?: ViewConfig;
 }
 
-export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({ 
-  events = [], 
-  onDateClick, 
-  onEventClick, 
-  onDatesChange,
-  currentView = 'timeGridWeek',
-  showWeekends = true,
-  viewConfig
-}, ref) => {
-  const internalRef = useRef<FullCalendar>(null);
-  const calendarRef = ref || internalRef;
+export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
+  (
+    {
+      events = [],
+      onDateClick,
+      onEventClick,
+      onDatesChange,
+      currentView = 'timeGridWeek',
+      showWeekends = true,
+      viewConfig,
+    },
+    ref
+  ) => {
+    const internalRef = useRef<FullCalendar>(null);
+    const calendarRef = ref || internalRef;
 
-  // Apply theme-aware styling
-  useEffect(() => {
-    const applyThemeStyles = () => {
-      const root = document.documentElement;
-      const isDark = root.classList.contains('dark');
-      
-      // Update FullCalendar custom CSS variables
-      const calendarEl = document.querySelector('.fc');
-      if (calendarEl) {
-        const style = calendarEl as HTMLElement;
-        if (isDark) {
-          style.style.setProperty('--fc-border-color', 'hsl(var(--border))');
-          style.style.setProperty('--fc-button-bg-color', 'hsl(var(--primary))');
-          style.style.setProperty('--fc-button-text-color', 'hsl(var(--primary-foreground))');
-          style.style.setProperty('--fc-button-hover-bg-color', 'hsl(var(--primary) / 0.9)');
-          style.style.setProperty('--fc-page-bg-color', 'hsl(var(--background))');
-          style.style.setProperty('--fc-neutral-bg-color', 'hsl(var(--muted))');
-          style.style.setProperty('--fc-neutral-text-color', 'hsl(var(--muted-foreground))');
-          style.style.setProperty('--fc-today-bg-color', 'hsl(var(--accent))');
-        } else {
-          style.style.setProperty('--fc-border-color', 'hsl(var(--border))');
-          style.style.setProperty('--fc-button-bg-color', 'hsl(var(--primary))');
-          style.style.setProperty('--fc-button-text-color', 'hsl(var(--primary-foreground))');
-          style.style.setProperty('--fc-button-hover-bg-color', 'hsl(var(--primary) / 0.9)');
-          style.style.setProperty('--fc-page-bg-color', 'hsl(var(--background))');
-          style.style.setProperty('--fc-neutral-bg-color', 'hsl(var(--muted))');
-          style.style.setProperty('--fc-neutral-text-color', 'hsl(var(--muted-foreground))');
-          style.style.setProperty('--fc-today-bg-color', 'hsl(var(--accent))');
-        }
-      }
-    };
+    // Apply theme-aware styling
+    useEffect(() => {
+      const applyThemeStyles = () => {
+        const root = document.documentElement;
+        const isDark = root.classList.contains('dark');
 
-    applyThemeStyles();
-    
-    // Observer for theme changes
-    const observer = new MutationObserver(() => {
-      applyThemeStyles();
-    });
-    
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    });
-
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div className="calendar-container h-full">
-      <FullCalendar
-        ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-        initialView={currentView}
-        locale={frLocale}
-        headerToolbar={false}
-        businessHours={{
-          daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
-          startTime: '08:00',
-          endTime: '20:00'
-        }}
-        slotMinTime="07:00:00"
-        slotMaxTime="21:00:00"
-        slotDuration="00:30:00"
-        height="auto"
-        contentHeight="auto"
-        aspectRatio={1.8}
-        weekends={showWeekends}
-        editable={true}
-        selectable={true}
-        selectMirror={true}
-        dayMaxEvents={true}
-        events={events}
-        dateClick={onDateClick}
-        eventClick={onEventClick}
-        eventDisplay="block"
-        // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
-        // eventContent={(eventInfo) => createElement(FullCalendarTaskCard, {
-        //   eventInfo,
-        //   viewConfig
-        // })}
-        // Callbacks pour détecter les changements de vue et de dates
-        datesSet={(dateInfo) => {
-          // Appelé quand les dates visibles changent (navigation ou changement de vue)
-          if (onDatesChange) {
-            onDatesChange(dateInfo.start, dateInfo.end);
+        // Update FullCalendar custom CSS variables
+        const calendarEl = document.querySelector('.fc');
+        if (calendarEl) {
+          const style = calendarEl as HTMLElement;
+          if (isDark) {
+            style.style.setProperty('--fc-border-color', 'hsl(var(--border))');
+            style.style.setProperty('--fc-button-bg-color', 'hsl(var(--primary))');
+            style.style.setProperty('--fc-button-text-color', 'hsl(var(--primary-foreground))');
+            style.style.setProperty('--fc-button-hover-bg-color', 'hsl(var(--primary) / 0.9)');
+            style.style.setProperty('--fc-page-bg-color', 'hsl(var(--background))');
+            style.style.setProperty('--fc-neutral-bg-color', 'hsl(var(--muted))');
+            style.style.setProperty('--fc-neutral-text-color', 'hsl(var(--muted-foreground))');
+            style.style.setProperty('--fc-today-bg-color', 'hsl(var(--accent))');
+          } else {
+            style.style.setProperty('--fc-border-color', 'hsl(var(--border))');
+            style.style.setProperty('--fc-button-bg-color', 'hsl(var(--primary))');
+            style.style.setProperty('--fc-button-text-color', 'hsl(var(--primary-foreground))');
+            style.style.setProperty('--fc-button-hover-bg-color', 'hsl(var(--primary) / 0.9)');
+            style.style.setProperty('--fc-page-bg-color', 'hsl(var(--background))');
+            style.style.setProperty('--fc-neutral-bg-color', 'hsl(var(--muted))');
+            style.style.setProperty('--fc-neutral-text-color', 'hsl(var(--muted-foreground))');
+            style.style.setProperty('--fc-today-bg-color', 'hsl(var(--accent))');
           }
-        }}
-        // Options pour améliorer l'affichage
-        weekNumbers={false}
-        navLinks={true} // Permet de cliquer sur les jours/semaines pour naviguer
-        eventTimeFormat={{
-          hour: '2-digit',
-          minute: '2-digit',
-          meridiem: false
-        }}
-        slotLabelFormat={{
-          hour: '2-digit',
-          minute: '2-digit',
-          meridiem: false
-        }}
-      />
-      <style>{`
+        }
+      };
+
+      applyThemeStyles();
+
+      // Observer for theme changes
+      const observer = new MutationObserver(() => {
+        applyThemeStyles();
+      });
+
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class'],
+      });
+
+      return () => observer.disconnect();
+    }, []);
+
+    return (
+      <div className='calendar-container h-full'>
+        <FullCalendar
+          ref={calendarRef}
+          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          initialView={currentView}
+          locale={frLocale}
+          headerToolbar={false}
+          businessHours={{
+            daysOfWeek: [1, 2, 3, 4, 5], // Monday - Friday
+            startTime: '08:00',
+            endTime: '20:00',
+          }}
+          slotMinTime='07:00:00'
+          slotMaxTime='21:00:00'
+          slotDuration='00:30:00'
+          height='auto'
+          contentHeight='auto'
+          aspectRatio={1.8}
+          weekends={showWeekends}
+          editable={true}
+          selectable={true}
+          selectMirror={true}
+          dayMaxEvents={currentView === 'dayGridMonth' ? 3 : true}
+          events={events}
+          dateClick={onDateClick}
+          eventClick={onEventClick}
+          eventDisplay='block'
+          // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
+          eventContent={eventInfo =>
+            createElement(FullCalendarTaskCard, {
+              eventInfo,
+              viewConfig,
+            })
+          }
+          // Callbacks pour détecter les changements de vue et de dates
+          datesSet={dateInfo => {
+            // Appelé quand les dates visibles changent (navigation ou changement de vue)
+            if (onDatesChange) {
+              onDatesChange(dateInfo.start, dateInfo.end);
+            }
+          }}
+          // Options pour améliorer l'affichage
+          weekNumbers={false}
+          navLinks={true} // Permet de cliquer sur les jours/semaines pour naviguer
+          eventTimeFormat={{
+            hour: '2-digit',
+            minute: '2-digit',
+            meridiem: false,
+          }}
+          slotLabelFormat={{
+            hour: '2-digit',
+            minute: '2-digit',
+            meridiem: false,
+          }}
+        />
+        <style>{`
         .fc {
           font-family: inherit;
           color: hsl(var(--foreground));
@@ -232,21 +238,74 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({
           border-color: hsl(var(--border) / 0.3);
         }
         
-        /* Events styling */
+        /* Events styling - Make FullCalendar container a flexbox */
         .fc-event {
           cursor: pointer;
-          border: none;
-          font-size: 0.8125rem;
-          padding: 0.25rem 0.5rem;
-          border-radius: 0.375rem;
+          border: none !important;
+          padding: 0 !important;
+          overflow: visible;
+          background-color: transparent !important;
+          display: flex !important;
+          flex-direction: column !important;
         }
         
         .fc-event:hover {
-          filter: brightness(0.9);
+          filter: brightness(0.95);
         }
         
         .fc-event-main {
-          padding: 0.125rem 0.25rem;
+          padding: 0 !important;
+          overflow: visible;
+          background-color: transparent !important;
+          flex: 1 !important;
+          display: flex !important;
+          width: 100% !important;
+          height: 100% !important;
+        }
+        
+        /* Remove FullCalendar's default event colors */
+        .fc-event,
+        .fc-event-dot {
+          background-color: transparent !important;
+        }
+        
+        .fc-h-event,
+        .fc-v-event {
+          background-color: transparent !important;
+          border-color: transparent !important;
+        }
+        
+        /* Ensure event content fills the container */
+        .fc-event-main-frame {
+          flex: 1 !important;
+          display: flex !important;
+        }
+        
+        /* Week view specific - better spacing for overlapping events */
+        .fc-timegrid-event {
+          margin-bottom: 1px;
+        }
+        
+        .fc-timegrid-event-harness {
+          margin-right: 2px;
+        }
+        
+        /* Month view - ensure events have enough height */
+        .fc-daygrid-event {
+          min-height: 20px;
+          margin-bottom: 1px;
+        }
+        
+        .fc-daygrid-event-harness {
+          margin-left: 2px;
+          margin-right: 2px;
+        }
+        
+        /* More events link styling */
+        .fc-daygrid-more-link {
+          color: hsl(var(--primary));
+          font-weight: 500;
+          font-size: 0.75rem;
         }
         
         /* Week view specific - align with DayView */
@@ -310,6 +369,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(({
           color: hsl(var(--muted-foreground));
         }
       `}</style>
-    </div>
-  );
-});
+      </div>
+    );
+  }
+);

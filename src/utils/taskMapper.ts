@@ -11,7 +11,7 @@ export function taskToCalendarEvent(
   viewConfig?: { fields: FieldType[]; maxTitleLength?: number }
 ): EventInput {
   // Determine event color based on status
-  const color = getStatusColor(task.status);
+  // const color = getStatusColor(task.status); // Géré dans TaskCard maintenant
   
   // Ensure we have valid dates
   const startDate = task.workPeriod?.startDate || new Date().toISOString();
@@ -28,9 +28,7 @@ export function taskToCalendarEvent(
     title,
     start: startDate,
     end: endDate,
-    backgroundColor: color,
-    borderColor: color,
-    textColor: '#ffffff',
+    // Retirer les couleurs, on les gère dans TaskCard avec le thème
     extendedProps: {
       task, // Passer la tâche complète pour le rendu personnalisé
       status: task.status,

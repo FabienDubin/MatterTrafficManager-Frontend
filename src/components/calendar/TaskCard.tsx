@@ -65,14 +65,13 @@ export function TaskCard({
   return (
     <div
       className={cn(
-        'px-2 py-1 rounded-md border cursor-pointer transition-all',
+        'px-2 py-1 rounded-md cursor-pointer transition-all',
         'hover:shadow-md hover:z-50',
-        'bg-background',
+        'bg-card text-card-foreground border border-border', // Utiliser les couleurs card du thème + bordure fine
         className
       )}
       style={{
-        borderLeftWidth: '3px',
-        borderLeftColor: statusColor,
+        borderLeft: `2px solid ${statusColor}`,
         ...style,
       }}
       draggable={draggable}
@@ -81,7 +80,7 @@ export function TaskCard({
       title={tooltipTitle}
     >
       <div className='flex flex-col overflow-hidden'>
-        <p className={cn('font-medium truncate', compact ? 'text-[11px]' : 'text-xs')}>
+        <p className={cn('font-medium truncate text-foreground', compact ? 'text-[11px]' : 'text-xs')}>
           {formattedTask.title}
         </p>
 

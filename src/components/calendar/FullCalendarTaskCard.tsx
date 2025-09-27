@@ -3,6 +3,7 @@ import { EventContentArg } from '@fullcalendar/core';
 import { Task } from '@/types/task.types';
 import { ViewConfig } from '@/types/calendar.types';
 import { TaskCard } from './TaskCard';
+import { useCalendarConfigStore } from '@/store/calendar-config.store';
 
 interface FullCalendarTaskCardProps {
   eventInfo: EventContentArg;
@@ -12,8 +13,9 @@ interface FullCalendarTaskCardProps {
 /**
  * Wrapper pour utiliser TaskCard dans FullCalendar
  */
-export function FullCalendarTaskCard({ eventInfo, viewConfig }: FullCalendarTaskCardProps) {
+export function FullCalendarTaskCard({ eventInfo, viewConfig: passedViewConfig }: FullCalendarTaskCardProps) {
   const task = eventInfo.event.extendedProps.task as Task | undefined;
+  const { config } = useCalendarConfigStore();
   
   if (!task) {
     return <div className="text-xs truncate px-1">{eventInfo.event.title}</div>;
@@ -21,24 +23,31 @@ export function FullCalendarTaskCard({ eventInfo, viewConfig }: FullCalendarTask
 
   const isMonthView = eventInfo.view.type === 'dayGridMonth';
   const isWeekView = eventInfo.view.type === 'timeGridWeek';
+  const isDayView = eventInfo.view.type === 'timeGridDay';
   
-  // Calculer la hauteur disponible (estimation basée sur la vue)
-  const eventHeight = isMonthView ? 20 : 40;
+  // Utiliser la config spécifique à la vue depuis le store
+  const viewConfig = passedViewConfig || (
+    isMonthView ? config?.monthView :
+    isWeekView ? config?.weekView :
+    isDayView ? config?.dayView :
+    undefined
+  );
   
-  // Adapter le rendu selon la vue et l'espace disponible
-  const compact = isMonthView || eventHeight < 40;
-  const showTime = !eventInfo.event.allDay && !isMonthView && eventHeight > 30;
+  // Adapter le rendu selon la vue
+  const compact = isMonthView;
+  // Pas d'horaires dans les vues semaine/mois car déjà visibles dans la grille
+  const showTime = false;
 
   return (
-    <div className="w-full h-full">
+    <div className="flex w-full h-full">
       <TaskCard
         task={task}
         viewConfig={viewConfig}
         showTime={showTime}
         compact={compact}
-        className={`h-full border-0 ${isWeekView ? 'text-[11px]' : isMonthView ? 'text-[10px]' : 'text-xs'}`}
+        className={`flex-1 h-full ${isMonthView ? 'text-[11px]' : 'text-xs'}`}
         style={{
-          padding: compact ? '2px 4px' : '4px 6px'
+          padding: isMonthView ? '1px 4px' : '2px 6px'
         }}
       />
     </div>
