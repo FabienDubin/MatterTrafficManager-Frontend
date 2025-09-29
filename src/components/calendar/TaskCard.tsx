@@ -3,7 +3,6 @@ import { Task, TaskWithConflicts } from '@/types/task.types';
 import { ViewConfig } from '@/types/calendar.types';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { getStatusColor } from '@/utils/taskMapper';
 import { formatTaskForDayView } from '@/utils/taskFormatter';
 import { format } from 'date-fns';
 import { useClientColors } from '@/store/config.store';
@@ -39,7 +38,6 @@ export function TaskCard({
   draggable = false,
   onDragStart,
 }: TaskCardProps) {
-  const statusColor = getStatusColor(task.status);
   const { getClientColor, isColorsLoaded } = useClientColors();
   const { theme } = useTheme();
   
@@ -80,14 +78,12 @@ export function TaskCard({
       className={cn(
         'relative px-2 py-1 rounded-md cursor-pointer transition-all',
         'hover:shadow-md hover:z-50',
-        clientColor ? '' : 'bg-card text-card-foreground border border-border', // Use theme colors only if no client color
+        clientColor ? '' : 'bg-card text-card-foreground border border-border', // Use theme colors and border only if no client color
         className
       )}
       style={{
         backgroundColor: clientColor || undefined,
         color: textColor || undefined,
-        borderLeft: `2px solid ${statusColor}`,
-        border: clientColor ? `1px solid ${statusColor}` : undefined, // Add border if client color is used
         ...style,
       }}
       draggable={draggable}

@@ -48,6 +48,9 @@ export interface MemberColumnProps {
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onTaskDrop?: (task: Task, newDate: Date) => void;
+  holidayTask?: Task; // Tâche de congé pour ce membre
+  remoteTask?: Task;  // Tâche de télétravail pour ce membre
+  schoolTask?: Task;  // Tâche de formation pour ce membre
 }
 
 export interface UnassignedColumnProps {

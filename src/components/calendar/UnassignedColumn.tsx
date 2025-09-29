@@ -52,8 +52,8 @@ export function UnassignedColumn({
   return (
     <div className="flex-1 min-w-[180px] border-r bg-muted/5">
       {/* Unassigned header */}
-      <div className="sticky top-0 z-10 bg-muted/30 border-b px-3 py-2">
-        <div className="flex items-center gap-2">
+      <div className="sticky top-0 z-30 bg-muted/30 border-b px-3 h-[4.5rem] flex items-center">
+        <div className="flex items-center gap-2 w-full">
           <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted">
             <UserX className="h-4 w-4 text-muted-foreground" />
           </div>
@@ -63,7 +63,7 @@ export function UnassignedColumn({
               À planifier
             </p>
           </div>
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs h-5 min-w-[1.25rem] flex items-center justify-center">
             {tasks.length}
           </Badge>
         </div>

@@ -37,10 +37,13 @@ export function DayView({
     });
   }, [tasks, date]);
 
-  // Séparer les tâches assignées et non assignées
-  const { assignedTasks, unassignedTasks } = useMemo(() => {
+  // Séparer les tâches assignées et non assignées, et détecter les statuts spéciaux
+  const { assignedTasks, unassignedTasks, specialTasksByMember } = useMemo(() => {
     const assigned: Map<string, Task[]> = new Map();
     const unassigned: Task[] = [];
+    const holidayTasks: Map<string, Task> = new Map();
+    const remoteTasks: Map<string, Task> = new Map();
+    const schoolTasks: Map<string, Task> = new Map();
 
     // Initialize map for each member
     members.forEach(member => {
@@ -56,11 +59,28 @@ export function DayView({
           const memberTasks = assigned.get(memberId) || [];
           memberTasks.push(task);
           assigned.set(memberId, memberTasks);
+          
+          // Détecter les tâches spéciales
+          if (task.taskType === 'holiday') {
+            holidayTasks.set(memberId, task);
+          } else if (task.taskType === 'remote') {
+            remoteTasks.set(memberId, task);
+          } else if (task.taskType === 'school') {
+            schoolTasks.set(memberId, task);
+          }
         });
       }
     });
 
-    return { assignedTasks: assigned, unassignedTasks: unassigned };
+    return { 
+      assignedTasks: assigned, 
+      unassignedTasks: unassigned,
+      specialTasksByMember: {
+        holiday: holidayTasks,
+        remote: remoteTasks,
+        school: schoolTasks
+      }
+    };
   }, [dayTasks, members]);
 
 
@@ -72,7 +92,7 @@ export function DayView({
           <div className='flex h-full'>
             {/* Fixed Time labels column */}
             <div className='w-20 flex-shrink-0 border-r sticky left-0 z-20 bg-background'>
-              <div className='bg-muted/30 border-b px-2 py-3'>
+              <div className='bg-muted/30 border-b px-2 h-[4.5rem] flex items-center'>
                 <span className='text-xs font-medium text-muted-foreground'>Heures</span>
               </div>
 
@@ -81,7 +101,7 @@ export function DayView({
                 {Array.from({ length: 15 }, (_, i) => i + 7).map(hour => (
                   <div
                     key={hour}
-                    className='h-20 border-b text-xs text-muted-foreground px-2 py-1 bg-background'
+                    className='h-20 border-b text-xs text-muted-foreground flex items-start px-2 pt-1 bg-background'
                   >
                     {hour}:00
                   </div>
@@ -98,6 +118,9 @@ export function DayView({
                     key={member.id}
                     member={member}
                     tasks={assignedTasks.get(member.id) || []}
+                    holidayTask={specialTasksByMember.holiday.get(member.id)}
+                    remoteTask={specialTasksByMember.remote.get(member.id)}
+                    schoolTask={specialTasksByMember.school.get(member.id)}
                     date={date}
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}

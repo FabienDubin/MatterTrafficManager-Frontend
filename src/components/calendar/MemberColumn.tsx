@@ -4,6 +4,9 @@ import { Member, MemberColumnProps, TaskPosition } from '@/types/calendar.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { TaskCard } from './TaskCard';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 /**
  * Colonne pour un membre avec ses tâches positionnées
@@ -16,6 +19,9 @@ export function MemberColumn({
   onTaskClick,
   onTimeSlotClick,
   onTaskDrop,
+  holidayTask,
+  remoteTask,
+  schoolTask,
 }: MemberColumnProps) {
   // Calculate task positions to avoid overlaps
   const taskPositions = useMemo(() => {
@@ -33,10 +39,18 @@ export function MemberColumn({
         const task = JSON.parse(taskData) as Task;
         const dropDate = new Date(date);
         dropDate.setHours(hour, 0, 0, 0);
+        
+        // Alertes pour congés et formation (pas pour télétravail)
+        if (holidayTask) {
+          toast.warning(`Attention : ${member.name} est en congé ce jour`);
+        } else if (schoolTask) {
+          toast.warning(`Attention : ${member.name} est en formation ce jour`);
+        }
+        
         onTaskDrop(task, dropDate);
       }
     },
-    [date, onTaskDrop]
+    [date, onTaskDrop, holidayTask, schoolTask, member.name]
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -66,11 +80,19 @@ export function MemberColumn({
       .slice(0, 2);
   };
 
+  // Déterminer le style de la colonne selon le statut
+  const columnClassName = cn(
+    'flex-1 min-w-[200px] border-r',
+    holidayTask && 'bg-muted/40', // Grisé pour congés
+    schoolTask && 'bg-blue-50/40 dark:bg-blue-950/20' // Bleuté pour formation
+    // Pas de style spécial pour télétravail
+  );
+
   return (
-    <div className='flex-1 min-w-[200px] border-r'>
+    <div className={columnClassName}>
       {/* Member header */}
-      <div className='sticky top-0 z-10 bg-muted/30 border-b px-3 py-2'>
-        <div className='flex items-center gap-2'>
+      <div className='sticky top-0 z-30 bg-muted/30 border-b px-3 h-[4.5rem] flex items-center'>
+        <div className='flex items-center gap-2 w-full'>
           <Avatar className='h-7 w-7'>
             <AvatarImage src={`/avatars/${member.id}.png`} alt={member.name} />
             <AvatarFallback className='text-xs'>{getInitials(member.name)}</AvatarFallback>
@@ -103,9 +125,61 @@ export function MemberColumn({
               return null;
             })()}
           </div>
-          <Badge variant='secondary' className='text-xs'>
-            {tasks.length}
-          </Badge>
+          <div className='flex flex-col items-end gap-0.5'>
+            {/* Badges de statut - emoji seulement avec tooltip */}
+            {(holidayTask || remoteTask || schoolTask) && (
+              <div className='flex gap-1'>
+                <TooltipProvider>
+                  {holidayTask && (
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div className='cursor-default'>
+                          <Badge variant="secondary" className='text-xs px-1.5 h-5'>
+                            🏖️
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className='text-xs'>Congé</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {remoteTask && (
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div className='cursor-default'>
+                          <Badge variant="outline" className='text-xs px-1.5 h-5'>
+                            🏠
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className='text-xs'>Télétravail</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {schoolTask && (
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <div className='cursor-default'>
+                          <Badge variant="secondary" className='text-xs px-1.5 h-5'>
+                            📚
+                          </Badge>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className='text-xs'>Formation</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                </TooltipProvider>
+              </div>
+            )}
+            {/* Badge du nombre de tâches */}
+            <Badge variant='secondary' className='text-xs h-5 min-w-[1.25rem] flex items-center justify-center'>
+              {tasks.length}
+            </Badge>
+          </div>
         </div>
       </div>
 
