@@ -162,7 +162,7 @@ export function useProgressiveCalendarTasks(
    * Refresh all loaded ranges (for polling)
    */
   const refreshAllRanges = useCallback(async () => {
-    if (loadedRanges.length === 0) return;
+    if (loadedRanges.length === 0) {return;}
     
     console.log('[Progressive] Refreshing all loaded ranges...');
     
@@ -196,7 +196,7 @@ export function useProgressiveCalendarTasks(
    * Schedule next polling
    */
   const scheduleNextPoll = useCallback(() => {
-    if (!enablePolling) return;
+    if (!enablePolling) {return;}
     
     // Clear existing timeout
     if (pollingTimeoutRef.current) {
@@ -220,7 +220,7 @@ export function useProgressiveCalendarTasks(
    * Handle tab visibility change
    */
   useEffect(() => {
-    if (!enablePolling) return;
+    if (!enablePolling) {return;}
     
     const handleVisibilityChange = () => {
       const wasActive = isTabActiveRef.current;
@@ -310,7 +310,7 @@ export function useProgressiveCalendarTasks(
  * Merge overlapping date ranges
  */
 function mergeOverlappingRanges(ranges: Array<{ start: Date; end: Date }>): Array<{ start: Date; end: Date }> {
-  if (ranges.length <= 1) return ranges;
+  if (ranges.length <= 1) {return ranges;}
   
   // Sort ranges by start date
   const sorted = [...ranges].sort((a, b) => a.start.getTime() - b.start.getTime());

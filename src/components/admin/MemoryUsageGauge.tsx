@@ -46,8 +46,8 @@ export function MemoryUsageGauge({ data, showDetails = false, className }: Memor
   
   // Determine status based on usage percentage
   const getStatus = () => {
-    if (usagePercent < 50) return { color: 'green', icon: CheckCircle, text: 'Optimal' };
-    if (usagePercent < 75) return { color: 'yellow', icon: TrendingUp, text: 'Normal' };
+    if (usagePercent < 50) {return { color: 'green', icon: CheckCircle, text: 'Optimal' };}
+    if (usagePercent < 75) {return { color: 'yellow', icon: TrendingUp, text: 'Normal' };}
     return { color: 'red', icon: AlertTriangle, text: 'Élevé' };
   };
 
@@ -56,8 +56,8 @@ export function MemoryUsageGauge({ data, showDetails = false, className }: Memor
 
   // Visual gauge representation
   const getGaugeColor = () => {
-    if (usagePercent < 50) return 'bg-green-500';
-    if (usagePercent < 75) return 'bg-yellow-500';
+    if (usagePercent < 50) {return 'bg-green-500';}
+    if (usagePercent < 75) {return 'bg-yellow-500';}
     return 'bg-red-500';
   };
 

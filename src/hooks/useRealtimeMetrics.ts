@@ -103,7 +103,7 @@ export function useRealtimeMetrics(pollingInterval = 5000) {
 
   // Quick Actions
   const handleClearAllCache = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir vider tout le cache ?')) return;
+    if (!confirm('Êtes-vous sûr de vouloir vider tout le cache ?')) {return;}
     
     try {
       clearCache();

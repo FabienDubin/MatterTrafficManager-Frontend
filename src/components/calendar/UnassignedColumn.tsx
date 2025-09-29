@@ -129,7 +129,7 @@ export function UnassignedColumn({
  * Calculate non-overlapping positions for unassigned tasks
  */
 function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
-  if (tasks.length === 0) return [];
+  if (tasks.length === 0) {return [];}
 
   // Filter and sort tasks by start time
   const dayStart = new Date(date);

@@ -82,7 +82,7 @@ export function TaskEditSheet({
   }, [task]);
 
   const handleSave = async () => {
-    if (!task) return;
+    if (!task) {return;}
     
     if (!title.trim()) {
       toast.error('Le nom de la tâche est requis');
@@ -154,7 +154,7 @@ export function TaskEditSheet({
   };
 
   const handleDelete = async () => {
-    if (!task) return;
+    if (!task) {return;}
     
     // Optimistic update: Close immediately for better UX
     onClose();
@@ -171,7 +171,7 @@ export function TaskEditSheet({
     });
   };
 
-  if (!task) return null;
+  if (!task) {return null;}
 
   return (
     <Sheet open={open} onOpenChange={onClose}>

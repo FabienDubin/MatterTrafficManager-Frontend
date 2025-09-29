@@ -27,7 +27,7 @@ export function DayView({
     dayEnd.setHours(23, 59, 59, 999);
 
     return tasks.filter(task => {
-      if (!task.workPeriod) return false;
+      if (!task.workPeriod) {return false;}
 
       const taskStart = new Date(task.workPeriod.startDate);
       const taskEnd = new Date(task.workPeriod.endDate);

@@ -56,9 +56,9 @@ class UsersService {
     search?: string;
   }): Promise<UsersResponse> {
     const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
+    if (params?.page) {queryParams.append('page', params.page.toString());}
+    if (params?.limit) {queryParams.append('limit', params.limit.toString());}
+    if (params?.search) {queryParams.append('search', params.search);}
 
     const response = await apiClient.get(`/auth/users?${queryParams}`);
     

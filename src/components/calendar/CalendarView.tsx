@@ -13,7 +13,9 @@ interface CalendarViewProps {
   onDateClick?: (info: any) => void;
   onEventClick?: (info: any) => void;
   onDatesChange?: (start: Date, end: Date) => void;
+  onNavLinkDayClick?: (date: Date) => void;
   currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
+  currentDate?: Date;
   showWeekends?: boolean;
   viewConfig?: ViewConfig;
 }
@@ -25,14 +27,34 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       onDateClick,
       onEventClick,
       onDatesChange,
+      onNavLinkDayClick,
       currentView = 'timeGridWeek',
+      currentDate,
       showWeekends = true,
       viewConfig,
     },
     ref
   ) => {
     const internalRef = useRef<FullCalendar>(null);
-    const calendarRef = ref || internalRef;
+    // Use the forwarded ref if provided, otherwise use internal ref
+    const actualRef = ref || internalRef;
+    
+    // Navigate to currentDate when it changes or view changes
+    useEffect(() => {
+      // Access the ref correctly - check if it's a forwarded ref or internal
+      const fcRef = typeof actualRef === 'function' ? internalRef : actualRef;
+      
+      if (currentDate && fcRef.current) {
+        const api = fcRef.current.getApi();
+        if (api) {
+          // Small delay to let view change settle
+          const timer = setTimeout(() => {
+            api.gotoDate(currentDate);
+          }, 10);
+          return () => clearTimeout(timer);
+        }
+      }
+    }, [currentDate, currentView, actualRef]);
 
     // Apply theme-aware styling
     useEffect(() => {
@@ -84,9 +106,10 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
     return (
       <div className='calendar-container h-full'>
         <FullCalendar
-          ref={calendarRef}
+          ref={actualRef}
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView={currentView}
+          initialDate={currentDate || new Date()}
           locale={frLocale}
           headerToolbar={false}
           businessHours={{
@@ -126,6 +149,16 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           // Options pour améliorer l'affichage
           weekNumbers={false}
           navLinks={true} // Permet de cliquer sur les jours/semaines pour naviguer
+          navLinkDayClick={(date) => {
+            // Navigation vers la vue jour
+            if (onNavLinkDayClick) {
+              onNavLinkDayClick(date);
+            }
+          }}
+          navLinkWeekClick={(weekDate) => {
+            // Navigation vers la vue semaine (optionnel)
+            console.log('Week clicked:', weekDate);
+          }}
           eventTimeFormat={{
             hour: '2-digit',
             minute: '2-digit',
@@ -145,6 +178,34 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         
         .fc-toolbar-title {
           color: hsl(var(--foreground));
+        }
+        
+        /* Navigation links styling */
+        .fc-daygrid-day-number,
+        .fc-col-header-cell-cushion {
+          color: hsl(var(--primary));
+          text-decoration: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .fc-daygrid-day-number:hover,
+        .fc-col-header-cell-cushion:hover {
+          color: hsl(var(--primary) / 0.8);
+          text-decoration: underline;
+        }
+        
+        /* Week view header dates should be clickable */
+        .fc-timegrid-axis-cushion {
+          cursor: default;
+        }
+        
+        .fc-col-header-cell {
+          position: relative;
+        }
+        
+        .fc-col-header-cell:hover {
+          background-color: hsl(var(--accent) / 0.1);
         }
         
         /* Style headers like DayView */

@@ -176,14 +176,34 @@ export function useOptimisticTaskUpdate(
       const isAsyncResponse = data && '_pendingSync' in data;
       
       if (!isAsyncResponse && data) {
-        // SYNC mode: Update with fresh server data (complete task from Notion)
+        // SYNC mode: Merge server data with existing enriched data
+        // The server returns basic task data without enriched fields,
+        // so we need to preserve clientData, projectData, assignedMembersData
+        const currentTask = tasksMapRef?.current?.get(id) || 
+                           tasks.find(t => t.id === id);
+        
+        const mergedTask = currentTask ? {
+          ...currentTask,  // Keep all existing enriched data
+          ...data,         // Apply updates from server
+          // Preserve critical enriched fields that server doesn't return
+          clientId: currentTask.clientId,
+          clientData: currentTask.clientData,
+          projectData: currentTask.projectData,
+          assignedMembersData: currentTask.assignedMembersData,
+          teamsData: currentTask.teamsData,
+          involvedTeamIds: currentTask.involvedTeamIds,
+          involvedTeamsData: currentTask.involvedTeamsData,
+          // Keep conflicts if they exist
+          conflicts: currentTask.conflicts || data.conflicts
+        } : data;
+        
         if (tasksMapRef?.current) {
-          tasksMapRef.current.set(id, data);
+          tasksMapRef.current.set(id, mergedTask);
         }
         
         setTasks(prevTasks =>
           prevTasks.map(task =>
-            task.id === id ? data : task
+            task.id === id ? mergedTask : task
           )
         );
       }
@@ -316,10 +336,10 @@ export function useOptimisticTaskBatchUpdate(
       const updatedFields = Object.keys(updates);
       let toastMessage = 'Mise à jour: ';
       
-      if (updatedFields.includes('workPeriod')) toastMessage += 'dates, ';
-      if (updatedFields.includes('assignedMembers')) toastMessage += 'assignés, ';
-      if (updatedFields.includes('status')) toastMessage += 'statut, ';
-      if (updatedFields.includes('title')) toastMessage += 'titre, ';
+      if (updatedFields.includes('workPeriod')) {toastMessage += 'dates, ';}
+      if (updatedFields.includes('assignedMembers')) {toastMessage += 'assignés, ';}
+      if (updatedFields.includes('status')) {toastMessage += 'statut, ';}
+      if (updatedFields.includes('title')) {toastMessage += 'titre, ';}
       
       toastMessage = toastMessage.slice(0, -2); // Remove trailing comma
       

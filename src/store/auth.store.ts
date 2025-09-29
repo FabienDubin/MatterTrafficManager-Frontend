@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { authService, User } from '@/services/api/auth.service';
+import { useConfigStore } from './config.store';
 
 interface AuthState {
   user: User | null;
@@ -35,6 +36,20 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
             isLoading: false 
           });
+          
+          // Preload config after successful login
+          // Use setTimeout to avoid blocking the login flow
+          setTimeout(() => {
+            const configStore = useConfigStore.getState();
+            // Load all config in parallel
+            Promise.all([
+              configStore.loadAsyncConfig(),
+              configStore.loadClientColors(),
+              configStore.loadClients()
+            ]).catch(error => {
+              console.error('Failed to preload config after login:', error);
+            });
+          }, 0);
         } catch (error) {
           set({ isLoading: false });
           throw error;

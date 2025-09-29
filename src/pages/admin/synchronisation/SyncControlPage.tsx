@@ -98,7 +98,7 @@ const SyncControlPage: React.FC = () => {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) {return 'N/A';}
     return new Date(dateString).toLocaleString('fr-FR');
   };
 

@@ -32,7 +32,7 @@ export function useCalendarTasks({
   const [cacheHit, setCacheHit] = useState(false);
 
   const fetchTasks = async () => {
-    if (!enabled) return;
+    if (!enabled) {return;}
 
     try {
       setIsLoading(true);

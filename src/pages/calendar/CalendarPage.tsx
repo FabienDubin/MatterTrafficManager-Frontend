@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth.store';
 import { useCalendarStore } from '@/store/calendar.store';
 import { useCalendarConfigStore } from '@/store/calendar-config.store';
+import { useClientColors } from '@/store/config.store';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, Calendar, Settings } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
@@ -29,6 +30,9 @@ export default function CalendarPage() {
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const calendarRef = useRef<FullCalendar>(null);
+
+  // Initialize client colors early for reactivity with admin panel
+  useClientColors();
 
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
@@ -90,14 +94,15 @@ export default function CalendarPage() {
     if (calendarRef.current && currentView !== 'day') {
       const api = calendarRef.current.getApi();
       
-      // Update view
+      // Update view and date atomically
       const fcView = currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth';
       if (api.view.type !== fcView) {
-        api.changeView(fcView);
+        // changeView with date parameter changes both view and date
+        api.changeView(fcView, currentDate);
+      } else {
+        // If view is already correct, just update the date
+        api.gotoDate(currentDate);
       }
-      
-      // Update date
-      api.gotoDate(currentDate);
     }
   }, [currentView, currentDate]);
 
@@ -248,10 +253,14 @@ export default function CalendarPage() {
   const handleViewChange = (view: CalendarViewType) => {
     setCurrentView(view);
 
-    // Update FullCalendar view if needed
+    // Update FullCalendar view if needed AND go to current date
     if (view !== 'day' && calendarRef.current) {
       const fcView = view === 'week' ? 'timeGridWeek' : 'dayGridMonth';
-      calendarRef.current.getApi().changeView(fcView);
+      const api = calendarRef.current.getApi();
+      
+      // Use changeView with date parameter for atomic update
+      // This ensures the view and date change together
+      api.changeView(fcView, currentDate);
     }
   };
 
@@ -461,7 +470,13 @@ export default function CalendarPage() {
                   onDateClick={handleDateClick}
                   onEventClick={handleEventClick}
                   onDatesChange={handleDatesChange}
+                  onNavLinkDayClick={(date) => {
+                    // Switch to day view and set the selected date
+                    setCurrentView('day');
+                    setCurrentDate(date);
+                  }}
                   currentView={currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
+                  currentDate={currentDate}
                   showWeekends={calendarConfig?.showWeekends ?? true}
                   viewConfig={currentView === 'week' ? calendarConfig?.weekView : calendarConfig?.monthView}
                 />

@@ -159,7 +159,7 @@ export default function UsersPage() {
   };
 
   const formatDate = (date: Date | string | undefined) => {
-    if (!date) return 'Jamais';
+    if (!date) {return 'Jamais';}
     return new Date(date).toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'short',

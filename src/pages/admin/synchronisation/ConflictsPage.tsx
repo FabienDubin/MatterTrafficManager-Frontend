@@ -33,8 +33,8 @@ const ConflictsPage: React.FC = () => {
     queryKey: ['conflicts', filterStatus, filterSeverity, page],
     queryFn: () => {
       const params: any = { page, limit: 20 };
-      if (filterStatus !== 'all') params.status = filterStatus;
-      if (filterSeverity !== 'all') params.severity = filterSeverity;
+      if (filterStatus !== 'all') {params.status = filterStatus;}
+      if (filterSeverity !== 'all') {params.severity = filterSeverity;}
       
       return conflictsService.getConflicts(params);
     },

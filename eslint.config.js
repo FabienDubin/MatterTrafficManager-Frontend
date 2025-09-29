@@ -8,7 +8,16 @@ import globals from 'globals';
 export default [
   // Ignore patterns
   {
-    ignores: ['dist/**', 'build/**', 'node_modules/**', '*.cjs', 'vite.config.ts', 'tailwind.config.js'],
+    ignores: [
+      'dist/**', 
+      'build/**', 
+      'node_modules/**', 
+      '*.cjs', 
+      'vite.config.ts', 
+      'tailwind.config.js',
+      'eslint.config.js',
+      'postcss.config.js'
+    ],
   },
 
   // Base JavaScript configuration
@@ -22,7 +31,7 @@ export default [
         ecmaFeatures: {
           jsx: true,
         },
-        project: true,
+        project: ['./tsconfig.app.json'],
         tsconfigRootDir: import.meta.dirname,
       },
       globals: {

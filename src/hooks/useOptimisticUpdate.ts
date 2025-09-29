@@ -186,7 +186,7 @@ export function useGlobalSyncState() {
     const mutationKey = m.options.mutationKey;
     // Check if it's a task-related mutation
     // mutationKey is an array like ['update-task'] or ['create-task']
-    if (!mutationKey || !Array.isArray(mutationKey)) return false;
+    if (!mutationKey || !Array.isArray(mutationKey)) {return false;}
     
     const keyString = mutationKey.join('-');
     return (

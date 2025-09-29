@@ -2,6 +2,7 @@ import { apiClient } from './client';
 import { useConfigStore } from '@/store/config.store';
 import { 
   Task, 
+  TaskWithConflicts,
   TaskResponse,
   CalendarTasksResponse, 
   NotionTestResponse,
@@ -71,11 +72,11 @@ export const tasksService = {
   },
 
   // Create a new task
-  async createTask(task: Partial<Task>): Promise<Task> {
+  async createTask(task: Partial<Task>): Promise<TaskWithConflicts> {
     // Get async mode from store (no API call needed!)
     const asyncMode = useConfigStore.getState().getAsyncMode();
     
-    const response = await apiClient.post('/tasks', task, {
+    const response = await apiClient.post<TaskResponse>('/tasks', task, {
       params: {
         async: asyncMode.create
       }
@@ -90,23 +91,27 @@ export const tasksService = {
       console.log('Response:', response.data);
     }
     
-    // Backend returns { success: true, data: {...task} }
-    // Extract the actual task from the wrapped response
+    // Backend returns { success: true, data: {...task}, conflicts: [...] }
+    // Return task with conflicts attached
     if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-      return response.data.data;
+      const taskWithConflicts: TaskWithConflicts = {
+        ...response.data.data,
+        conflicts: response.data.conflicts
+      };
+      return taskWithConflicts;
     }
     
     // Fallback if response structure is different
-    return response.data;
+    return response.data as TaskWithConflicts;
   },
 
   // Update a task
-  async updateTask(id: string, task: Partial<Task>): Promise<Task> {
+  async updateTask(id: string, task: Partial<Task>): Promise<TaskWithConflicts> {
     // Get async mode from store (no API call needed!)
     const asyncMode = useConfigStore.getState().getAsyncMode();
     
     // Mode normal - Utilise la configuration async du store
-    const response = await apiClient.put(`/tasks/${id}`, task, {
+    const response = await apiClient.put<TaskResponse>(`/tasks/${id}`, task, {
       params: {
         async: asyncMode.update
       }
@@ -118,14 +123,18 @@ export const tasksService = {
       console.log('Response complète:', response.data);
     }
     
-    // Backend returns { success: true, data: {...task} }
-    // Extract the actual task from the wrapped response
+    // Backend returns { success: true, data: {...task}, conflicts: [...] }
+    // Return task with conflicts attached
     if (response.data && typeof response.data === 'object' && 'data' in response.data) {
-      return response.data.data;
+      const taskWithConflicts: TaskWithConflicts = {
+        ...response.data.data,
+        conflicts: response.data.conflicts
+      };
+      return taskWithConflicts;
     }
     
     // Fallback if response structure is different
-    return response.data;
+    return response.data as TaskWithConflicts;
   },
 
   // Delete a task

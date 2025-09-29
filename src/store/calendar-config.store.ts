@@ -146,7 +146,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
 
   saveConfig: async () => {
     const { config } = get();
-    if (!config) return;
+    if (!config) {return;}
 
     set({ isLoading: true, error: null });
     try {

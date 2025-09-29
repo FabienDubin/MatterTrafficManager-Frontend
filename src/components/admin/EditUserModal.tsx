@@ -74,7 +74,7 @@ export default function EditUserModal({ open, user, onClose, onSubmit }: EditUse
   }, [user, form]);
 
   const handleSubmit = async (data: EditUserFormData) => {
-    if (!user) return;
+    if (!user) {return;}
     
     setIsSubmitting(true);
     try {

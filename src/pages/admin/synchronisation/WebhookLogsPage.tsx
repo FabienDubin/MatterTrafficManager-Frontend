@@ -33,10 +33,10 @@ const WebhookLogsPage: React.FC = () => {
     queryKey: ['webhook-logs', page, filterEntityType, filterStatus, dateRange],
     queryFn: () => {
       const params: any = { page, limit: 20 };
-      if (filterEntityType !== 'all') params.entityType = filterEntityType;
-      if (filterStatus !== 'all') params.status = filterStatus;
-      if (dateRange.start) params.startDate = dateRange.start;
-      if (dateRange.end) params.endDate = dateRange.end;
+      if (filterEntityType !== 'all') {params.entityType = filterEntityType;}
+      if (filterStatus !== 'all') {params.status = filterStatus;}
+      if (dateRange.start) {params.startDate = dateRange.start;}
+      if (dateRange.end) {params.endDate = dateRange.end;}
       
       return webhookService.getLogs(params);
     },
@@ -76,7 +76,7 @@ const WebhookLogsPage: React.FC = () => {
   };
 
   const formatDuration = (ms: number) => {
-    if (ms < 1000) return `${ms}ms`;
+    if (ms < 1000) {return `${ms}ms`;}
     return `${(ms / 1000).toFixed(2)}s`;
   };
 

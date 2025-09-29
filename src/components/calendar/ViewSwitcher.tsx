@@ -14,7 +14,7 @@ export function ViewSwitcher({ currentView, onViewChange }: ViewSwitcherProps) {
       type="single" 
       value={currentView}
       onValueChange={(value) => {
-        if (value) onViewChange(value as CalendarViewType);
+        if (value) {onViewChange(value as CalendarViewType);}
       }}
       className="border rounded-md h-10 min-w-[280px]"
     >

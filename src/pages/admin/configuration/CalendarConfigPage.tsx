@@ -7,12 +7,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Save, RefreshCw, Calendar, CalendarDays, CalendarRange } from 'lucide-react';
+import { Save, RefreshCw, Calendar, CalendarDays, CalendarRange, Palette } from 'lucide-react';
 import { 
   useCalendarConfigStore, 
   AVAILABLE_FIELDS, 
   type FieldType 
 } from '@/store/calendar-config.store';
+import { ClientColorsTab } from '@/components/admin/ClientColorsTab';
 
 export function CalendarConfigPage() {
   const { 
@@ -50,7 +51,7 @@ export function CalendarConfigPage() {
     viewType: 'dayView' | 'weekView' | 'monthView', 
     field: FieldType
   ) => {
-    if (!localConfig) return;
+    if (!localConfig) {return;}
 
     const currentFields = localConfig[viewType]?.fields || [];
     const newFields = currentFields.includes(field)
@@ -70,10 +71,10 @@ export function CalendarConfigPage() {
     viewType: 'dayView' | 'weekView' | 'monthView',
     value: string
   ) => {
-    if (!localConfig) return;
+    if (!localConfig) {return;}
 
     const maxLength = parseInt(value, 10);
-    if (isNaN(maxLength) || maxLength < 1) return;
+    if (isNaN(maxLength) || maxLength < 1) {return;}
 
     setLocalConfig({
       ...localConfig,
@@ -85,7 +86,7 @@ export function CalendarConfigPage() {
   };
 
   const handleSave = async () => {
-    if (!localConfig) return;
+    if (!localConfig) {return;}
 
     setIsSaving(true);
     try {
@@ -138,7 +139,7 @@ export function CalendarConfigPage() {
     );
   }
 
-  if (!localConfig) return null;
+  if (!localConfig) {return null;}
 
   return (
     <div className="space-y-6">
@@ -201,7 +202,7 @@ export function CalendarConfigPage() {
       </Card>
 
       <Tabs defaultValue="dayView" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dayView" className="gap-2">
             <Calendar className="h-4 w-4" />
             Vue Jour
@@ -213,6 +214,10 @@ export function CalendarConfigPage() {
           <TabsTrigger value="monthView" className="gap-2">
             <CalendarDays className="h-4 w-4" />
             Vue Mois
+          </TabsTrigger>
+          <TabsTrigger value="clientColors" className="gap-2">
+            <Palette className="h-4 w-4" />
+            Couleurs Clients
           </TabsTrigger>
         </TabsList>
 
@@ -367,6 +372,10 @@ export function CalendarConfigPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="clientColors" className="space-y-4">
+          <ClientColorsTab />
         </TabsContent>
       </Tabs>
 

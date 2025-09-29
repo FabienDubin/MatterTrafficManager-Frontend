@@ -34,7 +34,7 @@ export const useCalendarStore = create<CalendarState>()(
       storage: {
         getItem: (name) => {
           const str = localStorage.getItem(name);
-          if (!str) return null;
+          if (!str) {return null;}
           const state = JSON.parse(str);
           // Convert date string back to Date object
           if (state.state?.currentDate) {

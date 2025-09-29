@@ -44,6 +44,7 @@ export function taskToCalendarEvent(
       teamsData: task.teamsData || [],
       involvedTeamIds: task.involvedTeamIds || [],
       involvedTeamsData: task.involvedTeamsData || [],
+      conflicts: task.conflicts || [], // Ajouter les conflits
       createdAt: task.createdAt,
       updatedAt: task.updatedAt
     },

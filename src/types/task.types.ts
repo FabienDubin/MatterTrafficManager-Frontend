@@ -21,7 +21,8 @@ export interface Task {
     name: string;
     status: string;
   };
-  clientId?: string;
+  client?: string; // Client name from Notion rollup
+  clientId?: string; // Client ID from project relation
   clientData?: {
     id: string;
     name: string;
@@ -49,6 +50,9 @@ export interface Task {
   // Champs ajoutés côté client
   _pendingSync?: boolean; // Indique que la tâche est en attente de sync avec Notion
   _optimisticId?: string; // ID temporaire pour les créations optimistes
+  
+  // Conflits persistés depuis MongoDB
+  conflicts?: TaskConflict[];
 }
 
 // Types pour les conflits
