@@ -120,10 +120,11 @@ export function DayView({
 
               {/* Hour labels */}
               <div className='relative'>
-                {Array.from({ length: 15 }, (_, i) => i + 7).map(hour => (
+                {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => (
                   <div
                     key={hour}
-                    className='h-20 border-b text-xs text-muted-foreground flex items-start px-2 pt-1 bg-background'
+                    className='h-16 border-b text-xs text-muted-foreground flex items-start px-2 pt-1 bg-background'
+                    style={{ height: 'calc((100vh - 200px) / 13)' }}
                   >
                     {hour}:00
                   </div>

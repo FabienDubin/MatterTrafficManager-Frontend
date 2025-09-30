@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef, useEffect } from 'react';
 import { Task } from '@/types/task.types';
 import { Member, MemberColumnProps, TaskPosition } from '@/types/calendar.types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,22 +23,77 @@ export function MemberColumn({
   remoteTask,
   schoolTask,
 }: MemberColumnProps) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const dragScrollInterval = useRef<NodeJS.Timeout | null>(null);
+  
   // Calculate task positions to avoid overlaps
   const taskPositions = useMemo(() => {
     return calculateTaskPositions(tasks, date);
   }, [tasks, date]);
+
+  // Auto-scroll pendant le drag et gestion ESC
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Annuler le drag en cours
+        const draggedElement = document.querySelector('[draggable="true"]:active');
+        if (draggedElement) {
+          // Force le navigateur à annuler le drag
+          const event = new DragEvent('dragend', {
+            bubbles: true,
+            cancelable: true,
+          });
+          draggedElement.dispatchEvent(event);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      if (dragScrollInterval.current) {
+        clearInterval(dragScrollInterval.current);
+      }
+    };
+  }, []);
 
   // Handle drop on time slot
   const handleDrop = useCallback(
     (e: React.DragEvent, hour: number) => {
       e.preventDefault();
       e.stopPropagation();
+      
+      // Récupérer l'offset de drag stocké ou utiliser 0 par défaut
+      const dragOffset = parseInt(e.dataTransfer.getData('dragOffsetY') || '0');
+      
+      // Calculer la position Y relative dans le slot pour déterminer les minutes
+      const rect = e.currentTarget.getBoundingClientRect();
+      const relativeY = e.clientY - rect.top - dragOffset; // Soustraire l'offset pour positionner selon le haut de la tâche
+      const slotHeight = rect.height;
+      const minuteOffset = Math.max(0, Math.floor((relativeY / slotHeight) * 60));
+      
+      // Arrondir aux 15 minutes
+      const roundedMinutes = Math.round(minuteOffset / 15) * 15;
 
       const taskData = e.dataTransfer.getData('task');
       if (taskData && onTaskDrop) {
         const task = JSON.parse(taskData) as Task;
         const dropDate = new Date(date);
-        dropDate.setHours(hour, 0, 0, 0);
+        dropDate.setHours(hour, roundedMinutes % 60, 0, 0);
+        
+        // Si les minutes arrondies dépassent 60, ajouter une heure
+        if (roundedMinutes >= 60) {
+          dropDate.setHours(hour + 1, 0, 0, 0);
+        }
+
+        console.log('Drop at', { 
+          hour, 
+          minuteOffset, 
+          roundedMinutes, 
+          finalTime: dropDate.toTimeString(),
+          dragOffset
+        });
 
         // Alertes pour congés et formation (pas pour télétravail)
         if (holidayTask) {
@@ -53,10 +108,51 @@ export function MemberColumn({
     [date, onTaskDrop, holidayTask, schoolTask, member.name]
   );
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-  };
+    
+    // Auto-scroll logic
+    const container = e.currentTarget.closest('.flex-1.relative.overflow-hidden');
+    if (!container) return;
+    
+    const scrollContainer = container.querySelector('.overflow-y-auto, [data-radix-scroll-area-viewport]') as HTMLElement;
+    if (!scrollContainer) return;
+    
+    const rect = scrollContainer.getBoundingClientRect();
+    const y = e.clientY;
+    
+    // Zone de déclenchement du scroll (50px du bord)
+    const scrollZone = 50;
+    const scrollSpeed = 10;
+    
+    // Clear existing interval
+    if (dragScrollInterval.current) {
+      clearInterval(dragScrollInterval.current);
+      dragScrollInterval.current = null;
+    }
+    
+    // Scroll vers le bas
+    if (y > rect.bottom - scrollZone) {
+      dragScrollInterval.current = setInterval(() => {
+        scrollContainer.scrollTop += scrollSpeed;
+      }, 20);
+    }
+    // Scroll vers le haut
+    else if (y < rect.top + scrollZone) {
+      dragScrollInterval.current = setInterval(() => {
+        scrollContainer.scrollTop -= scrollSpeed;
+      }, 20);
+    }
+  }, []);
+  
+  const handleDragLeave = useCallback(() => {
+    // Stop scrolling when leaving the drop zone
+    if (dragScrollInterval.current) {
+      clearInterval(dragScrollInterval.current);
+      dragScrollInterval.current = null;
+    }
+  }, []);
 
   // Handle time slot click for creating new task
   const handleTimeSlotClick = useCallback(
@@ -189,18 +285,23 @@ export function MemberColumn({
       {/* Time slots with tasks */}
       <div className='relative'>
         {/* Hour slots for drop zones */}
-        {Array.from({ length: 15 }, (_, i) => i + 7).map(hour => (
-          <div
-            key={hour}
-            className='h-20 border-b hover:bg-muted/5 cursor-pointer transition-colors'
-            onDrop={e => handleDrop(e, hour)}
-            onDragOver={handleDragOver}
-            onClick={() => handleTimeSlotClick(hour)}
-          >
-            {/* Half-hour line */}
-            <div className='h-10 border-b border-dashed border-muted-foreground/20' />
-          </div>
-        ))}
+        {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => {
+          const slotHeight = `calc((100vh - 200px) / 13)`;
+          return (
+            <div
+              key={hour}
+              className='border-b hover:bg-muted/5 cursor-pointer transition-colors'
+              style={{ height: slotHeight }}
+              onDrop={e => handleDrop(e, hour)}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onClick={() => handleTimeSlotClick(hour)}
+            >
+              {/* Half-hour line */}
+              <div className='border-b border-dashed border-muted-foreground/20' style={{ height: `calc(${slotHeight} / 2)` }} />
+            </div>
+          );
+        })}
 
         {/* Positioned tasks */}
         {taskPositions.map((pos, index) => (
@@ -223,6 +324,15 @@ export function MemberColumn({
               compact={pos.height < 50}
               draggable={true}
               className='h-full hover:scale-[1.02]'
+              onDragStart={(e) => {
+                // Capturer l'offset Y du clic par rapport au haut de la tâche
+                const rect = e.currentTarget.getBoundingClientRect();
+                const offsetY = e.clientY - rect.top;
+                
+                e.dataTransfer.setData('task', JSON.stringify(pos.task));
+                e.dataTransfer.setData('dragOffsetY', offsetY.toString());
+                e.dataTransfer.effectAllowed = 'move';
+              }}
             />
           </div>
         ))}
@@ -239,9 +349,13 @@ function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
     return [];
   }
 
+  // Calculate slot height dynamically (viewport - header - padding) / 13 hours
+  const viewportHeight = window.innerHeight;
+  const hourHeight = (viewportHeight - 200) / 13;
+
   // Filter and sort tasks by start time
   const dayStart = new Date(date);
-  dayStart.setHours(7, 0, 0, 0);
+  dayStart.setHours(8, 0, 0, 0); // Changed to 8 AM start
 
   const sortedTasks = tasks
     .filter(task => task.workPeriod)
@@ -262,9 +376,9 @@ function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
     const startHour = startTime.getHours() + startTime.getMinutes() / 60;
     const endHour = endTime.getHours() + endTime.getMinutes() / 60;
 
-    // Position relative to 7:00 AM start
-    const top = (startHour - 7) * 80; // 80px per hour
-    const height = Math.max((endHour - startHour) * 80, 20); // Minimum 20px height
+    // Position relative to 8:00 AM start
+    const top = (startHour - 8) * hourHeight; // Dynamic height per hour
+    const height = Math.max((endHour - startHour) * hourHeight, 20); // Minimum 20px height
 
     // Find available column
     let columnIndex = columns.findIndex(col => col.endTime <= startTime.getTime());

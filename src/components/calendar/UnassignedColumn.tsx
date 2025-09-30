@@ -72,18 +72,22 @@ export function UnassignedColumn({
       {/* Time slots with tasks */}
       <div className="relative">
         {/* Hour slots for drop zones */}
-        {Array.from({ length: 15 }, (_, i) => i + 7).map(hour => (
-          <div
-            key={hour}
-            className="h-20 border-b hover:bg-muted/10 cursor-pointer transition-colors"
-            onDrop={(e) => handleDrop(e, hour)}
-            onDragOver={handleDragOver}
-            onClick={() => handleTimeSlotClick(hour)}
-          >
-            {/* Half-hour line */}
-            <div className="h-10 border-b border-dashed border-muted-foreground/20" />
-          </div>
-        ))}
+        {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => {
+          const slotHeight = `calc((100vh - 200px) / 13)`;
+          return (
+            <div
+              key={hour}
+              className="border-b hover:bg-muted/10 cursor-pointer transition-colors"
+              style={{ height: slotHeight }}
+              onDrop={(e) => handleDrop(e, hour)}
+              onDragOver={handleDragOver}
+              onClick={() => handleTimeSlotClick(hour)}
+            >
+              {/* Half-hour line */}
+              <div className="border-b border-dashed border-muted-foreground/20" style={{ height: `calc(${slotHeight} / 2)` }} />
+            </div>
+          );
+        })}
 
         {/* Positioned tasks */}
         {taskPositions.map((pos, index) => (
@@ -131,9 +135,13 @@ export function UnassignedColumn({
 function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
   if (tasks.length === 0) {return [];}
 
+  // Calculate slot height dynamically (viewport - header - padding) / 13 hours
+  const viewportHeight = window.innerHeight;
+  const hourHeight = (viewportHeight - 200) / 13;
+
   // Filter and sort tasks by start time
   const dayStart = new Date(date);
-  dayStart.setHours(7, 0, 0, 0);
+  dayStart.setHours(8, 0, 0, 0); // Changed to 8 AM start
   
   const sortedTasks = tasks
     .filter(task => task.workPeriod)
@@ -154,9 +162,9 @@ function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
     const startHour = startTime.getHours() + startTime.getMinutes() / 60;
     const endHour = endTime.getHours() + endTime.getMinutes() / 60;
     
-    // Position relative to 7:00 AM start
-    const top = (startHour - 7) * 80; // 80px per hour
-    const height = Math.max((endHour - startHour) * 80, 20); // Minimum 20px height
+    // Position relative to 8:00 AM start
+    const top = (startHour - 8) * hourHeight; // Dynamic height per hour
+    const height = Math.max((endHour - startHour) * hourHeight, 20); // Minimum 20px height
 
     // Find available column
     let columnIndex = columns.findIndex(col => col.endTime <= startTime.getTime());

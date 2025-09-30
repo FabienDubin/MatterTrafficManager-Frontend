@@ -15,6 +15,8 @@ interface CalendarViewProps {
   onEventClick?: (info: any) => void;
   onDatesChange?: (start: Date, end: Date) => void;
   onNavLinkDayClick?: (date: Date) => void;
+  onEventDrop?: (info: any) => void;
+  onEventResize?: (info: any) => void;
   currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
   currentDate?: Date;
   showWeekends?: boolean;
@@ -29,6 +31,8 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       onEventClick,
       onDatesChange,
       onNavLinkDayClick,
+      onEventDrop,
+      onEventResize,
       currentView = 'timeGridWeek',
       currentDate,
       showWeekends = true,
@@ -121,13 +125,16 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           slotMinTime='08:00:00'
           slotMaxTime='20:00:00'
           slotDuration='00:30:00'
+          snapDuration='00:15:00'
           height='auto'
           contentHeight='auto'
           aspectRatio={1.8}
           weekends={showWeekends}
           editable={true}
+          droppable={true}
           selectable={true}
           selectMirror={true}
+          eventDragMinDistance={5}
           dayMaxEvents={currentView === 'dayGridMonth' ? 3 : false}
           dayMaxEventRows={currentView === 'timeGridWeek' ? 2 : false}
           moreLinkClick='popover'
@@ -138,6 +145,16 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           }
           dateClick={onDateClick}
           eventClick={onEventClick}
+          eventDragStart={(info) => {
+            // Add dragging class for visual feedback
+            info.el.classList.add('fc-dragging');
+          }}
+          eventDragStop={(info) => {
+            // Remove dragging class
+            info.el.classList.remove('fc-dragging');
+          }}
+          eventDrop={onEventDrop}
+          eventResize={onEventResize}
           eventDisplay='block'
           // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
           eventContent={eventInfo =>
@@ -389,6 +406,21 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         
         .fc-timegrid .fc-daygrid-day-frame {
           border: none !important;
+        }
+        
+        /* Drag & Drop styling */
+        .fc-dragging {
+          opacity: 0.75 !important;
+          cursor: grabbing !important;
+        }
+        
+        .fc-event-mirror {
+          opacity: 0.6 !important;
+          background: hsl(var(--primary) / 0.3) !important;
+        }
+        
+        .fc-event-dragging {
+          z-index: 9999 !important;
         }
         
         .fc-timegrid .fc-daygrid-day-events {

@@ -249,6 +249,44 @@ export default function CalendarPage() {
     }
   };
 
+  // Handler pour le drag & drop dans FullCalendar (vues Week/Month)
+  const handleEventDrop = (info: any) => {
+    const taskId = info.event.id;
+    const newStart = info.event.start;
+    const newEnd = info.event.end || newStart;
+    
+    // Mettre à jour les dates avec l'update optimiste
+    taskUpdate.mutate({
+      id: taskId,
+      updates: {
+        workPeriod: {
+          startDate: newStart.toISOString(),
+          endDate: newEnd.toISOString(),
+        },
+      },
+    });
+    
+    // Pas de toast - les conflits seront affichés via les badges après le retour serveur
+  };
+
+  // Handler pour le resize dans FullCalendar
+  const handleEventResize = (info: any) => {
+    const taskId = info.event.id;
+    const newStart = info.event.start;
+    const newEnd = info.event.end || newStart;
+    
+    // Mettre à jour la durée avec l'update optimiste
+    taskUpdate.mutate({
+      id: taskId,
+      updates: {
+        workPeriod: {
+          startDate: newStart.toISOString(),
+          endDate: newEnd.toISOString(),
+        },
+      },
+    });
+  };
+
   // Handle view change
   const handleViewChange = (view: CalendarViewType) => {
     setCurrentView(view);
@@ -458,8 +496,81 @@ export default function CalendarPage() {
                     });
                   }}
                   onTaskDrop={(task, newMemberId, newDate) => {
-                    toast.info('Drag & Drop', {
-                      description: 'Fonctionnalité à venir',
+                    if (!task.workPeriod) return;
+                    
+                    // Calculer la durée originale de la tâche en millisecondes
+                    const originalStart = new Date(task.workPeriod.startDate);
+                    const originalEnd = new Date(task.workPeriod.endDate);
+                    const duration = originalEnd.getTime() - originalStart.getTime();
+                    
+                    // Calculer la nouvelle heure de fin en ajoutant la durée à la nouvelle heure de début
+                    const newEndDate = new Date(newDate.getTime() + duration);
+                    
+                    // Mise à jour optimiste de la tâche avec la nouvelle date
+                    const updates: any = {
+                      workPeriod: {
+                        startDate: newDate.toISOString(),
+                        endDate: newEndDate.toISOString(),
+                      },
+                    };
+
+                    // Gestion du changement de membre
+                    if (newMemberId) {
+                      // Vérifier si c'est vraiment un changement de membre
+                      const currentMembers = task.assignedMembers || [];
+                      const isAlreadyAssigned = currentMembers.includes(newMemberId);
+                      
+                      if (!isAlreadyAssigned) {
+                        // Le membre n'est pas déjà assigné, on l'ajoute ou remplace
+                        if (currentMembers.length > 1) {
+                          // Tâche multi-membres : on ajoute le nouveau membre
+                          updates.assignedMembers = [...currentMembers, newMemberId];
+                        } else {
+                          // Tâche mono-membre ou pas de membre : on remplace
+                          updates.assignedMembers = [newMemberId];
+                        }
+                        
+                        // IMPORTANT: Mettre à jour aussi assignedMembersData pour l'affichage
+                        const newMemberData = members.find(m => m.id === newMemberId);
+                        if (newMemberData) {
+                          if (currentMembers.length > 1 && task.assignedMembersData) {
+                            // Ajouter aux membres existants
+                            updates.assignedMembersData = [...task.assignedMembersData, {
+                              id: newMemberData.id,
+                              name: newMemberData.name,
+                              email: newMemberData.email || '',
+                              teams: Array.isArray(newMemberData.teams) ? newMemberData.teams : []
+                            }];
+                          } else {
+                            // Remplacer par le nouveau membre
+                            updates.assignedMembersData = [{
+                              id: newMemberData.id,
+                              name: newMemberData.name,
+                              email: newMemberData.email || '',
+                              teams: Array.isArray(newMemberData.teams) ? newMemberData.teams : []
+                            }];
+                          }
+                        }
+                      } else if (currentMembers.length > 1) {
+                        // Le membre est déjà assigné parmi d'autres, on ne garde que lui
+                        updates.assignedMembers = [newMemberId];
+                        
+                        // Mettre à jour assignedMembersData pour ne garder que ce membre
+                        const memberData = task.assignedMembersData?.find(m => m.id === newMemberId);
+                        if (memberData) {
+                          updates.assignedMembersData = [memberData];
+                        }
+                      }
+                      // Si le membre est déjà le seul assigné, on ne change rien
+                    } else if (newMemberId === null) {
+                      // Drop sur la colonne non-assigné
+                      updates.assignedMembers = [];
+                      updates.assignedMembersData = [];
+                    }
+
+                    taskUpdate.mutate({
+                      id: task.id,
+                      updates,
                     });
                   }}
                 />
@@ -469,6 +580,8 @@ export default function CalendarPage() {
                   events={events}
                   onDateClick={handleDateClick}
                   onEventClick={handleEventClick}
+                  onEventDrop={handleEventDrop}
+                  onEventResize={handleEventResize}
                   onDatesChange={handleDatesChange}
                   onNavLinkDayClick={(date) => {
                     // Switch to day view and set the selected date
