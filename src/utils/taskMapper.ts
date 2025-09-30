@@ -23,15 +23,30 @@ export function taskToCalendarEvent(
     ? formatTaskTitle(task, viewConfig.fields, viewConfig.maxTitleLength)
     : task.title;
   
+  // Détecter si c'est une tâche journée entière
+  const isAllDay = task.isAllDay || false;
+  
+  // Pour les tâches all-day normales (pas les badges splittés), 
+  // FullCalendar considère la date de fin comme exclusive, donc on ajoute 1 jour
+  let adjustedEndDate = endDate;
+  if (isAllDay && !task.shouldSplitDaily && endDate) {
+    const endDateObj = new Date(endDate);
+    endDateObj.setDate(endDateObj.getDate() + 1);
+    adjustedEndDate = endDateObj.toISOString();
+  }
+  
   return {
     id: task.id,
     title,
     start: startDate,
-    end: endDate,
+    end: adjustedEndDate,
+    allDay: isAllDay, // FullCalendar gère automatiquement l'affichage des événements allDay
     // Retirer les couleurs, on les gère dans TaskCard avec le thème
     extendedProps: {
       task, // Passer la tâche complète pour le rendu personnalisé
       status: task.status,
+      taskType: task.taskType, // Ajouter le type de tâche
+      isAllDay: task.isAllDay, // Passer l'info aussi dans extendedProps
       description: task.description || '',
       notes: task.notes || '',
       assignedMembers: task.assignedMembers || [],
@@ -58,12 +73,75 @@ export function taskToCalendarEvent(
 
 /**
  * Convert an array of Tasks to FullCalendar EventInputs
+ * Handles splitting multi-day special tasks into daily badges
  */
 export function tasksToCalendarEvents(
   tasks: Task[],
   viewConfig?: { fields: FieldType[]; maxTitleLength?: number }
 ): EventInput[] {
-  return tasks.map(task => taskToCalendarEvent(task, viewConfig));
+  const events: EventInput[] = [];
+  
+  tasks.forEach(task => {
+    // Si la tâche doit être splittée en badges journaliers (congés, TT, école multi-jours)
+    if (task.shouldSplitDaily && task.isAllDay && task.workPeriod) {
+      const startDate = new Date(task.workPeriod.startDate);
+      const endDate = new Date(task.workPeriod.endDate);
+      
+      // Créer un événement pour chaque jour de la période
+      const currentDate = new Date(startDate);
+      currentDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      while (currentDate <= endDate) {
+        const dayStart = new Date(currentDate);
+        const dayEnd = new Date(currentDate);
+        dayEnd.setHours(23, 59, 59, 999);
+        
+        // Créer un événement pour ce jour spécifique
+        events.push({
+          id: `${task.id}_${currentDate.toISOString().split('T')[0]}`,
+          title: viewConfig 
+            ? formatTaskTitle(task, viewConfig.fields, viewConfig.maxTitleLength)
+            : task.title,
+          start: dayStart.toISOString(),
+          end: dayEnd.toISOString(),
+          allDay: true,
+          extendedProps: {
+            task, // Passer la tâche complète pour le rendu personnalisé
+            status: task.status,
+            taskType: task.taskType,
+            isAllDay: task.isAllDay,
+            description: task.description || '',
+            notes: task.notes || '',
+            assignedMembers: task.assignedMembers || [],
+            assignedMembersData: task.assignedMembersData || [],
+            projectId: task.projectId,
+            projectData: task.projectData,
+            clientId: task.clientId,
+            clientData: task.clientData,
+            teams: task.teams || [],
+            teamsData: task.teamsData || [],
+            involvedTeamIds: task.involvedTeamIds || [],
+            involvedTeamsData: task.involvedTeamsData || [],
+            conflicts: task.conflicts || [],
+            createdAt: task.createdAt,
+            updatedAt: task.updatedAt
+          },
+          editable: false, // Les badges ne sont pas éditables
+          startEditable: false,
+          durationEditable: false,
+        });
+        
+        // Passer au jour suivant
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } else {
+      // Pour les tâches normales, créer un seul événement
+      events.push(taskToCalendarEvent(task, viewConfig));
+    }
+  });
+  
+  return events;
 }
 
 /**

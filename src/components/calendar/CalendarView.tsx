@@ -342,6 +342,38 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           display: flex !important;
         }
         
+        /* All-day section styling */
+        .fc-daygrid-day-events,
+        .fc-timegrid-divider {
+          background: hsl(var(--muted) / 0.3);
+          border-bottom: 2px solid hsl(var(--border));
+        }
+        
+        .fc-day-grid .fc-row.fc-week {
+          min-height: 2rem;
+        }
+        
+        /* All-day events in week view */
+        .fc-timegrid .fc-daygrid-body {
+          background: hsl(var(--muted) / 0.2);
+          border-bottom: 2px solid hsl(var(--border));
+        }
+        
+        .fc-timegrid .fc-daygrid-day-events {
+          min-height: 1.5rem;
+          padding: 0.25rem 0;
+        }
+        
+        /* Style for all-day event badges */
+        .fc-timegrid .fc-daygrid-event {
+          margin: 0.125rem 0.25rem;
+          padding: 0 !important;
+        }
+        
+        .fc-timegrid .fc-daygrid-event-harness {
+          margin: 0;
+        }
+        
         /* Week view specific - better spacing for overlapping events */
         .fc-timegrid-event {
           margin-bottom: 1px;

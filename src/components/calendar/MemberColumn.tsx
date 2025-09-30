@@ -39,14 +39,14 @@ export function MemberColumn({
         const task = JSON.parse(taskData) as Task;
         const dropDate = new Date(date);
         dropDate.setHours(hour, 0, 0, 0);
-        
+
         // Alertes pour congés et formation (pas pour télétravail)
         if (holidayTask) {
           toast.warning(`Attention : ${member.name} est en congé ce jour`);
         } else if (schoolTask) {
           toast.warning(`Attention : ${member.name} est en formation ce jour`);
         }
-        
+
         onTaskDrop(task, dropDate);
       }
     },
@@ -83,8 +83,8 @@ export function MemberColumn({
   // Déterminer le style de la colonne selon le statut
   const columnClassName = cn(
     'flex-1 min-w-[200px] border-r',
-    holidayTask && 'bg-muted/40', // Grisé pour congés
-    schoolTask && 'bg-blue-50/40 dark:bg-blue-950/20' // Bleuté pour formation
+    holidayTask && 'bg-muted/80', // Grisé pour congés
+    schoolTask && 'bg-blue-50/80 dark:bg-blue-950/20' // Bleuté pour formation
     // Pas de style spécial pour télétravail
   );
 
@@ -134,7 +134,7 @@ export function MemberColumn({
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <div className='cursor-default'>
-                          <Badge variant="secondary" className='text-xs px-1.5 h-5'>
+                          <Badge variant='secondary' className='text-xs px-1.5 h-5'>
                             🏖️
                           </Badge>
                         </div>
@@ -148,7 +148,7 @@ export function MemberColumn({
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <div className='cursor-default'>
-                          <Badge variant="outline" className='text-xs px-1.5 h-5'>
+                          <Badge variant='outline' className='text-xs px-1.5 h-5'>
                             🏠
                           </Badge>
                         </div>
@@ -162,7 +162,7 @@ export function MemberColumn({
                     <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <div className='cursor-default'>
-                          <Badge variant="secondary" className='text-xs px-1.5 h-5'>
+                          <Badge variant='secondary' className='text-xs px-1.5 h-5'>
                             📚
                           </Badge>
                         </div>
@@ -176,7 +176,10 @@ export function MemberColumn({
               </div>
             )}
             {/* Badge du nombre de tâches */}
-            <Badge variant='secondary' className='text-xs h-5 min-w-[1.25rem] flex items-center justify-center'>
+            <Badge
+              variant='secondary'
+              className='text-xs h-5 min-w-[1.25rem] flex items-center justify-center'
+            >
               {tasks.length}
             </Badge>
           </div>
@@ -203,7 +206,7 @@ export function MemberColumn({
         {taskPositions.map((pos, index) => (
           <div
             key={pos.task.id}
-            className="absolute"
+            className='absolute'
             style={{
               top: `${pos.top}px`,
               height: `${pos.height}px`,
@@ -219,7 +222,7 @@ export function MemberColumn({
               showTime={true}
               compact={pos.height < 50}
               draggable={true}
-              className="h-full hover:scale-[1.02]"
+              className='h-full hover:scale-[1.02]'
             />
           </div>
         ))}
@@ -232,7 +235,9 @@ export function MemberColumn({
  * Calculate non-overlapping positions for tasks
  */
 function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
-  if (tasks.length === 0) {return [];}
+  if (tasks.length === 0) {
+    return [];
+  }
 
   // Filter and sort tasks by start time
   const dayStart = new Date(date);

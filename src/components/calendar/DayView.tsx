@@ -32,7 +32,20 @@ export function DayView({
       const taskStart = new Date(task.workPeriod.startDate);
       const taskEnd = new Date(task.workPeriod.endDate);
 
-      // Check if task overlaps with this day
+      // Pour les tâches spéciales multi-jours qui doivent être splittées (congés, TT, école)
+      // On vérifie si le jour courant est dans la période de la tâche
+      if (task.shouldSplitDaily && task.isAllDay) {
+        // La journée courante doit être comprise dans la période de la tâche
+        // On compare juste les dates, pas les heures
+        const taskStartDay = new Date(taskStart);
+        taskStartDay.setHours(0, 0, 0, 0);
+        const taskEndDay = new Date(taskEnd);
+        taskEndDay.setHours(23, 59, 59, 999);
+        
+        return dayStart >= taskStartDay && dayStart <= taskEndDay;
+      }
+
+      // Pour les tâches normales, on vérifie le chevauchement standard
       return taskStart <= dayEnd && taskEnd >= dayStart;
     });
   }, [tasks, date]);
@@ -51,22 +64,31 @@ export function DayView({
     });
 
     dayTasks.forEach(task => {
+      // Détecter si c'est une tâche spéciale journée entière
+      const isSpecialAllDay = task.isAllDay && ['holiday', 'remote', 'school'].includes(task.taskType || '');
+      
       if (!task.assignedMembers || task.assignedMembers.length === 0) {
-        unassigned.push(task);
+        // Ne pas ajouter les tâches spéciales journée entière aux non assignées
+        if (!isSpecialAllDay) {
+          unassigned.push(task);
+        }
       } else {
         // Add to each assigned member's column
         task.assignedMembers.forEach(memberId => {
-          const memberTasks = assigned.get(memberId) || [];
-          memberTasks.push(task);
-          assigned.set(memberId, memberTasks);
-          
-          // Détecter les tâches spéciales
-          if (task.taskType === 'holiday') {
-            holidayTasks.set(memberId, task);
-          } else if (task.taskType === 'remote') {
-            remoteTasks.set(memberId, task);
-          } else if (task.taskType === 'school') {
-            schoolTasks.set(memberId, task);
+          // Pour les tâches spéciales journée entière, on les stocke seulement pour les badges
+          if (isSpecialAllDay) {
+            if (task.taskType === 'holiday') {
+              holidayTasks.set(memberId, task);
+            } else if (task.taskType === 'remote') {
+              remoteTasks.set(memberId, task);
+            } else if (task.taskType === 'school') {
+              schoolTasks.set(memberId, task);
+            }
+          } else {
+            // Les tâches normales sont ajoutées à la grille
+            const memberTasks = assigned.get(memberId) || [];
+            memberTasks.push(task);
+            assigned.set(memberId, memberTasks);
           }
         });
       }

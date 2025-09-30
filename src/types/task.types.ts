@@ -40,6 +40,8 @@ export interface Task {
   taskType?: 'task' | 'holiday' | 'remote' | 'school';
   status: 'not_started' | 'in_progress' | 'completed' | 'Pas Commencé' | 'A valider' | 'Terminé' | string;
   description?: string;
+  isAllDay?: boolean; // Flag pour indiquer si c'est une tâche journée entière
+  shouldSplitDaily?: boolean; // Flag pour indiquer si une tâche multi-jours doit être splittée en badges quotidiens
   notes?: string;
   billedHours?: number;
   actualHours?: number;
