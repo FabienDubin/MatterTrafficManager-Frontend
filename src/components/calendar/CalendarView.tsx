@@ -7,6 +7,7 @@ import frLocale from '@fullcalendar/core/locales/fr';
 import { EventInput } from '@fullcalendar/core';
 import { ViewConfig } from '@/types/calendar.types';
 import { FullCalendarTaskCard } from './FullCalendarTaskCard';
+import { generateDayHeaderContent, generateDayCellContent } from '@/utils/calendarBadges';
 
 interface CalendarViewProps {
   events?: EventInput[];
@@ -117,8 +118,8 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
             startTime: '08:00',
             endTime: '20:00',
           }}
-          slotMinTime='07:00:00'
-          slotMaxTime='21:00:00'
+          slotMinTime='08:00:00'
+          slotMaxTime='20:00:00'
           slotDuration='00:30:00'
           height='auto'
           contentHeight='auto'
@@ -127,8 +128,14 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           editable={true}
           selectable={true}
           selectMirror={true}
-          dayMaxEvents={currentView === 'dayGridMonth' ? 3 : true}
-          events={events}
+          dayMaxEvents={currentView === 'dayGridMonth' ? 3 : false}
+          dayMaxEventRows={currentView === 'timeGridWeek' ? 2 : false}
+          moreLinkClick='popover'
+          events={
+            currentView === 'timeGridWeek' || currentView === 'dayGridMonth'
+              ? events?.filter(event => !event.extendedProps?.isBadgeOnly) 
+              : events
+          }
           dateClick={onDateClick}
           eventClick={onEventClick}
           eventDisplay='block'
@@ -139,6 +146,26 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
               viewConfig,
             })
           }
+          // Personnalisation des headers de colonnes pour afficher les badges
+          dayHeaderContent={(arg) => {
+            // Uniquement pour la vue semaine
+            if (currentView === 'timeGridWeek' && events) {
+              return generateDayHeaderContent(events, arg.date, arg.text);
+            }
+            // Pour les autres vues, garder le comportement par défaut
+            return arg.text;
+          }}
+          // Personnalisation des cellules de jour pour la vue mois
+          dayCellContent={(arg) => {
+            // Uniquement pour la vue mois
+            if (currentView === 'dayGridMonth' && events) {
+              // Extraire le numéro du jour depuis arg.dayNumberText
+              const dayNumber = arg.dayNumberText || new Date(arg.date).getDate().toString();
+              return generateDayCellContent(events, arg.date, dayNumber);
+            }
+            // Pour les autres vues, garder le comportement par défaut
+            return arg.dayNumberText;
+          }}
           // Callbacks pour détecter les changements de vue et de dates
           datesSet={dateInfo => {
             // Appelé quand les dates visibles changent (navigation ou changement de vue)
@@ -291,7 +318,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         
         /* Time grid lines - make them more subtle */
         .fc-timegrid-slot {
-          height: 3rem;
+          height: 2.5rem; /* Reduced height for 8h-20h */
         }
         
         .fc-timegrid-slot-minor {
@@ -343,14 +370,9 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         }
         
         /* All-day section styling */
-        .fc-daygrid-day-events,
         .fc-timegrid-divider {
           background: hsl(var(--muted) / 0.3);
           border-bottom: 2px solid hsl(var(--border));
-        }
-        
-        .fc-day-grid .fc-row.fc-week {
-          min-height: 2rem;
         }
         
         /* All-day events in week view */
@@ -359,12 +381,27 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           border-bottom: 2px solid hsl(var(--border));
         }
         
+        /* Remove unwanted grid lines in all-day section */
+        .fc-timegrid .fc-daygrid-day {
+          border-left: none !important;
+          border-right: none !important;
+        }
+        
+        .fc-timegrid .fc-daygrid-day-frame {
+          border: none !important;
+        }
+        
         .fc-timegrid .fc-daygrid-day-events {
           min-height: 1.5rem;
           padding: 0.25rem 0;
         }
         
-        /* Style for all-day event badges */
+        /* Hide grid lines but keep events visible */
+        .fc-timegrid .fc-daygrid-day-bg {
+          display: none;
+        }
+        
+        /* Style for all-day events */
         .fc-timegrid .fc-daygrid-event {
           margin: 0.125rem 0.25rem;
           padding: 0 !important;
@@ -372,6 +409,14 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         
         .fc-timegrid .fc-daygrid-event-harness {
           margin: 0;
+        }
+        
+        /* More link for all-day section */
+        .fc-timegrid .fc-daygrid-more-link {
+          color: hsl(var(--primary));
+          font-weight: 500;
+          font-size: 0.75rem;
+          margin-left: 0.25rem;
         }
         
         /* Week view specific - better spacing for overlapping events */
@@ -422,6 +467,20 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         
         .fc-daygrid-day-events {
           margin-top: 0.25rem;
+        }
+        
+        /* Fix day cell content width */
+        .fc-daygrid-day-top {
+          width: 100%;
+        }
+        
+        .fc-daygrid-day-top .fc-daygrid-day-number {
+          width: 100%;
+        }
+        
+        .day-cell-content-wrapper {
+          width: 100%;
+          display: block;
         }
         
         /* Weekend styling */

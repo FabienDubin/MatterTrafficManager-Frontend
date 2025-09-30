@@ -111,6 +111,7 @@ export function tasksToCalendarEvents(
             status: task.status,
             taskType: task.taskType,
             isAllDay: task.isAllDay,
+            isBadgeOnly: true, // Flag pour indiquer que c'est un badge à masquer dans la zone all-day
             description: task.description || '',
             notes: task.notes || '',
             assignedMembers: task.assignedMembers || [],

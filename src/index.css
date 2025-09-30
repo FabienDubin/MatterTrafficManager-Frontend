@@ -98,6 +98,47 @@
   }
 }
 
+/* Calendar Header Badges Styles */
+.day-header-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.125rem;
+}
+
+.day-header-date {
+  font-weight: 600;
+}
+
+/* Month View Day Cell Styles */
+.day-cell-content-wrapper {
+  width: 100%;
+}
+
+.day-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+  min-height: 1.5rem;
+}
+
+.day-cell-number {
+  font-weight: 500;
+}
+
+.day-cell-badges {
+  display: inline-flex;
+  align-items: center;
+  flex: 1;
+}
+
+/* Adjust FullCalendar header cell padding for badges */
+.fc .fc-col-header-cell-cushion {
+  padding: 0.375rem 0.25rem;
+}
+
 /* Sync Indicator Carousel Animation - 3 messages */
 @keyframes slideUp3 {
   0%, 30% {
