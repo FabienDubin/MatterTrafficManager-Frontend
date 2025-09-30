@@ -77,6 +77,8 @@ export function MemberColumn({
       const roundedMinutes = Math.round(minuteOffset / 15) * 15;
 
       const taskData = e.dataTransfer.getData('task');
+      const sourceMemberId = e.dataTransfer.getData('sourceMemberId');
+      
       if (taskData && onTaskDrop) {
         const task = JSON.parse(taskData) as Task;
         const dropDate = new Date(date);
@@ -92,7 +94,9 @@ export function MemberColumn({
           minuteOffset, 
           roundedMinutes, 
           finalTime: dropDate.toTimeString(),
-          dragOffset
+          dragOffset,
+          sourceMemberId,
+          targetMemberId: member.id
         });
 
         // Alertes pour congés et formation (pas pour télétravail)
@@ -102,7 +106,7 @@ export function MemberColumn({
           toast.warning(`Attention : ${member.name} est en formation ce jour`);
         }
 
-        onTaskDrop(task, dropDate);
+        onTaskDrop(task, member.id, dropDate, sourceMemberId);
       }
     },
     [date, onTaskDrop, holidayTask, schoolTask, member.name]
@@ -331,6 +335,7 @@ export function MemberColumn({
                 
                 e.dataTransfer.setData('task', JSON.stringify(pos.task));
                 e.dataTransfer.setData('dragOffsetY', offsetY.toString());
+                e.dataTransfer.setData('sourceMemberId', member.id); // Ajouter le membre source
                 e.dataTransfer.effectAllowed = 'move';
               }}
             />

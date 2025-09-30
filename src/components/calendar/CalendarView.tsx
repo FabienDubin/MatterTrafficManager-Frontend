@@ -108,6 +108,22 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       return () => observer.disconnect();
     }, []);
 
+    // Gérer l'annulation du drag avec ESC pour FullCalendar
+    const escPressedRef = useRef(false);
+    const isDraggingRef = useRef(false);
+    
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape' && isDraggingRef.current) {
+          escPressedRef.current = true;
+          console.log('ESC pressé pendant le drag - le drop sera annulé');
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     return (
       <div className='calendar-container h-full'>
         <FullCalendar
@@ -148,12 +164,27 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           eventDragStart={(info) => {
             // Add dragging class for visual feedback
             info.el.classList.add('fc-dragging');
+            isDraggingRef.current = true;
+            escPressedRef.current = false; // Réinitialiser le flag ESC
           }}
           eventDragStop={(info) => {
             // Remove dragging class
             info.el.classList.remove('fc-dragging');
+            isDraggingRef.current = false;
           }}
-          eventDrop={onEventDrop}
+          eventDrop={(info) => {
+            // Si ESC a été pressé, on annule le drop
+            if (escPressedRef.current) {
+              info.revert();
+              console.log('Drop annulé suite à ESC');
+              escPressedRef.current = false;
+              return;
+            }
+            // Sinon on traite le drop normalement
+            if (onEventDrop) {
+              onEventDrop(info);
+            }
+          }}
           eventResize={onEventResize}
           eventDisplay='block'
           // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views

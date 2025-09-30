@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { Task } from '@/types/task.types';
 import { DayViewProps } from '@/types/calendar.types';
 import { MemberColumn } from './MemberColumn';
@@ -105,6 +105,23 @@ export function DayView({
     };
   }, [dayTasks, members]);
 
+  // Gérer l'annulation du drag avec ESC
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        // Annuler le drag en cours
+        // Le navigateur annule automatiquement le drag quand ESC est pressé
+        // On peut ajouter un feedback visuel si nécessaire
+        const isDragging = document.querySelector('[draggable="true"]:active');
+        if (isDragging) {
+          console.log('Drag annulé avec ESC');
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   return (
     <div className='h-full border border-border rounded-lg overflow-hidden'>
@@ -148,7 +165,7 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
-                    onTaskDrop={(task, newDate) => onTaskDrop?.(task, member.id, newDate)}
+                    onTaskDrop={(task, memberId, newDate, sourceMemberId) => onTaskDrop?.(task, memberId, newDate, sourceMemberId)}
                   />
                 ))}
 
@@ -160,7 +177,7 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
-                    onTaskDrop={(task, newDate) => onTaskDrop?.(task, null, newDate)}
+                    onTaskDrop={(task, memberId, newDate, sourceMemberId) => onTaskDrop?.(task, memberId, newDate, sourceMemberId)}
                   />
                 )}
               </div>

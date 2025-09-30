@@ -76,13 +76,27 @@ export function useOptimisticTaskUpdate(
   const originalTasksRef = useRef<Map<string, Task>>(new Map());
   // Track which tasks have pending updates (to show sync indicator)
   const pendingUpdatesRef = useRef<Set<string>>(new Set());
+  // Track update timestamps to ignore stale responses
+  const updateTimestampsRef = useRef<Map<string, number>>(new Map());
 
   const updateTask = useOptimisticUpdate<Task, TaskUpdatePayload>({
     mutationKey: ['update-task'],
     
     mutationFn: async ({ id, updates }) => {
+      // Record when this update was initiated
+      const updateTimestamp = Date.now();
+      updateTimestampsRef.current.set(id, updateTimestamp);
+      
       // Call the backend API
       const response = await tasksService.updateTask(id, updates);
+      
+      // Check if this response is stale (a newer update has been initiated)
+      const currentTimestamp = updateTimestampsRef.current.get(id);
+      if (currentTimestamp !== updateTimestamp) {
+        // This response is stale, ignore it
+        console.log(`Ignoring stale response for task ${id}`);
+        return null;
+      }
       
       // Check for conflicts in the response
       if (response && 'conflicts' in response && (response as any).conflicts?.length > 0) {
@@ -110,18 +124,22 @@ export function useOptimisticTaskUpdate(
       // Mark task as having pending update
       pendingUpdatesRef.current.add(id);
       
-      // Save original task for potential rollback
-      const originalTask = tasks.find(t => t.id === id);
-      
-      if (originalTask) {
-        originalTasksRef.current.set(id, { ...originalTask });
+      // Only save original if we don't have one already (from a previous pending update)
+      if (!originalTasksRef.current.has(id)) {
+        const originalTask = tasks.find(t => t.id === id);
+        if (originalTask) {
+          originalTasksRef.current.set(id, { ...originalTask });
+        }
       }
       
+      // Get the current task (might have been updated optimistically already)
+      const currentTask = tasks.find(t => t.id === id);
+      
       // Create updated task - THIS IS IMMEDIATE!
-      // Merge only the provided updates with the original task
-      const updatedTask = originalTask 
+      // Merge only the provided updates with the current task
+      const updatedTask = currentTask 
         ? {
-            ...originalTask,
+            ...currentTask,
             ...updates,
             updatedAt: new Date().toISOString()
           }
@@ -166,11 +184,19 @@ export function useOptimisticTaskUpdate(
     },
     
     onSuccess: (data, { id }) => {
+      // If response is null (stale), don't process it
+      if (data === null) {
+        return;
+      }
+      
       // Remove from pending
       pendingUpdatesRef.current.delete(id);
       
       // Clear the original task from ref
       originalTasksRef.current.delete(id);
+      
+      // Clear the timestamp
+      updateTimestampsRef.current.delete(id);
       
       // Check if response has _pendingSync flag (async mode indicator)
       const isAsyncResponse = data && '_pendingSync' in data;

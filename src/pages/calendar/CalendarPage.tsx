@@ -495,7 +495,7 @@ export default function CalendarPage() {
                       description: `${member ? member.name : 'Non assigné'} - ${hour}:00`,
                     });
                   }}
-                  onTaskDrop={(task, newMemberId, newDate) => {
+                  onTaskDrop={(task, newMemberId, newDate, sourceMemberId) => {
                     if (!task.workPeriod) return;
                     
                     // Calculer la durée originale de la tâche en millisecondes
@@ -515,57 +515,43 @@ export default function CalendarPage() {
                     };
 
                     // Gestion du changement de membre
-                    if (newMemberId) {
-                      // Vérifier si c'est vraiment un changement de membre
-                      const currentMembers = task.assignedMembers || [];
-                      const isAlreadyAssigned = currentMembers.includes(newMemberId);
-                      
-                      if (!isAlreadyAssigned) {
-                        // Le membre n'est pas déjà assigné, on l'ajoute ou remplace
-                        if (currentMembers.length > 1) {
-                          // Tâche multi-membres : on ajoute le nouveau membre
-                          updates.assignedMembers = [...currentMembers, newMemberId];
-                        } else {
-                          // Tâche mono-membre ou pas de membre : on remplace
-                          updates.assignedMembers = [newMemberId];
-                        }
-                        
-                        // IMPORTANT: Mettre à jour aussi assignedMembersData pour l'affichage
-                        const newMemberData = members.find(m => m.id === newMemberId);
-                        if (newMemberData) {
-                          if (currentMembers.length > 1 && task.assignedMembersData) {
-                            // Ajouter aux membres existants
-                            updates.assignedMembersData = [...task.assignedMembersData, {
-                              id: newMemberData.id,
-                              name: newMemberData.name,
-                              email: newMemberData.email || '',
-                              teams: Array.isArray(newMemberData.teams) ? newMemberData.teams : []
-                            }];
-                          } else {
-                            // Remplacer par le nouveau membre
-                            updates.assignedMembersData = [{
-                              id: newMemberData.id,
-                              name: newMemberData.name,
-                              email: newMemberData.email || '',
-                              teams: Array.isArray(newMemberData.teams) ? newMemberData.teams : []
-                            }];
-                          }
-                        }
-                      } else if (currentMembers.length > 1) {
-                        // Le membre est déjà assigné parmi d'autres, on ne garde que lui
-                        updates.assignedMembers = [newMemberId];
-                        
-                        // Mettre à jour assignedMembersData pour ne garder que ce membre
-                        const memberData = task.assignedMembersData?.find(m => m.id === newMemberId);
-                        if (memberData) {
-                          updates.assignedMembersData = [memberData];
-                        }
-                      }
-                      // Si le membre est déjà le seul assigné, on ne change rien
-                    } else if (newMemberId === null) {
-                      // Drop sur la colonne non-assigné
+                    const currentMembers = task.assignedMembers || [];
+                    
+                    if (newMemberId === null) {
+                      // Drop sur la colonne non-assigné : retirer tous les membres
                       updates.assignedMembers = [];
                       updates.assignedMembersData = [];
+                    } else if (newMemberId) {
+                      // Drop sur une colonne membre
+                      let updatedMembers = [...currentMembers];
+                      
+                      // Si on a un membre source et qu'il est différent du membre cible
+                      if (sourceMemberId && sourceMemberId !== '' && sourceMemberId !== newMemberId) {
+                        // Retirer le membre source de la liste
+                        updatedMembers = updatedMembers.filter(id => id !== sourceMemberId);
+                      }
+                      
+                      // Si le membre cible n'est pas déjà dans la liste, l'ajouter
+                      if (!updatedMembers.includes(newMemberId)) {
+                        updatedMembers.push(newMemberId);
+                      }
+                      
+                      // Mettre à jour les membres si changement
+                      if (updatedMembers.length !== currentMembers.length || 
+                          !updatedMembers.every(id => currentMembers.includes(id))) {
+                        updates.assignedMembers = updatedMembers;
+                        
+                        // Reconstruire assignedMembersData
+                        updates.assignedMembersData = updatedMembers
+                          .map(memberId => members.find(m => m.id === memberId))
+                          .filter(Boolean)
+                          .map(member => ({
+                            id: member!.id,
+                            name: member!.name,
+                            email: member!.email || '',
+                            teams: Array.isArray(member!.teams) ? member!.teams : []
+                          }));
+                      }
                     }
 
                     taskUpdate.mutate({

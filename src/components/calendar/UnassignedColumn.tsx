@@ -27,11 +27,13 @@ export function UnassignedColumn({
     e.stopPropagation();
     
     const taskData = e.dataTransfer.getData('task');
+    const sourceMemberId = e.dataTransfer.getData('sourceMemberId');
+    
     if (taskData && onTaskDrop) {
       const task = JSON.parse(taskData) as Task;
       const dropDate = new Date(date);
       dropDate.setHours(hour, 0, 0, 0);
-      onTaskDrop(task, dropDate);
+      onTaskDrop(task, null, dropDate, sourceMemberId); // null = non assigné
     }
   }, [date, onTaskDrop]);
 
@@ -111,6 +113,16 @@ export function UnassignedColumn({
                 compact={pos.height < 50}
                 draggable={true}
                 className="h-full border-dashed opacity-90 hover:opacity-100 hover:scale-[1.02] bg-background/80 backdrop-blur-sm"
+                onDragStart={(e) => {
+                  // Capturer l'offset Y du clic par rapport au haut de la tâche
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const offsetY = e.clientY - rect.top;
+                  
+                  e.dataTransfer.setData('task', JSON.stringify(pos.task));
+                  e.dataTransfer.setData('dragOffsetY', offsetY.toString());
+                  e.dataTransfer.setData('sourceMemberId', ''); // Pas de membre source (non assigné)
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
               />
               {pos.height > 70 && (
                 <Badge 
