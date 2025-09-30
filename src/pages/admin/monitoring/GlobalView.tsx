@@ -4,6 +4,15 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { HealthStatusCard } from '@/components/admin/monitoring/cards/HealthStatusCard';
+import { ActiveUsersCard } from '@/components/admin/monitoring/cards/ActiveUsersCard';
+import { RequestRateCard } from '@/components/admin/monitoring/cards/RequestRateCard';
+import { ResponseTimeCard } from '@/components/admin/monitoring/cards/ResponseTimeCard';
+import { RequestTrendChart } from '@/components/admin/monitoring/charts/RequestTrendChart';
+import { CachePerformanceChart } from '@/components/admin/monitoring/charts/CachePerformanceChart';
+import { ServiceLatencyChart } from '@/components/admin/monitoring/charts/ServiceLatencyChart';
+import { SystemLoadChart } from '@/components/admin/monitoring/charts/SystemLoadChart';
+import { DatabaseStatsCard } from '@/components/admin/monitoring/charts/DatabaseStatsCard';
 import {
   Activity,
   Users,
@@ -131,96 +140,10 @@ export default function GlobalView() {
 
       {/* System Status Overview */}
       <div className="grid gap-4 md:grid-cols-4">
-        {/* Overall Health */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Santé Globale</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                {isServerDown ? (
-                  <XCircle className="h-8 w-8 text-red-500" />
-                ) : health.redis === 'operational' && health.api === 'operational' ? (
-                  <CheckCircle className="h-8 w-8 text-green-500" />
-                ) : (
-                  <AlertCircle className="h-8 w-8 text-yellow-500" />
-                )}
-                <div>
-                  <p className="text-2xl font-bold">
-                    {isServerDown ? 'Hors ligne' : 
-                     health.redis === 'operational' && health.api === 'operational' ? 'Optimal' : 'Dégradé'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {Object.values(health).filter(s => s === 'operational').length}/4 services actifs
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Active Users */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Utilisateurs Actifs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Users className="h-8 w-8 text-blue-500" />
-              <div>
-                <p className="text-2xl font-bold">{activity?.activeUsers || 0}</p>
-                <p className="text-xs text-muted-foreground">
-                  Dans les 5 dernières minutes
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Request Rate */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Débit Requêtes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Activity className="h-8 w-8 text-purple-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {activity?.requestsPerMinute || 0}
-                  <span className="text-sm font-normal text-muted-foreground ml-1">req/min</span>
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Moyenne sur 60 secondes
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Response Time */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Temps de Réponse</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Zap className="h-8 w-8 text-yellow-500" />
-              <div>
-                <p className="text-2xl font-bold">
-                  {performance.avgLatency}ms
-                  {performance.avgLatency < 100 && (
-                    <TrendingDown className="h-4 w-4 text-green-500 inline ml-2" />
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  P95: {performance.p95Latency}ms
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <HealthStatusCard health={health} isServerDown={isServerDown} />
+        <ActiveUsersCard activity={activity} />
+        <RequestRateCard activity={activity} />
+        <ResponseTimeCard performance={performance} />
       </div>
 
       <Tabs defaultValue="performance" className="space-y-4">
@@ -245,225 +168,16 @@ export default function GlobalView() {
 
         <TabsContent value="performance" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {/* Request Trend Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Évolution du Trafic</CardTitle>
-                <CardDescription>
-                  Requêtes et latence sur les 20 dernières minutes
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ResponsiveContainer width="100%" height={200}>
-                  <LineChart data={requestTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
-                    <YAxis yAxisId="left" />
-                    <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
-                    <Line 
-                      yAxisId="left"
-                      type="monotone" 
-                      dataKey="requests" 
-                      stroke="#8884d8" 
-                      name="Requêtes"
-                    />
-                    <Line 
-                      yAxisId="right"
-                      type="monotone" 
-                      dataKey="avgLatency" 
-                      stroke="#82ca9d" 
-                      name="Latence (ms)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Cache Performance */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Performance du Cache</CardTitle>
-                <CardDescription>
-                  Taux de réussite et distribution
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span className="text-sm font-medium">Hit Rate</span>
-                      <span className="text-sm text-muted-foreground">{cache.hitRate}%</span>
-                    </div>
-                    <Progress value={cache.hitRate} className="h-2" />
-                  </div>
-                  
-                  <ResponsiveContainer width="100%" height={150}>
-                    <PieChart>
-                      <Pie
-                        data={cacheDistribution}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={40}
-                        outerRadius={60}
-                        paddingAngle={5}
-                        dataKey="value"
-                      >
-                        {cacheDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  
-                  <div className="flex justify-around text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded" />
-                      <span>Hits: {Math.round(cache.totalRequests * cache.hitRate / 100)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-red-500 rounded" />
-                      <span>Misses: {Math.round(cache.totalRequests * (100 - cache.hitRate) / 100)}</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RequestTrendChart requestTrendData={requestTrendData} />
+            <CachePerformanceChart cache={cache} cacheDistribution={cacheDistribution} />
           </div>
-
-          {/* Service Latency Comparison */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Comparaison des Latences</CardTitle>
-              <CardDescription>
-                Performance des différents services
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {[
-                  { service: 'Redis Cache', latency: 12, status: 'optimal' },
-                  { service: 'Notion API', latency: 450, status: 'normal' },
-                  { service: 'MongoDB', latency: 35, status: 'optimal' },
-                  { service: 'API Backend', latency: performance.avgLatency, status: performance.avgLatency < 100 ? 'optimal' : 'normal' },
-                ].map((service) => (
-                  <div key={service.service} className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        service.status === 'optimal' ? "bg-green-500" : "bg-yellow-500"
-                      )} />
-                      <span className="text-sm font-medium w-32">{service.service}</span>
-                    </div>
-                    <div className="flex items-center gap-2 flex-1 max-w-md">
-                      <Progress 
-                        value={Math.min((service.latency / 500) * 100, 100)} 
-                        className="h-2"
-                      />
-                      <span className="text-sm text-muted-foreground w-16 text-right">
-                        {service.latency}ms
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <ServiceLatencyChart performance={performance} />
         </TabsContent>
 
         <TabsContent value="resources" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
-            {/* System Load */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Charge Système</CardTitle>
-                <CardDescription>
-                  Utilisation des ressources serveur
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {systemLoad.map((load) => (
-                    <div key={load.metric}>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">{load.metric}</span>
-                        <span className={cn(
-                          "text-sm",
-                          load.current > load.threshold ? "text-red-600" : "text-muted-foreground"
-                        )}>
-                          {load.current}% / {load.threshold}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={load.current} 
-                        className={cn(
-                          "h-2",
-                          load.current > load.threshold && "[&>div]:bg-red-500"
-                        )}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Database Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Base de Données</CardTitle>
-                <CardDescription>
-                  Statistiques MongoDB et Redis
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Database className="h-4 w-4 text-green-500" />
-                      <span className="text-sm font-medium">MongoDB</span>
-                    </div>
-                    <Badge variant="secondary">
-                      {health.mongodb === 'operational' ? 'Actif' : 'Hors ligne'}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Documents</p>
-                      <p className="font-medium">1,245</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Taille</p>
-                      <p className="font-medium">45.2 MB</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Database className="h-4 w-4 text-red-500" />
-                        <span className="text-sm font-medium">Redis</span>
-                      </div>
-                      <Badge variant="secondary">
-                        {health.redis === 'operational' ? 'Actif' : 'Hors ligne'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 text-sm mt-4">
-                      <div>
-                        <p className="text-muted-foreground">Clés</p>
-                        <p className="font-medium">{cache.totalRequests}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Mémoire</p>
-                        <p className="font-medium">{cache.memory}%</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <SystemLoadChart systemLoad={systemLoad} />
+            <DatabaseStatsCard health={health} cache={cache} />
           </div>
 
           {/* Network Stats */}

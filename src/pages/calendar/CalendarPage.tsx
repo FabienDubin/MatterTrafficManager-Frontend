@@ -16,6 +16,9 @@ import { LogOut, Calendar, Settings } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
+import { useCalendarEvents } from '@/hooks/calendar/useCalendarEvents';
+import { useCalendarNavigation } from '@/hooks/calendar/useCalendarNavigation';
+import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManagement';
 import { SyncIndicator } from '@/components/shared/SyncIndicator';
 import { toast } from 'sonner';
 import { tasksToCalendarEvents } from '@/utils/taskMapper';
@@ -40,9 +43,6 @@ export default function CalendarPage() {
   // Get calendar configuration
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
 
-  // État pour le sheet d'édition
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [sheetOpen, setSheetOpen] = useState(false);
 
   // Période actuellement visible dans le calendrier (pour debug seulement)
   const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
@@ -71,6 +71,37 @@ export default function CalendarPage() {
     tasksMapRef,
     // NO onMutationSuccess - we don't want to refresh everything after each update
   });
+
+  // Use calendar hooks
+  const {
+    selectedTask,
+    setSelectedTask,
+    sheetOpen,
+    setSheetOpen,
+    handleTaskUpdate,
+    handleTaskDelete,
+  } = useCalendarTaskManagement(taskUpdate, tasksMapRef, setTasks);
+
+  const {
+    handleEventClick,
+    handleEventDrop,
+    handleEventResize,
+  } = useCalendarEvents(setSelectedTask, setSheetOpen, taskUpdate);
+
+  const {
+    handleViewChange,
+    handleDateNavigate,
+    handleDatesChange,
+  } = useCalendarNavigation(
+    currentView,
+    currentDate,
+    setCurrentView,
+    setCurrentDate,
+    calendarRef,
+    setVisiblePeriod,
+    loadedRanges,
+    fetchAdditionalRange
+  );
 
   // Track if initial load is complete
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -191,195 +222,6 @@ export default function CalendarPage() {
       description: `Vous avez cliqué sur ${arg.dateStr}`,
     });
   };
-
-  const handleEventClick = (arg: any) => {
-    const task: Task = {
-      id: arg.event.id,
-      title: arg.event.title,
-      status: arg.event.extendedProps.status,
-      description: arg.event.extendedProps.description,
-      notes: arg.event.extendedProps.notes,
-      assignedMembers: arg.event.extendedProps.assignedMembers,
-      assignedMembersData: arg.event.extendedProps.assignedMembersData,
-      projectId: arg.event.extendedProps.projectId,
-      projectData: arg.event.extendedProps.projectData,
-      clientId: arg.event.extendedProps.clientId,
-      clientData: arg.event.extendedProps.clientData,
-      teams: arg.event.extendedProps.teams,
-      teamsData: arg.event.extendedProps.teamsData,
-      involvedTeamIds: arg.event.extendedProps.involvedTeamIds,
-      involvedTeamsData: arg.event.extendedProps.involvedTeamsData,
-      workPeriod: {
-        startDate: arg.event.startStr,
-        endDate: arg.event.endStr,
-      },
-    };
-
-    // Ouvrir le sheet d'édition avec la tâche sélectionnée
-    setSelectedTask(task);
-    setSheetOpen(true);
-  };
-
-  // Gérer le changement de période visible dans le calendrier
-  // Handlers pour le sheet d'édition - Use optimistic updates
-  const handleTaskUpdate = async (id: string, data: Partial<Task>) => {
-    // Use optimistic update for INSTANT UI feedback
-    // No need to await - the update is immediate in the UI
-    taskUpdate.mutate({
-      id,
-      updates: data,
-    });
-    // That's it! No refresh needed - polling handles sync every 2 min
-  };
-
-  const handleTaskDelete = async (id: string) => {
-    try {
-      // For delete, we still call the service directly
-      // TODO: Create optimistic delete hook if needed
-      await tasksService.deleteTask(id);
-
-      // Remove from local state immediately for better UX
-      tasksMapRef.current.delete(id);
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-
-      // No full refresh - let polling handle any other changes
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-      throw error;
-    }
-  };
-
-  // Handler pour le drag & drop dans FullCalendar (vues Week/Month)
-  const handleEventDrop = (info: any) => {
-    const taskId = info.event.id;
-    const newStart = info.event.start;
-    const newEnd = info.event.end || newStart;
-    
-    // Mettre à jour les dates avec l'update optimiste
-    taskUpdate.mutate({
-      id: taskId,
-      updates: {
-        workPeriod: {
-          startDate: newStart.toISOString(),
-          endDate: newEnd.toISOString(),
-        },
-      },
-    });
-    
-    // Pas de toast - les conflits seront affichés via les badges après le retour serveur
-  };
-
-  // Handler pour le resize dans FullCalendar
-  const handleEventResize = (info: any) => {
-    const taskId = info.event.id;
-    const newStart = info.event.start;
-    const newEnd = info.event.end || newStart;
-    
-    // Mettre à jour la durée avec l'update optimiste
-    taskUpdate.mutate({
-      id: taskId,
-      updates: {
-        workPeriod: {
-          startDate: newStart.toISOString(),
-          endDate: newEnd.toISOString(),
-        },
-      },
-    });
-  };
-
-  // Handle view change
-  const handleViewChange = (view: CalendarViewType) => {
-    setCurrentView(view);
-
-    // Update FullCalendar view if needed AND go to current date
-    if (view !== 'day' && calendarRef.current) {
-      const fcView = view === 'week' ? 'timeGridWeek' : 'dayGridMonth';
-      const api = calendarRef.current.getApi();
-      
-      // Use changeView with date parameter for atomic update
-      // This ensures the view and date change together
-      api.changeView(fcView, currentDate);
-    }
-  };
-
-  // Handle date navigation
-  const handleDateNavigate = (direction: 'prev' | 'next' | 'today') => {
-    let newDate = currentDate;
-
-    if (direction === 'today') {
-      newDate = new Date();
-    } else {
-      const increment = direction === 'next' ? 1 : -1;
-
-      switch (currentView) {
-        case 'day':
-          newDate = addDays(currentDate, increment);
-          break;
-        case 'week':
-          newDate = addDays(currentDate, increment * 7);
-          break;
-        case 'month':
-          newDate = addDays(currentDate, increment * 30);
-          break;
-      }
-    }
-
-    setCurrentDate(newDate);
-
-    // Update FullCalendar if not in day view
-    if (currentView !== 'day' && calendarRef.current) {
-      calendarRef.current.getApi().gotoDate(newDate);
-    }
-  };
-
-  const handleDatesChange = useCallback(
-    (start: Date, end: Date) => {
-      setVisiblePeriod({ start, end });
-
-      // Check if we're getting close to the edge of loaded data
-      // We want to preload before user reaches the edge for smooth experience
-      const marginDays = 7; // Preload when within 7 days of edge
-
-      // Check if any loaded range covers the visible period
-      const isCurrentlyCovered = loadedRanges.some(
-        range => start >= range.start && end <= range.end
-      );
-
-      if (!isCurrentlyCovered) {
-        // Need to load data for current view
-        const extendedStart = addDays(start, -marginDays);
-        const extendedEnd = addDays(end, marginDays);
-        fetchAdditionalRange(extendedStart, extendedEnd);
-        return;
-      }
-
-      // Check if we're approaching the edges
-      const earliestLoaded = loadedRanges.reduce(
-        (min, range) => (!min || range.start < min ? range.start : min),
-        null as Date | null
-      );
-
-      const latestLoaded = loadedRanges.reduce(
-        (max, range) => (!max || range.end > max ? range.end : max),
-        null as Date | null
-      );
-
-      if (earliestLoaded && start < addDays(earliestLoaded, marginDays)) {
-        // Approaching the beginning, load more past data
-        const newStart = addDays(earliestLoaded, -30); // Load 30 more days before
-        const newEnd = earliestLoaded;
-        fetchAdditionalRange(newStart, newEnd);
-      }
-
-      if (latestLoaded && end > addDays(latestLoaded, -marginDays)) {
-        // Approaching the end, load more future data
-        const newStart = latestLoaded;
-        const newEnd = addDays(latestLoaded, 30); // Load 30 more days after
-        fetchAdditionalRange(newStart, newEnd);
-      }
-    },
-    [loadedRanges, fetchAdditionalRange]
-  );
 
   return (
     <div className='flex flex-col h-screen bg-background'>
