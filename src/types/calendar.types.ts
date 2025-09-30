@@ -38,6 +38,7 @@ export interface DayViewProps {
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (member: Member | null, date: Date, hour: number) => void;
   onTaskDrop?: (task: Task, newMember: string | null, newDate: Date, sourceMember?: string) => void;
+  onTaskResize?: (task: TaskWithConflicts, newStartDate: Date, newEndDate: Date) => void;
 }
 
 export interface MemberColumnProps {
@@ -48,6 +49,7 @@ export interface MemberColumnProps {
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onTaskDrop?: (task: Task, memberId: string, newDate: Date, sourceMemberId?: string) => void;
+  onTaskResize?: (task: TaskWithConflicts, newStartDate: Date, newEndDate: Date) => void;
   holidayTask?: Task; // Tâche de congé pour ce membre
   remoteTask?: Task;  // Tâche de télétravail pour ce membre
   schoolTask?: Task;  // Tâche de formation pour ce membre
@@ -60,6 +62,7 @@ export interface UnassignedColumnProps {
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onTaskDrop?: (task: Task, memberId: string | null, newDate: Date, sourceMemberId?: string) => void;
+  onTaskResize?: (task: TaskWithConflicts, newStartDate: Date, newEndDate: Date) => void;
 }
 
 export interface TimeGridProps {

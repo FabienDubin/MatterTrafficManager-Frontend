@@ -1,6 +1,7 @@
-import { useMemo, useCallback, useRef, useEffect } from 'react';
+import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
 import { Task } from '@/types/task.types';
 import { Member, MemberColumnProps, TaskPosition } from '@/types/calendar.types';
+import { TaskWithConflicts } from '@/types/task.types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { TaskCard } from './TaskCard';
@@ -19,6 +20,7 @@ export function MemberColumn({
   onTaskClick,
   onTimeSlotClick,
   onTaskDrop,
+  onTaskResize,
   holidayTask,
   remoteTask,
   schoolTask,
@@ -26,19 +28,125 @@ export function MemberColumn({
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragScrollInterval = useRef<NodeJS.Timeout | null>(null);
   
+  // État pour la gestion du resize
+  const [resizingTask, setResizingTask] = useState<{
+    taskId: string;
+    type: 'top' | 'bottom';
+    startY: number;
+    originalStartDate: Date;
+    originalEndDate: Date;
+    tempStartDate?: Date;
+    tempEndDate?: Date;
+  } | null>(null);
+
   // Calculate task positions to avoid overlaps
   const taskPositions = useMemo(() => {
-    return calculateTaskPositions(tasks, date);
-  }, [tasks, date]);
+    const positions = calculateTaskPositions(tasks, date);
+    
+    // Override position pour la tâche en cours de resize
+    if (resizingTask && resizingTask.tempStartDate && resizingTask.tempEndDate) {
+      const resizeIndex = positions.findIndex(p => p.task.id === resizingTask.taskId);
+      if (resizeIndex !== -1) {
+        // Recalculer la position avec les dates temporaires
+        const startHour = resizingTask.tempStartDate.getHours() + resizingTask.tempStartDate.getMinutes() / 60;
+        const endHour = resizingTask.tempEndDate.getHours() + resizingTask.tempEndDate.getMinutes() / 60;
+        
+        const viewportHeight = window.innerHeight;
+        const hourHeight = (viewportHeight - 200) / 13;
+        
+        positions[resizeIndex] = {
+          ...positions[resizeIndex],
+          top: (startHour - 8) * hourHeight,
+          height: Math.max((endHour - startHour) * hourHeight, 20)
+        };
+      }
+    }
+    
+    return positions;
+  }, [tasks, date, resizingTask]);
 
-  // Auto-scroll pendant le drag et gestion ESC
+  // Gestion du resize avec les événements mouse
   useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizingTask) return;
+      
+      const viewportHeight = window.innerHeight;
+      const hourHeight = (viewportHeight - 200) / 13;
+      
+      // Calculer le déplacement en pixels
+      const deltaY = e.clientY - resizingTask.startY;
+      
+      // Convertir en minutes (1 heure = hourHeight pixels)
+      const deltaMinutes = (deltaY / hourHeight) * 60;
+      
+      // Arrondir aux 15 minutes
+      const roundedDeltaMinutes = Math.round(deltaMinutes / 15) * 15;
+      
+      let newStartDate = new Date(resizingTask.originalStartDate);
+      let newEndDate = new Date(resizingTask.originalEndDate);
+      
+      if (resizingTask.type === 'top') {
+        // Resize du haut - modifier startDate
+        newStartDate = new Date(resizingTask.originalStartDate.getTime() + roundedDeltaMinutes * 60000);
+        
+        // Contraintes : 8h minimum, ne pas dépasser endDate - 15min
+        const minDate = new Date(date);
+        minDate.setHours(8, 0, 0, 0);
+        const maxDate = new Date(resizingTask.originalEndDate.getTime() - 15 * 60000);
+        
+        newStartDate = new Date(Math.max(minDate.getTime(), Math.min(maxDate.getTime(), newStartDate.getTime())));
+      } else {
+        // Resize du bas - modifier endDate
+        newEndDate = new Date(resizingTask.originalEndDate.getTime() + roundedDeltaMinutes * 60000);
+        
+        // Contraintes : 20h maximum, ne pas être avant startDate + 15min
+        const maxDate = new Date(date);
+        maxDate.setHours(20, 0, 0, 0);
+        const minDate = new Date(resizingTask.originalStartDate.getTime() + 15 * 60000);
+        
+        newEndDate = new Date(Math.max(minDate.getTime(), Math.min(maxDate.getTime(), newEndDate.getTime())));
+      }
+      
+      // Contrainte globale : durée maximale de 12h
+      const maxDuration = 12 * 60 * 60 * 1000; // 12 heures en ms
+      if (newEndDate.getTime() - newStartDate.getTime() > maxDuration) {
+        if (resizingTask.type === 'top') {
+          newStartDate = new Date(newEndDate.getTime() - maxDuration);
+        } else {
+          newEndDate = new Date(newStartDate.getTime() + maxDuration);
+        }
+      }
+      
+      // Mettre à jour l'état temporaire
+      setResizingTask(prev => prev ? {
+        ...prev,
+        tempStartDate: newStartDate,
+        tempEndDate: newEndDate
+      } : null);
+    };
+    
+    const handleMouseUp = () => {
+      if (resizingTask && resizingTask.tempStartDate && resizingTask.tempEndDate && onTaskResize) {
+        // Finaliser le resize
+        const taskToResize = tasks.find(t => t.id === resizingTask.taskId);
+        if (taskToResize) {
+          onTaskResize(taskToResize as TaskWithConflicts, resizingTask.tempStartDate, resizingTask.tempEndDate);
+        }
+      }
+      setResizingTask(null);
+    };
+    
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Annuler le resize en cours
+        if (resizingTask) {
+          setResizingTask(null);
+          return;
+        }
+        
         // Annuler le drag en cours
         const draggedElement = document.querySelector('[draggable="true"]:active');
         if (draggedElement) {
-          // Force le navigateur à annuler le drag
           const event = new DragEvent('dragend', {
             bubbles: true,
             cancelable: true,
@@ -48,14 +156,37 @@ export function MemberColumn({
       }
     };
 
+    if (resizingTask) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+    
     document.addEventListener('keydown', handleEscape);
 
     return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('keydown', handleEscape);
       if (dragScrollInterval.current) {
         clearInterval(dragScrollInterval.current);
       }
     };
+  }, [resizingTask, tasks, date, onTaskResize]);
+
+  // Handler pour démarrer le resize
+  const handleResizeStart = useCallback((e: React.MouseEvent, type: 'top' | 'bottom', task: TaskWithConflicts) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!task.workPeriod) return;
+    
+    setResizingTask({
+      taskId: task.id,
+      type,
+      startY: e.clientY,
+      originalStartDate: new Date(task.workPeriod.startDate),
+      originalEndDate: new Date(task.workPeriod.endDate)
+    });
   }, []);
 
   // Handle drop on time slot
@@ -327,6 +458,7 @@ export function MemberColumn({
               showTime={true}
               compact={pos.height < 50}
               draggable={true}
+              resizable={true}
               className='h-full hover:scale-[1.02]'
               onDragStart={(e) => {
                 // Capturer l'offset Y du clic par rapport au haut de la tâche
@@ -338,6 +470,7 @@ export function MemberColumn({
                 e.dataTransfer.setData('sourceMemberId', member.id); // Ajouter le membre source
                 e.dataTransfer.effectAllowed = 'move';
               }}
+              onResizeStart={handleResizeStart}
             />
           </div>
         ))}

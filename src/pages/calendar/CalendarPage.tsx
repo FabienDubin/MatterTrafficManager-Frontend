@@ -401,6 +401,18 @@ export default function CalendarPage() {
                       updates,
                     });
                   }}
+                  onTaskResize={(task, newStartDate, newEndDate) => {
+                    // Resize de la tâche avec mise à jour optimiste
+                    taskUpdate.mutate({
+                      id: task.id,
+                      updates: {
+                        workPeriod: {
+                          startDate: newStartDate.toISOString(),
+                          endDate: newEndDate.toISOString(),
+                        },
+                      },
+                    });
+                  }}
                 />
               ) : (
                 <CalendarView

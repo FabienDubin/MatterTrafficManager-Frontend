@@ -18,6 +18,7 @@ export function DayView({
   onTaskClick,
   onTimeSlotClick,
   onTaskDrop,
+  onTaskResize,
 }: DayViewProps) {
   // Filtrer les tâches pour la journée actuelle
   const dayTasks = useMemo(() => {
@@ -166,6 +167,7 @@ export function DayView({
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) => onTaskDrop?.(task, memberId, newDate, sourceMemberId)}
+                    onTaskResize={onTaskResize}
                   />
                 ))}
 
@@ -178,6 +180,7 @@ export function DayView({
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) => onTaskDrop?.(task, memberId, newDate, sourceMemberId)}
+                    onTaskResize={onTaskResize}
                   />
                 )}
               </div>

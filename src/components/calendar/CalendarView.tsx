@@ -147,6 +147,12 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           aspectRatio={1.8}
           weekends={showWeekends}
           editable={true}
+          eventResizableFromStart={true}
+          eventDurationEditable={true}
+          eventConstraint={{
+            startTime: '08:00',
+            endTime: '20:00',
+          }}
           droppable={true}
           selectable={true}
           selectMirror={true}
@@ -185,7 +191,20 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
               onEventDrop(info);
             }
           }}
-          eventResize={onEventResize}
+          eventResizeStart={(info) => {
+            console.log('Resize start:', info.event.title);
+            // TODO: Task 2 - Afficher tooltip shadcn
+          }}
+          eventResize={(info) => {
+            console.log('Resize:', info.event.title, 'New duration:', info.event.end);
+            if (onEventResize) {
+              onEventResize(info);
+            }
+          }}
+          eventResizeStop={(info) => {
+            console.log('Resize stop:', info.event.title);
+            // TODO: Task 2 - Masquer tooltip
+          }}
           eventDisplay='block'
           // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
           eventContent={eventInfo =>

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback, useRef } from 'react';
 import { Task, TaskWithConflicts } from '@/types/task.types';
 import { ViewConfig } from '@/types/calendar.types';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,9 @@ export interface TaskCardProps {
   style?: React.CSSProperties;
   draggable?: boolean;
   onDragStart?: (e: React.DragEvent) => void;
+  resizable?: boolean;
+  onResizeStart?: (e: React.MouseEvent, type: 'top' | 'bottom', task: TaskWithConflicts) => void;
+  onTaskResize?: (task: TaskWithConflicts, newStartDate: Date, newEndDate: Date) => void;
 }
 
 /**
@@ -37,6 +40,8 @@ export function TaskCard({
   style,
   draggable = false,
   onDragStart,
+  resizable = false,
+  onResizeStart,
 }: TaskCardProps) {
   const { getClientColor, isColorsLoaded } = useClientColors();
   const { theme } = useTheme();
@@ -73,6 +78,9 @@ export function TaskCard({
 
   const tooltipTitle = `${task.title}${timeString ? '\n' + timeString : ''}`;
 
+  // État simple pour l'affichage des handles
+  const [isHovering, setIsHovering] = useState(false);
+
   return (
     <div
       className={cn(
@@ -90,6 +98,8 @@ export function TaskCard({
       onDragStart={draggable ? handleDragStart : undefined}
       onClick={onClick}
       title={tooltipTitle}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
       {/* Badges de conflits et télétravail */}
       {task.conflicts && task.conflicts.length > 0 && (
@@ -99,6 +109,35 @@ export function TaskCard({
         <TTIndicator 
           memberName={task.assignedMembersData?.[0]?.name}
         />
+      )}
+
+      {/* Handles de resize - seulement si resizable et pas compact */}
+      {resizable && !compact && isHovering && (
+        <>
+          {/* Handle resize haut */}
+          <div
+            className={cn(
+              'absolute top-0 left-0 right-0 h-1 cursor-ns-resize',
+              'hover:bg-primary/30 transition-colors',
+              'flex items-center justify-center'
+            )}
+            onMouseDown={(e) => onResizeStart?.(e, 'top', task)}
+          >
+            <div className="w-6 h-0.5 bg-primary/60 rounded-full" />
+          </div>
+          
+          {/* Handle resize bas */}
+          <div
+            className={cn(
+              'absolute bottom-0 left-0 right-0 h-1 cursor-ns-resize',
+              'hover:bg-primary/30 transition-colors',
+              'flex items-center justify-center'
+            )}
+            onMouseDown={(e) => onResizeStart?.(e, 'bottom', task)}
+          >
+            <div className="w-6 h-0.5 bg-primary/60 rounded-full" />
+          </div>
+        </>
       )}
       
       <div className='flex flex-col overflow-hidden'>
