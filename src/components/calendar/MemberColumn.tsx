@@ -21,6 +21,7 @@ export function MemberColumn({
   viewConfig,
   onTaskClick,
   onTimeSlotClick,
+  onTimeSlotSelect,
   onTaskDrop,
   onTaskResize,
   holidayTask,
@@ -29,7 +30,8 @@ export function MemberColumn({
 }: MemberColumnProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragScrollInterval = useRef<NodeJS.Timeout | null>(null);
-  
+  const timeSlotsRef = useRef<HTMLDivElement>(null);
+
   // État pour la gestion du resize
   const [resizingTask, setResizingTask] = useState<{
     taskId: string;
@@ -39,6 +41,14 @@ export function MemberColumn({
     originalEndDate: Date;
     tempStartDate?: Date;
     tempEndDate?: Date;
+  } | null>(null);
+
+  // État pour la sélection (click & drag)
+  const [selecting, setSelecting] = useState<{
+    startY: number;
+    currentY: number;
+    startHour: number;
+    startMinute: number;
   } | null>(null);
 
   // État pour le tooltip de resize
@@ -332,6 +342,102 @@ export function MemberColumn({
     [date, onTimeSlotClick]
   );
 
+  // Gestion du click & drag pour sélection de plage horaire
+  const handleSelectionStart = useCallback(
+    (e: React.MouseEvent, containerRef: HTMLElement) => {
+      // Ne pas démarrer la sélection si on clique sur une tâche
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-task-card]')) {
+        return;
+      }
+
+      e.preventDefault();
+
+      const rect = containerRef.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const hourHeight = (viewportHeight - 200) / 13;
+
+      const y = e.clientY - rect.top;
+      const totalMinutes = (y / hourHeight) * 60;
+      const startHour = Math.floor(totalMinutes / 60) + 8;
+      const startMinute = Math.round((totalMinutes % 60) / 15) * 15; // Snap to 15min
+
+      console.log('🖱️ Sélection démarrée:', { startHour, startMinute, y });
+
+      setSelecting({
+        startY: e.clientY,
+        currentY: e.clientY,
+        startHour,
+        startMinute,
+      });
+    },
+    []
+  );
+
+  const handleSelectionMove = useCallback((e: MouseEvent) => {
+    if (!selecting) return;
+
+    setSelecting(prev =>
+      prev ? { ...prev, currentY: e.clientY } : null
+    );
+  }, [selecting]);
+
+  const handleSelectionEnd = useCallback(() => {
+    if (!selecting || !onTimeSlotSelect) {
+      setSelecting(null);
+      return;
+    }
+
+    const viewportHeight = window.innerHeight;
+    const hourHeight = (viewportHeight - 200) / 13;
+
+    // Calculer la différence en minutes
+    const deltaY = selecting.currentY - selecting.startY;
+    const deltaMinutes = (deltaY / hourHeight) * 60;
+    const roundedDeltaMinutes = Math.round(deltaMinutes / 15) * 15;
+
+    // Créer les dates de début et fin
+    const startDate = new Date(date);
+    startDate.setHours(selecting.startHour, selecting.startMinute, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setMinutes(endDate.getMinutes() + Math.abs(roundedDeltaMinutes));
+
+    // Si drag vers le haut, inverser les dates
+    const finalStartDate = roundedDeltaMinutes < 0 ? endDate : startDate;
+    const finalEndDate = roundedDeltaMinutes < 0 ? startDate : endDate;
+
+    // Assurer une durée minimale de 30 minutes
+    const durationMs = finalEndDate.getTime() - finalStartDate.getTime();
+    if (durationMs < 30 * 60 * 1000) {
+      finalEndDate.setMinutes(finalEndDate.getMinutes() + 30);
+    }
+
+    console.log('✅ Sélection terminée:', {
+      start: finalStartDate,
+      end: finalEndDate,
+      duration: `${Math.round(durationMs / 60000)} min`,
+    });
+
+    // Appeler le callback avec les dates
+    onTimeSlotSelect(member, finalStartDate, finalEndDate);
+
+    setSelecting(null);
+  }, [selecting, date, member, onTimeSlotSelect]);
+
+  // Gérer les événements mouse au niveau global pendant la sélection
+  useEffect(() => {
+    if (!selecting) return;
+
+    window.addEventListener('mousemove', handleSelectionMove);
+    window.addEventListener('mouseup', handleSelectionEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleSelectionMove);
+      window.removeEventListener('mouseup', handleSelectionEnd);
+    };
+  }, [selecting, handleSelectionMove, handleSelectionEnd]);
+
   // Get member initials for avatar
   const getInitials = (name: string) => {
     return name
@@ -449,7 +555,15 @@ export function MemberColumn({
       </div>
 
       {/* Time slots with tasks */}
-      <div className='relative'>
+      <div
+        ref={timeSlotsRef}
+        className='relative'
+        onMouseDown={(e) => {
+          if (timeSlotsRef.current) {
+            handleSelectionStart(e, timeSlotsRef.current);
+          }
+        }}
+      >
         {/* Hour slots for drop zones */}
         {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => {
           const slotHeight = `calc((100vh - 200px) / 13)`;
@@ -474,6 +588,7 @@ export function MemberColumn({
           <div
             key={pos.task.id}
             className='absolute'
+            data-task-card
             style={{
               top: `${pos.top}px`,
               height: `${pos.height}px`,
@@ -505,8 +620,31 @@ export function MemberColumn({
             />
           </div>
         ))}
+
+        {/* Overlay de sélection */}
+        {selecting && (() => {
+          const viewportHeight = window.innerHeight;
+          const hourHeight = (viewportHeight - 200) / 13;
+
+          const deltaY = selecting.currentY - selecting.startY;
+          const startOffset = (selecting.startHour - 8) * hourHeight + (selecting.startMinute / 60) * hourHeight;
+
+          const height = Math.abs(deltaY);
+          const top = deltaY < 0 ? startOffset + deltaY : startOffset;
+
+          return (
+            <div
+              className='absolute left-0 right-0 bg-primary/20 pointer-events-none'
+              style={{
+                top: `${top}px`,
+                height: `${height}px`,
+                zIndex: 100,
+              }}
+            />
+          );
+        })()}
       </div>
-      
+
       {/* Tooltip de redimensionnement - Rendu via portal */}
       {resizeTooltip?.visible && ReactDOM.createPortal(
         <div

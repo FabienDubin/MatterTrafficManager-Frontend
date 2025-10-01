@@ -17,6 +17,7 @@ export function DayView({
   viewConfig,
   onTaskClick,
   onTimeSlotClick,
+  onTimeSlotSelect,
   onTaskDrop,
   onTaskResize,
 }: DayViewProps) {
@@ -169,6 +170,7 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
+                    onTimeSlotSelect={(m, startDate, endDate) => onTimeSlotSelect?.(m, startDate, endDate)}
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
                       onTaskDrop?.(task, memberId, newDate, sourceMemberId)
                     }
@@ -184,6 +186,7 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
+                    onTimeSlotSelect={(startDate, endDate) => onTimeSlotSelect?.(null, startDate, endDate)}
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
                       onTaskDrop?.(task, memberId, newDate, sourceMemberId)
                     }

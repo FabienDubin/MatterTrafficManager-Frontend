@@ -19,6 +19,7 @@ interface CalendarViewProps {
   onNavLinkDayClick?: (date: Date) => void;
   onEventDrop?: (info: any) => void;
   onEventResize?: (info: any) => void;
+  onSelect?: (info: any) => void;
   currentView?: 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay';
   currentDate?: Date;
   showWeekends?: boolean;
@@ -35,6 +36,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       onNavLinkDayClick,
       onEventDrop,
       onEventResize,
+      onSelect,
       currentView = 'timeGridWeek',
       currentDate,
       showWeekends = true,
@@ -166,6 +168,17 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           droppable={true}
           selectable={true}
           selectMirror={true}
+          select={info => {
+            console.log('📅 Sélection calendrier:', {
+              start: info.start,
+              end: info.end,
+              allDay: info.allDay,
+              view: info.view.type,
+            });
+            if (onSelect) {
+              onSelect(info);
+            }
+          }}
           eventDragMinDistance={5}
           dayMaxEvents={currentView === 'dayGridMonth' ? 3 : false}
           dayMaxEventRows={currentView === 'timeGridWeek' ? 2 : false}
