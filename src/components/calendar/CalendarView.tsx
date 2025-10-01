@@ -45,7 +45,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
     const internalRef = useRef<FullCalendar>(null);
     // Use the forwarded ref if provided, otherwise use internal ref
     const actualRef = ref || internalRef;
-    
+
     // État pour le tooltip de resize
     const [resizeTooltip, setResizeTooltip] = useState<{
       visible: boolean;
@@ -53,12 +53,12 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       y: number;
       timeRange: string;
     } | null>(null);
-    
+
     // Navigate to currentDate when it changes or view changes
     useEffect(() => {
       // Access the ref correctly - check if it's a forwarded ref or internal
       const fcRef = typeof actualRef === 'function' ? internalRef : actualRef;
-      
+
       if (currentDate && fcRef.current) {
         const api = fcRef.current.getApi();
         if (api) {
@@ -121,7 +121,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
     // Gérer l'annulation du drag avec ESC pour FullCalendar
     const escPressedRef = useRef(false);
     const isDraggingRef = useRef(false);
-    
+
     useEffect(() => {
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && isDraggingRef.current) {
@@ -172,23 +172,23 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           moreLinkClick='popover'
           events={
             currentView === 'timeGridWeek' || currentView === 'dayGridMonth'
-              ? events?.filter(event => !event.extendedProps?.isBadgeOnly) 
+              ? events?.filter(event => !event.extendedProps?.isBadgeOnly)
               : events
           }
           dateClick={onDateClick}
           eventClick={onEventClick}
-          eventDragStart={(info) => {
+          eventDragStart={info => {
             // Add dragging class for visual feedback
             info.el.classList.add('fc-dragging');
             isDraggingRef.current = true;
             escPressedRef.current = false; // Réinitialiser le flag ESC
           }}
-          eventDragStop={(info) => {
+          eventDragStop={info => {
             // Remove dragging class
             info.el.classList.remove('fc-dragging');
             isDraggingRef.current = false;
           }}
-          eventDrop={(info) => {
+          eventDrop={info => {
             // Si ESC a été pressé, on annule le drop
             if (escPressedRef.current) {
               info.revert();
@@ -201,9 +201,9 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
               onEventDrop(info);
             }
           }}
-          eventResizeStart={(info) => {
+          eventResizeStart={info => {
             console.log('Resize start:', info.event.title);
-            
+
             // Afficher le tooltip de resize
             const start = info.event.start;
             const end = info.event.end;
@@ -212,38 +212,38 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
                 visible: true,
                 x: info.jsEvent.clientX,
                 y: info.jsEvent.clientY - 40, // Au-dessus de la souris
-                timeRange: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`
+                timeRange: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`,
               });
             }
           }}
-          eventResize={(info) => {
+          eventResize={info => {
             console.log('Resize:', info.event.title, 'New duration:', info.event.end);
-            
+
             // Mettre à jour le tooltip pendant le resize
             const newStart = info.event.start;
             const newEnd = info.event.end;
-            
+
             if (newStart && newEnd) {
               setResizeTooltip(prev => {
                 if (!prev) return null;
-                
+
                 return {
                   ...prev,
                   // Garder la position existante si jsEvent n'est pas disponible
                   x: info.jsEvent ? info.jsEvent.clientX : prev.x,
                   y: info.jsEvent ? info.jsEvent.clientY - 40 : prev.y,
-                  timeRange: `${format(newStart, 'HH:mm')} - ${format(newEnd, 'HH:mm')}`
+                  timeRange: `${format(newStart, 'HH:mm')} - ${format(newEnd, 'HH:mm')}`,
                 };
               });
             }
-            
+
             if (onEventResize) {
               onEventResize(info);
             }
           }}
-          eventResizeStop={(info) => {
+          eventResizeStop={info => {
             console.log('Resize stop:', info.event.title);
-            
+
             // Masquer le tooltip
             setResizeTooltip(null);
           }}
@@ -256,7 +256,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
             })
           }
           // Personnalisation des headers de colonnes pour afficher les badges
-          dayHeaderContent={(arg) => {
+          dayHeaderContent={arg => {
             // Uniquement pour la vue semaine
             if (currentView === 'timeGridWeek' && events) {
               return generateDayHeaderContent(events, arg.date, arg.text);
@@ -265,7 +265,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
             return arg.text;
           }}
           // Personnalisation des cellules de jour pour la vue mois
-          dayCellContent={(arg) => {
+          dayCellContent={arg => {
             // Uniquement pour la vue mois
             if (currentView === 'dayGridMonth' && events) {
               // Extraire le numéro du jour depuis arg.dayNumberText
@@ -285,13 +285,13 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           // Options pour améliorer l'affichage
           weekNumbers={false}
           navLinks={true} // Permet de cliquer sur les jours/semaines pour naviguer
-          navLinkDayClick={(date) => {
+          navLinkDayClick={date => {
             // Navigation vers la vue jour
             if (onNavLinkDayClick) {
               onNavLinkDayClick(date);
             }
           }}
-          navLinkWeekClick={(weekDate) => {
+          navLinkWeekClick={weekDate => {
             // Navigation vers la vue semaine (optionnel)
             console.log('Week clicked:', weekDate);
           }}
@@ -547,7 +547,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         .fc-timegrid-event {
           margin-bottom: 1px;
         }
-        
+
         .fc-timegrid-event-harness {
           margin-right: 2px;
         }
@@ -645,20 +645,21 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           color: hsl(var(--muted-foreground));
         }
       `}</style>
-      
-      {/* Tooltip de redimensionnement - Rendu via portal */}
-      {resizeTooltip?.visible && ReactDOM.createPortal(
-        <div
-          className="fixed z-[9999] px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none"
-          style={{
-            left: resizeTooltip.x,
-            top: resizeTooltip.y,
-          }}
-        >
-          {resizeTooltip.timeRange}
-        </div>,
-        document.body
-      )}
+
+        {/* Tooltip de redimensionnement - Rendu via portal */}
+        {resizeTooltip?.visible &&
+          ReactDOM.createPortal(
+            <div
+              className='fixed z-[9999] px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none'
+              style={{
+                left: resizeTooltip.x,
+                top: resizeTooltip.y,
+              }}
+            >
+              {resizeTooltip.timeRange}
+            </div>,
+            document.body
+          )}
       </div>
     );
   }

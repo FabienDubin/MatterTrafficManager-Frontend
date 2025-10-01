@@ -86,6 +86,7 @@ export function TaskCard({
       className={cn(
         'relative px-2 py-1 rounded-md cursor-pointer transition-all',
         'hover:shadow-md hover:z-50',
+        'max-w-full box-border', // Force respect of container width
         clientColor ? '' : 'bg-card text-card-foreground border border-border', // Use theme colors and border only if no client color
         className
       )}

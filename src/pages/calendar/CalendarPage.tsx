@@ -39,10 +39,9 @@ export default function CalendarPage() {
 
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
-  
+
   // Get calendar configuration
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
-
 
   // Période actuellement visible dans le calendrier (pour debug seulement)
   const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
@@ -88,17 +87,13 @@ export default function CalendarPage() {
     removeFromDeleteBlacklist,
   });
 
-  const {
-    handleEventClick,
-    handleEventDrop,
-    handleEventResize,
-  } = useCalendarEvents(setSelectedTask, setSheetOpen, taskUpdate);
+  const { handleEventClick, handleEventDrop, handleEventResize } = useCalendarEvents(
+    setSelectedTask,
+    setSheetOpen,
+    taskUpdate
+  );
 
-  const {
-    handleViewChange,
-    handleDateNavigate,
-    handleDatesChange,
-  } = useCalendarNavigation(
+  const { handleViewChange, handleDateNavigate, handleDatesChange } = useCalendarNavigation(
     currentView,
     currentDate,
     setCurrentView,
@@ -130,7 +125,7 @@ export default function CalendarPage() {
   useEffect(() => {
     if (calendarRef.current && currentView !== 'day') {
       const api = calendarRef.current.getApi();
-      
+
       // Update view and date atomically
       const fcView = currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth';
       if (api.view.type !== fcView) {
@@ -303,7 +298,7 @@ export default function CalendarPage() {
                     fetchAdditionalRange(addDays(now, -30), addDays(now, 30));
                   }}
                 />
-                
+
                 {/* Right side: Period display, view switcher and date navigator */}
                 <div className='flex flex-col items-end gap-2'>
                   {/* Top row: Period display + View switcher */}
@@ -311,7 +306,7 @@ export default function CalendarPage() {
                     <PeriodDisplay currentDate={currentDate} currentView={currentView} />
                     <ViewSwitcher currentView={currentView} onViewChange={handleViewChange} />
                   </div>
-                  
+
                   {/* Bottom row: Date navigator aligned under view switcher */}
                   <DateNavigator onNavigate={handleDateNavigate} />
                 </div>
@@ -329,97 +324,105 @@ export default function CalendarPage() {
                   </div>
                 </div>
               ) : currentView === 'day' ? (
-                <DayView
-                  date={currentDate}
-                  tasks={tasks}
-                  members={members}
-                  viewConfig={calendarConfig?.dayView}
-                  onTaskClick={task => {
-                    setSelectedTask(task);
-                    setSheetOpen(true);
-                  }}
-                  onTimeSlotClick={(member, date, hour) => {
-                    toast.info('Créneau sélectionné', {
-                      description: `${member ? member.name : 'Non assigné'} - ${hour}:00`,
-                    });
-                  }}
-                  onTaskDrop={(task, newMemberId, newDate, sourceMemberId) => {
-                    if (!task.workPeriod) return;
-                    
-                    // Calculer la durée originale de la tâche en millisecondes
-                    const originalStart = new Date(task.workPeriod.startDate);
-                    const originalEnd = new Date(task.workPeriod.endDate);
-                    const duration = originalEnd.getTime() - originalStart.getTime();
-                    
-                    // Calculer la nouvelle heure de fin en ajoutant la durée à la nouvelle heure de début
-                    const newEndDate = new Date(newDate.getTime() + duration);
-                    
-                    // Mise à jour optimiste de la tâche avec la nouvelle date
-                    const updates: any = {
-                      workPeriod: {
-                        startDate: newDate.toISOString(),
-                        endDate: newEndDate.toISOString(),
-                      },
-                    };
+                <div style={{ height: '85%' }}>
+                  <DayView
+                    date={currentDate}
+                    tasks={tasks}
+                    members={members}
+                    viewConfig={calendarConfig?.dayView}
+                    onTaskClick={task => {
+                      setSelectedTask(task);
+                      setSheetOpen(true);
+                    }}
+                    onTimeSlotClick={(member, date, hour) => {
+                      toast.info('Créneau sélectionné', {
+                        description: `${member ? member.name : 'Non assigné'} - ${hour}:00`,
+                      });
+                    }}
+                    onTaskDrop={(task, newMemberId, newDate, sourceMemberId) => {
+                      if (!task.workPeriod) return;
 
-                    // Gestion du changement de membre
-                    const currentMembers = task.assignedMembers || [];
-                    
-                    if (newMemberId === null) {
-                      // Drop sur la colonne non-assigné : retirer tous les membres
-                      updates.assignedMembers = [];
-                      updates.assignedMembersData = [];
-                    } else if (newMemberId) {
-                      // Drop sur une colonne membre
-                      let updatedMembers = [...currentMembers];
-                      
-                      // Si on a un membre source et qu'il est différent du membre cible
-                      if (sourceMemberId && sourceMemberId !== '' && sourceMemberId !== newMemberId) {
-                        // Retirer le membre source de la liste
-                        updatedMembers = updatedMembers.filter(id => id !== sourceMemberId);
-                      }
-                      
-                      // Si le membre cible n'est pas déjà dans la liste, l'ajouter
-                      if (!updatedMembers.includes(newMemberId)) {
-                        updatedMembers.push(newMemberId);
-                      }
-                      
-                      // Mettre à jour les membres si changement
-                      if (updatedMembers.length !== currentMembers.length || 
-                          !updatedMembers.every(id => currentMembers.includes(id))) {
-                        updates.assignedMembers = updatedMembers;
-                        
-                        // Reconstruire assignedMembersData
-                        updates.assignedMembersData = updatedMembers
-                          .map(memberId => members.find(m => m.id === memberId))
-                          .filter(Boolean)
-                          .map(member => ({
-                            id: member!.id,
-                            name: member!.name,
-                            email: member!.email || '',
-                            teams: Array.isArray(member!.teams) ? member!.teams : []
-                          }));
-                      }
-                    }
+                      // Calculer la durée originale de la tâche en millisecondes
+                      const originalStart = new Date(task.workPeriod.startDate);
+                      const originalEnd = new Date(task.workPeriod.endDate);
+                      const duration = originalEnd.getTime() - originalStart.getTime();
 
-                    taskUpdate.mutate({
-                      id: task.id,
-                      updates,
-                    });
-                  }}
-                  onTaskResize={(task, newStartDate, newEndDate) => {
-                    // Resize de la tâche avec mise à jour optimiste
-                    taskUpdate.mutate({
-                      id: task.id,
-                      updates: {
+                      // Calculer la nouvelle heure de fin en ajoutant la durée à la nouvelle heure de début
+                      const newEndDate = new Date(newDate.getTime() + duration);
+
+                      // Mise à jour optimiste de la tâche avec la nouvelle date
+                      const updates: any = {
                         workPeriod: {
-                          startDate: newStartDate.toISOString(),
+                          startDate: newDate.toISOString(),
                           endDate: newEndDate.toISOString(),
                         },
-                      },
-                    });
-                  }}
-                />
+                      };
+
+                      // Gestion du changement de membre
+                      const currentMembers = task.assignedMembers || [];
+
+                      if (newMemberId === null) {
+                        // Drop sur la colonne non-assigné : retirer tous les membres
+                        updates.assignedMembers = [];
+                        updates.assignedMembersData = [];
+                      } else if (newMemberId) {
+                        // Drop sur une colonne membre
+                        let updatedMembers = [...currentMembers];
+
+                        // Si on a un membre source et qu'il est différent du membre cible
+                        if (
+                          sourceMemberId &&
+                          sourceMemberId !== '' &&
+                          sourceMemberId !== newMemberId
+                        ) {
+                          // Retirer le membre source de la liste
+                          updatedMembers = updatedMembers.filter(id => id !== sourceMemberId);
+                        }
+
+                        // Si le membre cible n'est pas déjà dans la liste, l'ajouter
+                        if (!updatedMembers.includes(newMemberId)) {
+                          updatedMembers.push(newMemberId);
+                        }
+
+                        // Mettre à jour les membres si changement
+                        if (
+                          updatedMembers.length !== currentMembers.length ||
+                          !updatedMembers.every(id => currentMembers.includes(id))
+                        ) {
+                          updates.assignedMembers = updatedMembers;
+
+                          // Reconstruire assignedMembersData
+                          updates.assignedMembersData = updatedMembers
+                            .map(memberId => members.find(m => m.id === memberId))
+                            .filter(Boolean)
+                            .map(member => ({
+                              id: member!.id,
+                              name: member!.name,
+                              email: member!.email || '',
+                              teams: Array.isArray(member!.teams) ? member!.teams : [],
+                            }));
+                        }
+                      }
+
+                      taskUpdate.mutate({
+                        id: task.id,
+                        updates,
+                      });
+                    }}
+                    onTaskResize={(task, newStartDate, newEndDate) => {
+                      // Resize de la tâche avec mise à jour optimiste
+                      taskUpdate.mutate({
+                        id: task.id,
+                        updates: {
+                          workPeriod: {
+                            startDate: newStartDate.toISOString(),
+                            endDate: newEndDate.toISOString(),
+                          },
+                        },
+                      });
+                    }}
+                  />
+                </div>
               ) : (
                 <CalendarView
                   ref={calendarRef}
@@ -429,7 +432,7 @@ export default function CalendarPage() {
                   onEventDrop={handleEventDrop}
                   onEventResize={handleEventResize}
                   onDatesChange={handleDatesChange}
-                  onNavLinkDayClick={(date) => {
+                  onNavLinkDayClick={date => {
                     // Switch to day view and set the selected date
                     setCurrentView('day');
                     setCurrentDate(date);
@@ -437,7 +440,9 @@ export default function CalendarPage() {
                   currentView={currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
                   currentDate={currentDate}
                   showWeekends={calendarConfig?.showWeekends ?? true}
-                  viewConfig={currentView === 'week' ? calendarConfig?.weekView : calendarConfig?.monthView}
+                  viewConfig={
+                    currentView === 'week' ? calendarConfig?.weekView : calendarConfig?.monthView
+                  }
                 />
               )}
             </>

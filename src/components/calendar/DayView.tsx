@@ -28,7 +28,9 @@ export function DayView({
     dayEnd.setHours(23, 59, 59, 999);
 
     return tasks.filter(task => {
-      if (!task.workPeriod) {return false;}
+      if (!task.workPeriod) {
+        return false;
+      }
 
       const taskStart = new Date(task.workPeriod.startDate);
       const taskEnd = new Date(task.workPeriod.endDate);
@@ -42,7 +44,7 @@ export function DayView({
         taskStartDay.setHours(0, 0, 0, 0);
         const taskEndDay = new Date(taskEnd);
         taskEndDay.setHours(23, 59, 59, 999);
-        
+
         return dayStart >= taskStartDay && dayStart <= taskEndDay;
       }
 
@@ -66,8 +68,9 @@ export function DayView({
 
     dayTasks.forEach(task => {
       // Détecter si c'est une tâche spéciale journée entière
-      const isSpecialAllDay = task.isAllDay && ['holiday', 'remote', 'school'].includes(task.taskType || '');
-      
+      const isSpecialAllDay =
+        task.isAllDay && ['holiday', 'remote', 'school'].includes(task.taskType || '');
+
       if (!task.assignedMembers || task.assignedMembers.length === 0) {
         // Ne pas ajouter les tâches spéciales journée entière aux non assignées
         if (!isSpecialAllDay) {
@@ -95,14 +98,14 @@ export function DayView({
       }
     });
 
-    return { 
-      assignedTasks: assigned, 
+    return {
+      assignedTasks: assigned,
       unassignedTasks: unassigned,
       specialTasksByMember: {
         holiday: holidayTasks,
         remote: remoteTasks,
-        school: schoolTasks
-      }
+        school: schoolTasks,
+      },
     };
   }, [dayTasks, members]);
 
@@ -166,7 +169,9 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
-                    onTaskDrop={(task, memberId, newDate, sourceMemberId) => onTaskDrop?.(task, memberId, newDate, sourceMemberId)}
+                    onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
+                      onTaskDrop?.(task, memberId, newDate, sourceMemberId)
+                    }
                     onTaskResize={onTaskResize}
                   />
                 ))}
@@ -179,7 +184,9 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
-                    onTaskDrop={(task, memberId, newDate, sourceMemberId) => onTaskDrop?.(task, memberId, newDate, sourceMemberId)}
+                    onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
+                      onTaskDrop?.(task, memberId, newDate, sourceMemberId)
+                    }
                     onTaskResize={onTaskResize}
                   />
                 )}
