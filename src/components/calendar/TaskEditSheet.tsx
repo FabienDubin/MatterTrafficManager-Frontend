@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
@@ -65,6 +65,7 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Types & Schema
 import type { Task } from '@/types/task.types';
@@ -201,15 +202,18 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
         updatePayload.projectData = {
           id: newProject.id,
           name: newProject.name,
-          status: newProject.status
+          status: newProject.status,
         };
 
         // Update client data
         updatePayload.clientId = newProject.client || undefined;
-        updatePayload.clientData = newProject.clientName && newProject.client ? {
-          id: newProject.client,
-          name: newProject.clientName
-        } : undefined;
+        updatePayload.clientData =
+          newProject.clientName && newProject.client
+            ? {
+                id: newProject.client,
+                name: newProject.clientName,
+              }
+            : undefined;
       }
     }
 
@@ -254,19 +258,21 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
       updatePayload.assignedMembersData = data.assignedMembers
         ?.map(memberId => {
           const member = members.find(m => m.id === memberId);
-          return member ? {
-            id: member.id,
-            name: member.name,
-            email: member.email,
-            teams: member.teams
-          } : null;
+          return member
+            ? {
+                id: member.id,
+                name: member.name,
+                email: member.email,
+                teams: member.teams,
+              }
+            : null;
         })
         .filter(Boolean) as Array<{
-          id: string;
-          name: string;
-          email: string;
-          teams?: string[];
-        }>;
+        id: string;
+        name: string;
+        email: string;
+        teams?: string[];
+      }>;
     }
 
     // Handle notes
@@ -296,6 +302,38 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
       });
     }
   };
+
+  // Keyboard shortcuts: Cmd/Ctrl+Enter to submit, Escape to close
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to submit
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        e.preventDefault();
+
+        // Trigger form submission programmatically
+        form.handleSubmit(onSubmit)();
+      }
+
+      // Escape to close (ShadCN handles it natively, but we ensure clean close)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Backspace') {
+        // Only if not focused in a textarea (let textarea handle Escape naturally)
+        const target = e.target as HTMLElement;
+        if (target.tagName !== 'TEXTAREA') {
+          onClose();
+        }
+      }
+    };
+
+    // Add event listener
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open, form, onSubmit, onClose]);
 
   // Handle delete
   const handleDelete = async () => {
@@ -745,12 +783,29 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
 
             {/* SECTION 5: Actions (Footer) - Fixé en bas */}
             <SheetFooter className='flex justify-between items-center pt-4 border-t mt-4'>
-              <div className='flex gap-2'>
-                <Button type='submit'>Enregistrer</Button>
-                <Button variant='outline' onClick={onClose} type='button'>
-                  Annuler
-                </Button>
-              </div>
+              <TooltipProvider>
+                <div className='flex gap-2'>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button type='submit'>Enregistrer</Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'} + ↩︎</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant='outline' onClick={onClose} type='button'>
+                        Annuler
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'} + ⌫</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </TooltipProvider>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
