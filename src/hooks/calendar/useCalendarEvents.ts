@@ -7,27 +7,14 @@ export const useCalendarEvents = (
   taskUpdate: any
 ) => {
   const handleEventClick = (arg: any) => {
-    const task: any = {
-      id: arg.event.id,
-      title: arg.event.title,
-      status: arg.event.extendedProps.status,
-      description: arg.event.extendedProps.description,
-      notes: arg.event.extendedProps.notes,
-      assignedMembers: arg.event.extendedProps.assignedMembers,
-      assignedMembersData: arg.event.extendedProps.assignedMembersData,
-      projectId: arg.event.extendedProps.projectId,
-      projectData: arg.event.extendedProps.projectData,
-      clientId: arg.event.extendedProps.clientId,
-      clientData: arg.event.extendedProps.clientData,
-      teams: arg.event.extendedProps.teams,
-      teamsData: arg.event.extendedProps.teamsData,
-      involvedTeamIds: arg.event.extendedProps.involvedTeamIds,
-      involvedTeamsData: arg.event.extendedProps.involvedTeamsData,
-      workPeriod: {
-        startDate: arg.event.startStr,
-        endDate: arg.event.endStr,
-      },
-    };
+    // Use the full task object from extendedProps instead of reconstructing it
+    // This ensures we get the original title, not the formatted one
+    const task = arg.event.extendedProps.task;
+
+    if (!task) {
+      console.error('No task found in event extendedProps');
+      return;
+    }
 
     // Ouvrir le sheet d'édition avec la tâche sélectionnée
     setSelectedTask(task);

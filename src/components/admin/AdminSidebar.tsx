@@ -9,6 +9,7 @@ import {
   LogOut,
   Settings,
   RefreshCw,
+  Calendar,
 } from "lucide-react"
 
 import {
@@ -199,6 +200,14 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip="Retour au calendrier">
+              <Link to="/calendar" className="gap-2">
+                <Calendar className="size-4" />
+                <span>Retour au calendrier</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <div className="flex items-center justify-between px-2 py-1.5">
               <div className="flex items-center gap-2">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted">
@@ -209,8 +218,8 @@ export function AdminSidebar({ ...props }: React.ComponentProps<typeof Sidebar>)
                   <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                 </div>
               </div>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 size="icon"
                 className="h-8 w-8"
                 onClick={handleLogout}

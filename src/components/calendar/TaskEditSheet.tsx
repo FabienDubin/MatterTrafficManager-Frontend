@@ -1,6 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
-import { ChevronDownIcon, Loader2, Trash2 } from 'lucide-react';
+import { ChevronDownIcon, Check, ChevronsUpDown, X, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
+
+// UI Components
 import {
   Sheet,
   SheetContent,
@@ -20,18 +25,53 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+// Types & Schema
 import type { Task } from '@/types/task.types';
+import { taskEditSchema, TaskEditFormData } from '@/schemas/taskEdit.schema';
+import { cn } from '@/lib/utils';
+import { membersService, Member } from '@/services/api/members.service';
+import { projectsService, Project } from '@/services/api/projects.service';
 
 interface TaskEditSheetProps {
   task: Task | null;
@@ -41,87 +81,161 @@ interface TaskEditSheetProps {
   onDelete: (id: string) => Promise<void>;
 }
 
-export function TaskEditSheet({
-  task,
-  open,
-  onClose,
-  onUpdate,
-  onDelete,
-}: TaskEditSheetProps) {
-  const [title, setTitle] = useState('');
-  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
-  const [startTime, setStartTime] = useState('');
-  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
-  const [endTime, setEndTime] = useState('');
+export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskEditSheetProps) {
+  // State for projects and members
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+  const [openProjectCombobox, setOpenProjectCombobox] = useState(false);
+  const [openMembersCombobox, setOpenMembersCombobox] = useState(false);
   const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
   const [openEndDatePicker, setOpenEndDatePicker] = useState(false);
+
+  // React Hook Form with Zod validation
+  const form = useForm<TaskEditFormData>({
+    resolver: zodResolver(taskEditSchema),
+    defaultValues: {
+      title: '',
+      projectId: '',
+      status: 'not_started',
+      assignedMembers: [],
+      startDate: undefined,
+      startTime: '09:00',
+      endDate: undefined,
+      endTime: '18:00',
+      notes: '',
+      addToCalendar: false,
+    },
+  });
+
+  // Load projects and members on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoadingProjects(true);
+        const projectsData = await projectsService.getActiveProjects();
+        setProjects(projectsData);
+      } catch (error) {
+        console.error('Failed to load projects:', error);
+        toast.error('Erreur lors du chargement des projets');
+      } finally {
+        setLoadingProjects(false);
+      }
+
+      try {
+        setLoadingMembers(true);
+        const membersData = await membersService.getAllMembers();
+        setMembers(membersData);
+      } catch (error) {
+        console.error('Failed to load members:', error);
+        toast.error('Erreur lors du chargement des membres');
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
+    if (open) {
+      loadData();
+    }
+  }, [open]);
+
+  // Helper to normalize status from backend
+  const normalizeStatus = (status: string): 'not_started' | 'in_progress' | 'completed' => {
+    const normalized = status.toLowerCase();
+    if (normalized === 'not_started' || normalized === 'pas commencé') return 'not_started';
+    if (normalized === 'in_progress' || normalized === 'en cours' || normalized === 'a valider')
+      return 'in_progress';
+    if (normalized === 'completed' || normalized === 'terminé') return 'completed';
+    return 'not_started';
+  };
 
   // Initialize form when task changes
   useEffect(() => {
     if (task) {
-      setTitle(task.title || '');
-      
-      if (task.workPeriod?.startDate) {
-        const start = new Date(task.workPeriod.startDate);
-        setStartDate(start);
-        setStartTime(format(start, 'HH:mm'));
-      } else {
-        setStartDate(undefined);
-        setStartTime('09:00');
-      }
-      
-      if (task.workPeriod?.endDate) {
-        const end = new Date(task.workPeriod.endDate);
-        setEndDate(end);
-        setEndTime(format(end, 'HH:mm'));
-      } else {
-        setEndDate(undefined);
-        setEndTime('18:00');
-      }
-    }
-  }, [task]);
+      const startDate = task.workPeriod?.startDate
+        ? new Date(task.workPeriod.startDate)
+        : undefined;
+      const endDate = task.workPeriod?.endDate ? new Date(task.workPeriod.endDate) : undefined;
 
-  const handleSave = async () => {
-    if (!task) {return;}
-    
-    if (!title.trim()) {
-      toast.error('Le nom de la tâche est requis');
-      return;
+      form.reset({
+        title: task.title || '',
+        projectId: task.projectId || '',
+        status: normalizeStatus(task.status || 'not_started'),
+        assignedMembers: task.assignedMembers || [],
+        startDate,
+        startTime: startDate ? format(startDate, 'HH:mm') : '09:00',
+        endDate,
+        endTime: endDate ? format(endDate, 'HH:mm') : '18:00',
+        notes: task.notes || '',
+        addToCalendar: false, // Backend doesn't store this, always false initially
+      });
     }
+  }, [task, form]);
 
-    // Build update payload - only include what changed
+  // Watch selected members and project
+  const selectedMembers = form.watch('assignedMembers');
+  const selectedProjectId = form.watch('projectId');
+
+  // Get selected project to display client
+  const selectedProject = projects.find(p => p.id === selectedProjectId);
+
+  // Handle form submission
+  const onSubmit = async (data: TaskEditFormData) => {
+    if (!task) return;
+
+    // Build update payload
     const updatePayload: Partial<Task> = {};
-    
-    // Check if title actually changed
-    if (title !== task.title) {
-      updatePayload.title = title;
+
+    if (data.title !== task.title) {
+      updatePayload.title = data.title;
     }
-    
-    // Only process dates if user has dates in the form
-    if (startDate && endDate) {
-      // Combine date and time
-      const [startHours, startMinutes] = startTime.split(':').map(Number);
-      const [endHours, endMinutes] = endTime.split(':').map(Number);
-      
-      const startDateTime = new Date(startDate);
+
+    if (data.projectId !== task.projectId) {
+      updatePayload.projectId = data.projectId;
+
+      // When project changes, also update project and client info for optimistic UI update
+      const newProject = projects.find(p => p.id === data.projectId);
+      if (newProject) {
+        // Update project data
+        updatePayload.projectData = {
+          id: newProject.id,
+          name: newProject.name,
+          status: newProject.status
+        };
+
+        // Update client data
+        updatePayload.clientId = newProject.client || undefined;
+        updatePayload.clientData = newProject.clientName && newProject.client ? {
+          id: newProject.client,
+          name: newProject.clientName
+        } : undefined;
+      }
+    }
+
+    if (data.status !== task.status) {
+      updatePayload.status = data.status;
+    }
+
+    // Handle dates
+    if (data.startDate && data.endDate) {
+      const [startHours, startMinutes] = data.startTime.split(':').map(Number);
+      const startDateTime = new Date(data.startDate);
       startDateTime.setHours(startHours, startMinutes, 0, 0);
-      
-      const endDateTime = new Date(endDate);
+
+      const [endHours, endMinutes] = data.endTime.split(':').map(Number);
+      const endDateTime = new Date(data.endDate);
       endDateTime.setHours(endHours, endMinutes, 0, 0);
 
-      if (endDateTime <= startDateTime) {
-        toast.error('La date de fin doit être après la date de début');
-        return;
-      }
-      
-      // Check if dates actually changed
       const originalStart = task.workPeriod?.startDate ? new Date(task.workPeriod.startDate) : null;
       const originalEnd = task.workPeriod?.endDate ? new Date(task.workPeriod.endDate) : null;
-      
-      const datesChanged = !originalStart || !originalEnd ||
+
+      const datesChanged =
+        !originalStart ||
+        !originalEnd ||
         originalStart.getTime() !== startDateTime.getTime() ||
         originalEnd.getTime() !== endDateTime.getTime();
-      
+
       if (datesChanged) {
         updatePayload.workPeriod = {
           startDate: startDateTime.toISOString(),
@@ -129,235 +243,543 @@ export function TaskEditSheet({
         };
       }
     }
-    
+
+    // Handle assigned members
+    const membersChanged =
+      JSON.stringify(data.assignedMembers?.sort()) !== JSON.stringify(task.assignedMembers?.sort());
+    if (membersChanged) {
+      updatePayload.assignedMembers = data.assignedMembers;
+
+      // Enrich with member data for optimistic UI update
+      updatePayload.assignedMembersData = data.assignedMembers
+        ?.map(memberId => {
+          const member = members.find(m => m.id === memberId);
+          return member ? {
+            id: member.id,
+            name: member.name,
+            email: member.email,
+            teams: member.teams
+          } : null;
+        })
+        .filter(Boolean) as Array<{
+          id: string;
+          name: string;
+          email: string;
+          teams?: string[];
+        }>;
+    }
+
+    // Handle notes
+    if (data.notes !== task.notes) {
+      updatePayload.notes = data.notes;
+    }
+
+    // Handle addToCalendar
+    updatePayload.addToCalendar = data.addToCalendar;
+
     // Only proceed if something changed
     if (Object.keys(updatePayload).length === 0) {
       onClose();
       return;
     }
 
-    // Optimistic update: Close immediately for better UX
+    // Close and perform update
     onClose();
     toast.success('Modification en cours...');
-    
-    // Perform the update in background - only with changed fields
-    onUpdate(task.id, updatePayload).then(() => {
-      // Success is already handled by the optimistic update
-      console.log('Task updated successfully');
-    }).catch((error) => {
+
+    try {
+      await onUpdate(task.id, updatePayload);
+    } catch (error) {
       console.error('Error updating task:', error);
       toast.error('Erreur de synchronisation', {
-        description: 'La modification n\'a pas pu être synchronisée avec Notion'
+        description: "La modification n'a pas pu être synchronisée avec Notion",
       });
-      // Here we could implement a rollback if needed
-    });
+    }
   };
 
+  // Handle delete
   const handleDelete = async () => {
-    if (!task) {return;}
-    
-    // Optimistic update: Close immediately for better UX
+    if (!task) return;
+
     onClose();
     toast.success('Suppression en cours...');
-    
-    // Perform the delete in background
-    onDelete(task.id).then(() => {
-      console.log('Task deleted successfully');
-    }).catch((error) => {
+
+    try {
+      await onDelete(task.id);
+    } catch (error) {
       console.error('Error deleting task:', error);
       toast.error('Erreur de synchronisation', {
-        description: 'La suppression n\'a pas pu être synchronisée avec Notion'
+        description: "La suppression n'a pas pu être synchronisée avec Notion",
       });
-    });
+    }
   };
 
-  if (!task) {return null;}
+  if (!task) return null;
 
   return (
     <Sheet open={open} onOpenChange={onClose}>
-      <SheetContent className="w-[400px] sm:w-[540px]">
+      <SheetContent className='w-[400px] sm:w-[540px] flex flex-col'>
         <SheetHeader>
           <SheetTitle>Modifier la tâche</SheetTitle>
-          <SheetDescription>
-            Modifiez les informations de la tâche
-          </SheetDescription>
+          <SheetDescription>Modifiez les informations de la tâche</SheetDescription>
         </SheetHeader>
 
-        <div className="grid gap-6 py-6">
-          {/* Task Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Nom de la tâche</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Entrez le nom de la tâche"
-            />
-          </div>
-
-          {/* Start Date and Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="start-date">Date de début</Label>
-              <Popover open={openStartDatePicker} onOpenChange={setOpenStartDatePicker}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    id="start-date"
-                    className="w-full justify-between font-normal"
-                  >
-                    {startDate ? format(startDate, 'dd/MM/yyyy') : 'Sélectionner'}
-                    <ChevronDownIcon className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={(date) => {
-                      setStartDate(date);
-                      setOpenStartDatePicker(false);
-                    }}
-                    initialFocus
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col flex-1 min-h-0'>
+            <ScrollArea className='flex-1 pr-4'>
+              <div className='space-y-6 py-6'>
+                {/* SECTION 1: Informations principales */}
+                <div className='space-y-4'>
+                  {/* Nom de la tâche * */}
+                  <FormField
+                    control={form.control}
+                    name='title'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Nom de la tâche <span className='text-red-500'>*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder='Entrez le nom de la tâche' {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="start-time">Heure de début</Label>
-              <Input
-                type="time"
-                id="start-time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
 
-          {/* End Date and Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="end-date">Date de fin</Label>
-              <Popover open={openEndDatePicker} onOpenChange={setOpenEndDatePicker}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    id="end-date"
-                    className="w-full justify-between font-normal"
-                  >
-                    {endDate ? format(endDate, 'dd/MM/yyyy') : 'Sélectionner'}
-                    <ChevronDownIcon className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={(date) => {
-                      setEndDate(date);
-                      setOpenEndDatePicker(false);
-                    }}
-                    initialFocus
+                  {/* Projet * (Combobox) */}
+                  <FormField
+                    control={form.control}
+                    name='projectId'
+                    render={({ field }) => (
+                      <FormItem className='flex flex-col'>
+                        <FormLabel>
+                          Projet <span className='text-red-500'>*</span>
+                        </FormLabel>
+                        <Popover
+                          open={openProjectCombobox}
+                          onOpenChange={setOpenProjectCombobox}
+                          modal={true}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant='outline'
+                                role='combobox'
+                                className={cn(
+                                  'w-full justify-between',
+                                  !field.value && 'text-muted-foreground'
+                                )}
+                              >
+                                {field.value
+                                  ? projects.find(p => p.id === field.value)?.name
+                                  : 'Sélectionner un projet'}
+                                <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-[400px] p-0'>
+                            <Command>
+                              <CommandInput placeholder='Rechercher un projet...' />
+                              <CommandList>
+                                <CommandEmpty>Aucun projet trouvé.</CommandEmpty>
+                                <CommandGroup>
+                                  {projects.map(project => (
+                                    <CommandItem
+                                      key={project.id}
+                                      value={project.name}
+                                      onSelect={() => {
+                                        form.setValue('projectId', project.id);
+                                        setOpenProjectCombobox(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          project.id === field.value ? 'opacity-100' : 'opacity-0'
+                                        )}
+                                      />
+                                      {project.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="end-time">Heure de fin</Label>
-              <Input
-                type="time"
-                id="end-time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="w-full"
-              />
-            </div>
-          </div>
 
-          {/* Read-only Fields */}
-          <div className="space-y-4 border-t pt-4">
-            {/* Project */}
-            {task.projectData && (
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Projet</Label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{task.projectData.name}</Badge>
+                  {/* Client (read-only) - Display from selected project */}
+                  {selectedProject?.clientName && (
+                    <div className='space-y-2'>
+                      <Label className='text-sm text-muted-foreground'>Client</Label>
+                      <div>
+                        <Badge variant='outline'>{selectedProject.clientName}</Badge>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Statut */}
+                  <FormField
+                    control={form.control}
+                    name='status'
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Statut</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder='Sélectionner un statut' />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value='not_started'>Pas Commencé</SelectItem>
+                            <SelectItem value='in_progress'>A valider</SelectItem>
+                            <SelectItem value='completed'>Terminé</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              </div>
-            )}
 
-            {/* Client */}
-            {task.clientData && (
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Client</Label>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{task.clientData.name}</Badge>
+                <Separator />
+
+                {/* SECTION 2: Attribution & Planification */}
+                <div className='space-y-4'>
+                  {/* Assignée à (Multi-select Combobox) */}
+                  <FormField
+                    control={form.control}
+                    name='assignedMembers'
+                    render={({ field }) => (
+                      <FormItem className='flex flex-col'>
+                        <FormLabel>Assignée à</FormLabel>
+                        {/* Selected members badges */}
+                        {selectedMembers && selectedMembers.length > 0 && (
+                          <div className='flex flex-wrap gap-2 mt-2'>
+                            {selectedMembers.map(memberId => {
+                              const member = members.find(m => m.id === memberId);
+                              if (!member) return null;
+                              return (
+                                <Badge key={memberId} variant='default' className='gap-1'>
+                                  {member.name}
+                                  <X
+                                    className='h-3 w-3 cursor-pointer'
+                                    onClick={() => {
+                                      const currentMembers = selectedMembers || [];
+                                      form.setValue(
+                                        'assignedMembers',
+                                        currentMembers.filter(id => id !== memberId)
+                                      );
+                                    }}
+                                  />
+                                </Badge>
+                              );
+                            })}
+                          </div>
+                        )}
+                        <Popover
+                          open={openMembersCombobox}
+                          onOpenChange={setOpenMembersCombobox}
+                          modal={true}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant='outline'
+                                role='combobox'
+                                className={cn(
+                                  'w-full justify-between',
+                                  !selectedMembers?.length && 'text-muted-foreground'
+                                )}
+                              >
+                                {selectedMembers?.length
+                                  ? `${selectedMembers.length} membre(s) sélectionné(s)`
+                                  : 'Sélectionner des membres'}
+                                <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className='w-[400px] p-0'>
+                            <Command>
+                              <CommandInput placeholder='Rechercher un membre...' />
+                              <CommandList>
+                                <CommandEmpty>Aucun membre trouvé.</CommandEmpty>
+                                <CommandGroup>
+                                  {members.map(member => (
+                                    <CommandItem
+                                      key={member.id}
+                                      value={member.name}
+                                      onSelect={() => {
+                                        const currentMembers = field.value || [];
+                                        const isSelected = currentMembers.includes(member.id);
+
+                                        if (isSelected) {
+                                          form.setValue(
+                                            'assignedMembers',
+                                            currentMembers.filter(id => id !== member.id)
+                                          );
+                                        } else {
+                                          form.setValue('assignedMembers', [
+                                            ...currentMembers,
+                                            member.id,
+                                          ]);
+                                        }
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          selectedMembers?.includes(member.id)
+                                            ? 'opacity-100'
+                                            : 'opacity-0'
+                                        )}
+                                      />
+                                      {member.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Dates & Heures * */}
+                  <div className='grid grid-cols-2 gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='startDate'
+                      render={({ field }) => (
+                        <FormItem className='flex flex-col'>
+                          <FormLabel>
+                            Date de début <span className='text-red-500'>*</span>
+                          </FormLabel>
+                          <Popover
+                            open={openStartDatePicker}
+                            onOpenChange={setOpenStartDatePicker}
+                            modal={true}
+                          >
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant='outline'
+                                  className={cn(
+                                    'w-full justify-start text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                >
+                                  {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sélectionner'}
+                                  <ChevronDownIcon className='ml-auto h-4 w-4' />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className='w-auto p-0' align='start'>
+                              <Calendar
+                                mode='single'
+                                selected={field.value}
+                                onSelect={date => {
+                                  field.onChange(date);
+                                  setOpenStartDatePicker(false);
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='startTime'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Heure</FormLabel>
+                          <FormControl>
+                            <Input type='time' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className='grid grid-cols-2 gap-4'>
+                    <FormField
+                      control={form.control}
+                      name='endDate'
+                      render={({ field }) => (
+                        <FormItem className='flex flex-col'>
+                          <FormLabel>
+                            Date de fin <span className='text-red-500'>*</span>
+                          </FormLabel>
+                          <Popover
+                            open={openEndDatePicker}
+                            onOpenChange={setOpenEndDatePicker}
+                            modal={true}
+                          >
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant='outline'
+                                  className={cn(
+                                    'w-full justify-start text-left font-normal',
+                                    !field.value && 'text-muted-foreground'
+                                  )}
+                                >
+                                  {field.value ? format(field.value, 'dd/MM/yyyy') : 'Sélectionner'}
+                                  <ChevronDownIcon className='ml-auto h-4 w-4' />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className='w-auto p-0' align='start'>
+                              <Calendar
+                                mode='single'
+                                selected={field.value}
+                                onSelect={date => {
+                                  field.onChange(date);
+                                  setOpenEndDatePicker(false);
+                                }}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name='endTime'
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Heure</FormLabel>
+                          <FormControl>
+                            <Input type='time' {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
                 </div>
+
+                <Separator />
+
+                {/* SECTION 3: Options avancées (Accordion) */}
+                <Accordion type='single' collapsible>
+                  <AccordionItem value='advanced-options'>
+                    <AccordionTrigger>Options avancées</AccordionTrigger>
+                    <AccordionContent>
+                      <div className='space-y-4 pt-2'>
+                        {/* Ajouter au Calendrier */}
+                        <FormField
+                          control={form.control}
+                          name='addToCalendar'
+                          render={({ field }) => (
+                            <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
+                              <FormControl>
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                              </FormControl>
+                              <div className='space-y-1 leading-none'>
+                                <FormLabel>Ajouter au Calendrier Notion</FormLabel>
+                              </div>
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Notes */}
+                        <FormField
+                          control={form.control}
+                          name='notes'
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Notes</FormLabel>
+                              <FormControl>
+                                <Textarea
+                                  placeholder='Ajoutez des notes pour cette tâche...'
+                                  className='resize-none'
+                                  rows={4}
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormDescription className='text-right'>
+                                {field.value?.length || 0}/500 caractères
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
+                {/* SECTION 4: Historique */}
+                {(task.createdAt || task.updatedAt) && (
+                  <div className='space-y-2'>
+                    <Label className='text-sm font-medium'>Historique</Label>
+                    <div className='space-y-1 text-sm text-muted-foreground'>
+                      {task.createdAt && (
+                        <div>Créé le {format(new Date(task.createdAt), 'dd/MM/yyyy à HH:mm')}</div>
+                      )}
+                      {task.updatedAt && (
+                        <div>
+                          Modifié le {format(new Date(task.updatedAt), 'dd/MM/yyyy à HH:mm')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+            </ScrollArea>
 
-            {/* Assigned Members */}
-            {task.assignedMembersData && task.assignedMembersData.length > 0 && (
-              <div className="space-y-2">
-                <Label className="text-muted-foreground">Membres assignés</Label>
-                <div className="flex flex-wrap gap-2">
-                  {task.assignedMembersData.map((member) => (
-                    <Badge key={member.id} variant="default">
-                      {member.name}
-                    </Badge>
-                  ))}
-                </div>
+            {/* SECTION 5: Actions (Footer) - Fixé en bas */}
+            <SheetFooter className='flex justify-between items-center pt-4 border-t mt-4'>
+              <div className='flex gap-2'>
+                <Button type='submit'>Enregistrer</Button>
+                <Button variant='outline' onClick={onClose} type='button'>
+                  Annuler
+                </Button>
               </div>
-            )}
-          </div>
-        </div>
-
-        <SheetFooter className="flex justify-between">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
-                size="sm"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Supprimer
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action est irréversible. La tâche sera définitivement supprimée.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction 
-                  onClick={handleDelete}
-                >
-                  Confirmer la suppression
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={onClose}
-            >
-              Annuler
-            </Button>
-            <Button
-              onClick={handleSave}
-            >
-              Enregistrer
-            </Button>
-          </div>
-        </SheetFooter>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    type='button'
+                    className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                  >
+                    <Trash2 className='h-5 w-5' />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Cette action est irréversible. La tâche sera définitivement supprimée.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>
+                      Confirmer la suppression
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </SheetFooter>
+          </form>
+        </Form>
       </SheetContent>
     </Sheet>
   );

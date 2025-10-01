@@ -45,14 +45,15 @@ export interface Task {
   notes?: string;
   billedHours?: number;
   actualHours?: number;
+  addToCalendar?: boolean; // Trigger pour automation Notion (non persisté)
   createdAt?: string;
   updatedAt?: string;
   syncedAt?: string;
-  
+
   // Champs ajoutés côté client
   _pendingSync?: boolean; // Indique que la tâche est en attente de sync avec Notion
   _optimisticId?: string; // ID temporaire pour les créations optimistes
-  
+
   // Conflits persistés depuis MongoDB
   conflicts?: TaskConflict[];
 }
