@@ -1,4 +1,6 @@
 import { useMemo, useCallback, useRef, useEffect, useState } from 'react';
+import ReactDOM from 'react-dom';
+import { format } from 'date-fns';
 import { Task } from '@/types/task.types';
 import { Member, MemberColumnProps, TaskPosition } from '@/types/calendar.types';
 import { TaskWithConflicts } from '@/types/task.types';
@@ -37,6 +39,14 @@ export function MemberColumn({
     originalEndDate: Date;
     tempStartDate?: Date;
     tempEndDate?: Date;
+  } | null>(null);
+
+  // État pour le tooltip de resize
+  const [resizeTooltip, setResizeTooltip] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    timeRange: string;
   } | null>(null);
 
   // Calculate task positions to avoid overlaps
@@ -123,6 +133,14 @@ export function MemberColumn({
         tempStartDate: newStartDate,
         tempEndDate: newEndDate
       } : null);
+      
+      // Mettre à jour le tooltip avec les nouvelles heures
+      setResizeTooltip(prev => prev ? {
+        ...prev,
+        x: e.clientX,
+        y: e.clientY - 40,
+        timeRange: `${format(newStartDate, 'HH:mm')} - ${format(newEndDate, 'HH:mm')}`
+      } : null);
     };
     
     const handleMouseUp = () => {
@@ -134,6 +152,7 @@ export function MemberColumn({
         }
       }
       setResizingTask(null);
+      setResizeTooltip(null); // Masquer le tooltip
     };
     
     const handleEscape = (e: KeyboardEvent) => {
@@ -141,6 +160,7 @@ export function MemberColumn({
         // Annuler le resize en cours
         if (resizingTask) {
           setResizingTask(null);
+          setResizeTooltip(null); // Masquer le tooltip
           return;
         }
         
@@ -180,12 +200,23 @@ export function MemberColumn({
     
     if (!task.workPeriod) return;
     
+    const startDate = new Date(task.workPeriod.startDate);
+    const endDate = new Date(task.workPeriod.endDate);
+    
     setResizingTask({
       taskId: task.id,
       type,
       startY: e.clientY,
-      originalStartDate: new Date(task.workPeriod.startDate),
-      originalEndDate: new Date(task.workPeriod.endDate)
+      originalStartDate: startDate,
+      originalEndDate: endDate
+    });
+    
+    // Afficher le tooltip avec la plage horaire initiale
+    setResizeTooltip({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY - 40, // Au-dessus de la souris
+      timeRange: `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`
     });
   }, []);
 
@@ -475,6 +506,20 @@ export function MemberColumn({
           </div>
         ))}
       </div>
+      
+      {/* Tooltip de redimensionnement - Rendu via portal */}
+      {resizeTooltip?.visible && ReactDOM.createPortal(
+        <div
+          className="fixed z-[9999] px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none"
+          style={{
+            left: resizeTooltip.x,
+            top: resizeTooltip.y,
+          }}
+        >
+          {resizeTooltip.timeRange}
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

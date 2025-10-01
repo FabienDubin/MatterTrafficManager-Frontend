@@ -1,4 +1,4 @@
-import { useEffect, useRef, forwardRef, createElement } from 'react';
+import { useEffect, useRef, forwardRef, createElement, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -8,6 +8,8 @@ import { EventInput } from '@fullcalendar/core';
 import { ViewConfig } from '@/types/calendar.types';
 import { FullCalendarTaskCard } from './FullCalendarTaskCard';
 import { generateDayHeaderContent, generateDayCellContent } from '@/utils/calendarBadges';
+import { format } from 'date-fns';
+import ReactDOM from 'react-dom';
 
 interface CalendarViewProps {
   events?: EventInput[];
@@ -43,6 +45,14 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
     const internalRef = useRef<FullCalendar>(null);
     // Use the forwarded ref if provided, otherwise use internal ref
     const actualRef = ref || internalRef;
+    
+    // État pour le tooltip de resize
+    const [resizeTooltip, setResizeTooltip] = useState<{
+      visible: boolean;
+      x: number;
+      y: number;
+      timeRange: string;
+    } | null>(null);
     
     // Navigate to currentDate when it changes or view changes
     useEffect(() => {
@@ -193,17 +203,49 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           }}
           eventResizeStart={(info) => {
             console.log('Resize start:', info.event.title);
-            // TODO: Task 2 - Afficher tooltip shadcn
+            
+            // Afficher le tooltip de resize
+            const start = info.event.start;
+            const end = info.event.end;
+            if (start && end) {
+              setResizeTooltip({
+                visible: true,
+                x: info.jsEvent.clientX,
+                y: info.jsEvent.clientY - 40, // Au-dessus de la souris
+                timeRange: `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`
+              });
+            }
           }}
           eventResize={(info) => {
             console.log('Resize:', info.event.title, 'New duration:', info.event.end);
+            
+            // Mettre à jour le tooltip pendant le resize
+            const newStart = info.event.start;
+            const newEnd = info.event.end;
+            
+            if (newStart && newEnd) {
+              setResizeTooltip(prev => {
+                if (!prev) return null;
+                
+                return {
+                  ...prev,
+                  // Garder la position existante si jsEvent n'est pas disponible
+                  x: info.jsEvent ? info.jsEvent.clientX : prev.x,
+                  y: info.jsEvent ? info.jsEvent.clientY - 40 : prev.y,
+                  timeRange: `${format(newStart, 'HH:mm')} - ${format(newEnd, 'HH:mm')}`
+                };
+              });
+            }
+            
             if (onEventResize) {
               onEventResize(info);
             }
           }}
           eventResizeStop={(info) => {
             console.log('Resize stop:', info.event.title);
-            // TODO: Task 2 - Masquer tooltip
+            
+            // Masquer le tooltip
+            setResizeTooltip(null);
           }}
           eventDisplay='block'
           // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
@@ -603,6 +645,20 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           color: hsl(var(--muted-foreground));
         }
       `}</style>
+      
+      {/* Tooltip de redimensionnement - Rendu via portal */}
+      {resizeTooltip?.visible && ReactDOM.createPortal(
+        <div
+          className="fixed z-[9999] px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none"
+          style={{
+            left: resizeTooltip.x,
+            top: resizeTooltip.y,
+          }}
+        >
+          {resizeTooltip.timeRange}
+        </div>,
+        document.body
+      )}
       </div>
     );
   }
