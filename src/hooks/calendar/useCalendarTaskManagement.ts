@@ -1,6 +1,11 @@
 import { useState } from 'react';
-import { tasksService } from '@/services/api/tasks.service';
 import { Task } from '@/types/task.types';
+import { useOptimisticTaskDelete } from '@/hooks/useOptimisticTaskDelete';
+
+interface BlacklistOptions {
+  addToDeleteBlacklist?: (id: string) => void;
+  removeFromDeleteBlacklist?: (id: string) => void;
+}
 
 /**
  * Hook for managing task operations in calendar
@@ -8,11 +13,20 @@ import { Task } from '@/types/task.types';
 export const useCalendarTaskManagement = (
   taskUpdate: any,
   tasksMapRef: any,
-  setTasks: (updater: (tasks: Task[]) => Task[]) => void
+  setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
+  blacklistOptions?: BlacklistOptions
 ) => {
+  const tasks = Array.from(tasksMapRef.current?.values() || []) as Task[];
   // État pour le sheet d'édition
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  // Initialize optimistic delete hook with blacklist support
+  const taskDelete = useOptimisticTaskDelete(tasks, setTasks, {
+    tasksMapRef,
+    addToDeleteBlacklist: blacklistOptions?.addToDeleteBlacklist,
+    removeFromDeleteBlacklist: blacklistOptions?.removeFromDeleteBlacklist,
+  });
 
   // Handlers pour le sheet d'édition - Use optimistic updates
   const handleTaskUpdate = async (id: string, data: Partial<Task>) => {
@@ -26,20 +40,8 @@ export const useCalendarTaskManagement = (
   };
 
   const handleTaskDelete = async (id: string) => {
-    try {
-      // For delete, we still call the service directly
-      // TODO: Create optimistic delete hook if needed
-      await tasksService.deleteTask(id);
-
-      // Remove from local state immediately for better UX
-      tasksMapRef.current.delete(id);
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
-
-      // No full refresh - let polling handle any other changes
-    } catch (error) {
-      console.error('Failed to delete task:', error);
-      throw error;
-    }
+    // Use optimistic delete with blacklist protection
+    taskDelete.mutate({ id });
   };
 
   return {

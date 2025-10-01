@@ -17,6 +17,9 @@ interface UseOptimisticTaskDeleteOptions {
   tasksMapRef?: MutableRefObject<Map<string, Task>>;
   // Function to trigger a smooth refresh after successful mutation
   onMutationSuccess?: () => void;
+  // Blacklist functions to prevent refresh from re-adding deleted tasks
+  addToDeleteBlacklist?: (id: string) => void;
+  removeFromDeleteBlacklist?: (id: string) => void;
 }
 
 /**
@@ -33,7 +36,7 @@ export function useOptimisticTaskDelete(
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>,
   options: UseOptimisticTaskDeleteOptions = {}
 ) {
-  const { tasksMapRef, onMutationSuccess } = options;
+  const { tasksMapRef, onMutationSuccess, addToDeleteBlacklist, removeFromDeleteBlacklist } = options;
   
   // Keep deleted tasks for potential restoration
   const deletedTasksRef = useRef<Map<string, Task>>(new Map());
@@ -51,30 +54,40 @@ export function useOptimisticTaskDelete(
       const taskToDelete = tasks.find(t => t.id === id);
       if (taskToDelete) {
         deletedTasksRef.current.set(id, { ...taskToDelete });
-        
+
+        // CRITICAL: Add to blacklist FIRST to prevent refresh from re-adding
+        if (addToDeleteBlacklist) {
+          addToDeleteBlacklist(id);
+        }
+
         // IMMEDIATE UPDATE #1: Remove from internal map
         if (tasksMapRef?.current) {
           tasksMapRef.current.delete(id);
         }
-        
+
         // IMMEDIATE UPDATE #2: Remove from React state (disappears instantly!)
         setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
       }
-      
+
       // Return the deleted task as context for rollback
       return taskToDelete;
     },
     
-    onError: (error, { id }, deletedTask) => {
+    onError: (_error, { id }, deletedTask) => {
+      // Remove from blacklist to allow restoration
+      if (removeFromDeleteBlacklist) {
+        removeFromDeleteBlacklist(id);
+      }
+
       // Restore the deleted task on error
       if (deletedTask && typeof deletedTask === 'object' && 'id' in deletedTask) {
         const taskToRestore = deletedTask as Task;
-        
+
         // Restore in internal map
         if (tasksMapRef?.current) {
           tasksMapRef.current.set(id, taskToRestore);
         }
-        
+
         // Restore in React state (task reappears)
         setTasks(prevTasks => {
           // Check if task doesn't already exist (avoid duplicates)
@@ -96,7 +109,12 @@ export function useOptimisticTaskDelete(
     onSuccess: (_, { id }) => {
       // Clear from deleted tasks cache
       deletedTasksRef.current.delete(id);
-      
+
+      // Remove from blacklist after successful deletion
+      if (removeFromDeleteBlacklist) {
+        removeFromDeleteBlacklist(id);
+      }
+
       // Trigger smooth refresh to ensure consistency
       if (onMutationSuccess) {
         setTimeout(() => {
@@ -125,11 +143,16 @@ export function useOptimisticTaskDelete(
   const restoreDeletedTask = useCallback((taskId: string) => {
     const deletedTask = deletedTasksRef.current.get(taskId);
     if (deletedTask) {
+      // Remove from blacklist to allow restoration
+      if (removeFromDeleteBlacklist) {
+        removeFromDeleteBlacklist(taskId);
+      }
+
       // Restore in internal map
       if (tasksMapRef?.current) {
         tasksMapRef.current.set(taskId, deletedTask);
       }
-      
+
       // Restore in React state
       setTasks(prevTasks => {
         if (!prevTasks.some(t => t.id === taskId)) {
@@ -141,14 +164,14 @@ export function useOptimisticTaskDelete(
         }
         return prevTasks;
       });
-      
+
       // Remove from deleted cache
       deletedTasksRef.current.delete(taskId);
-      
+
       return true;
     }
     return false;
-  }, [setTasks, tasksMapRef]);
+  }, [setTasks, tasksMapRef, removeFromDeleteBlacklist]);
   
   return {
     ...deleteTask,

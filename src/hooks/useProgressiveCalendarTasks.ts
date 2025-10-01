@@ -22,6 +22,9 @@ interface UseProgressiveCalendarTasksReturn {
   tasksMapRef: MutableRefObject<Map<string, Task>>;
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
   refreshAllRanges: () => Promise<void>;
+  // Blacklist for tasks being deleted (prevents refresh from re-adding them)
+  addToDeleteBlacklist: (id: string) => void;
+  removeFromDeleteBlacklist: (id: string) => void;
 }
 
 /**
@@ -50,12 +53,15 @@ export function useProgressiveCalendarTasks(
   const [loadedRanges, setLoadedRanges] = useState<Array<{ start: Date; end: Date }>>([]);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const [nextRefresh, setNextRefresh] = useState<Date | null>(null);
-  
+
   // Track ongoing fetches to prevent duplicate requests
   const ongoingFetchesRef = useRef<Set<string>>(new Set());
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef<Date>(new Date());
   const isTabActiveRef = useRef<boolean>(true);
+
+  // Blacklist for tasks being deleted (prevents refresh from re-adding them)
+  const deleteBlacklistRef = useRef<Set<string>>(new Set());
 
   /**
    * Create a unique key for a date range
@@ -113,11 +119,14 @@ export function useProgressiveCalendarTasks(
       const response = await tasksService.getCalendarTasks(formattedStartDate, formattedEndDate);
 
       if (response.success) {
-        // Merge new tasks with existing ones
+        // Merge new tasks with existing ones, but filter out blacklisted tasks
         response.data.tasks.forEach(task => {
-          tasksMapRef.current.set(task.id, task);
+          // Don't add tasks that are being deleted
+          if (!deleteBlacklistRef.current.has(task.id)) {
+            tasksMapRef.current.set(task.id, task);
+          }
         });
-        
+
         // Update tasks array from map
         const allTasks = Array.from(tasksMapRef.current.values());
         setTasks(allTasks);
@@ -288,6 +297,25 @@ export function useProgressiveCalendarTasks(
     setTasks([]);
     setLoadedRanges([]);
     ongoingFetchesRef.current.clear();
+    deleteBlacklistRef.current.clear();
+  }, []);
+
+  /**
+   * Add a task ID to the delete blacklist
+   * Prevents the task from being re-added during refresh
+   */
+  const addToDeleteBlacklist = useCallback((id: string) => {
+    deleteBlacklistRef.current.add(id);
+    console.log('[Progressive] Added to delete blacklist:', id);
+  }, []);
+
+  /**
+   * Remove a task ID from the delete blacklist
+   * Allows the task to be added again (after delete confirmed or rolled back)
+   */
+  const removeFromDeleteBlacklist = useCallback((id: string) => {
+    deleteBlacklistRef.current.delete(id);
+    console.log('[Progressive] Removed from delete blacklist:', id);
   }, []);
 
   return {
@@ -302,7 +330,10 @@ export function useProgressiveCalendarTasks(
     // Expose internals for optimistic updates
     tasksMapRef,
     setTasks,
-    refreshAllRanges
+    refreshAllRanges,
+    // Blacklist management
+    addToDeleteBlacklist,
+    removeFromDeleteBlacklist
   };
 }
 

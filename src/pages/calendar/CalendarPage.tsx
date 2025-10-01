@@ -60,6 +60,9 @@ export default function CalendarPage() {
     // Exposed for optimistic updates
     tasksMapRef,
     setTasks,
+    // Blacklist for delete operations
+    addToDeleteBlacklist,
+    removeFromDeleteBlacklist,
   } = useProgressiveCalendarTasks({
     enablePolling: true,
     pollingInterval: 2 * 60 * 1000, // 2 minutes when active
@@ -72,7 +75,7 @@ export default function CalendarPage() {
     // NO onMutationSuccess - we don't want to refresh everything after each update
   });
 
-  // Use calendar hooks
+  // Use calendar hooks with blacklist support for delete operations
   const {
     selectedTask,
     setSelectedTask,
@@ -80,7 +83,10 @@ export default function CalendarPage() {
     setSheetOpen,
     handleTaskUpdate,
     handleTaskDelete,
-  } = useCalendarTaskManagement(taskUpdate, tasksMapRef, setTasks);
+  } = useCalendarTaskManagement(taskUpdate, tasksMapRef, setTasks, {
+    addToDeleteBlacklist,
+    removeFromDeleteBlacklist,
+  });
 
   const {
     handleEventClick,
