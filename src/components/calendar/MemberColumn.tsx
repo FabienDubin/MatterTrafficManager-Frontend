@@ -552,8 +552,16 @@ function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
   const columns: { endTime: number }[] = [];
 
   sortedTasks.forEach(task => {
-    const startTime = new Date(task.workPeriod!.startDate);
-    const endTime = new Date(task.workPeriod!.endDate);
+    let startTime = new Date(task.workPeriod!.startDate);
+    let endTime = new Date(task.workPeriod!.endDate);
+
+    // For all-day tasks, force them to start at 8:00 and end at 20:00
+    if (task.isAllDay) {
+      startTime = new Date(startTime);
+      startTime.setHours(8, 0, 0, 0);
+      endTime = new Date(endTime);
+      endTime.setHours(20, 0, 0, 0);
+    }
 
     // Calculate vertical position (top and height)
     const startHour = startTime.getHours() + startTime.getMinutes() / 60;
