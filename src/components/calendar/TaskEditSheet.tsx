@@ -78,11 +78,19 @@ interface TaskEditSheetProps {
   task: Task | null;
   open: boolean;
   onClose: () => void;
-  onUpdate: (id: string, data: Partial<Task>) => Promise<void>;
-  onDelete: (id: string) => Promise<void>;
+  onUpdate?: (id: string, data: Partial<Task>) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
+  onCreate?: (data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  initialDates?: {
+    start: Date;
+    end: Date;
+  };
+  initialMember?: string; // ID du membre pré-sélectionné (pour DayView)
 }
 
-export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskEditSheetProps) {
+export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete, onCreate, initialDates, initialMember }: TaskEditSheetProps) {
+  // Déterminer le mode : création ou édition
+  const isCreateMode = !task;
   // State for projects and members
   const [projects, setProjects] = useState<Project[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -151,9 +159,10 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
     return 'not_started';
   };
 
-  // Initialize form when task changes
+  // Initialize form when task changes OR when opening in create mode
   useEffect(() => {
     if (task) {
+      // Mode édition - pré-remplir avec les données de la tâche
       const startDate = task.workPeriod?.startDate
         ? new Date(task.workPeriod.startDate)
         : undefined;
@@ -169,10 +178,27 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
         endDate,
         endTime: endDate ? format(endDate, 'HH:mm') : '18:00',
         notes: task.notes || '',
-        addToCalendar: false, // Backend doesn't store this, always false initially
+        addToCalendar: false,
+      });
+    } else if (isCreateMode && open) {
+      // Mode création - pré-remplir avec initialDates et initialMember
+      const startDate = initialDates?.start;
+      const endDate = initialDates?.end;
+
+      form.reset({
+        title: '',
+        projectId: '',
+        status: 'not_started',
+        assignedMembers: initialMember ? [initialMember] : [],
+        startDate,
+        startTime: startDate ? format(startDate, 'HH:mm') : '09:00',
+        endDate,
+        endTime: endDate ? format(endDate, 'HH:mm') : '18:00',
+        notes: '',
+        addToCalendar: false,
       });
     }
-  }, [task, form]);
+  }, [task, form, isCreateMode, open, initialDates, initialMember]);
 
   // Watch selected members and project
   const selectedMembers = form.watch('assignedMembers');
@@ -183,7 +209,97 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
 
   // Handle form submission
   const onSubmit = async (data: TaskEditFormData) => {
-    if (!task) return;
+    // MODE CRÉATION
+    if (isCreateMode) {
+      if (!onCreate) {
+        console.error('onCreate callback is required in create mode');
+        return;
+      }
+
+      // Valider les champs requis
+      if (!data.title || !data.projectId || !data.startDate || !data.endDate) {
+        toast.error('Veuillez remplir tous les champs obligatoires');
+        return;
+      }
+
+      // Build create payload
+      const [startHours, startMinutes] = data.startTime.split(':').map(Number);
+      const startDateTime = new Date(data.startDate);
+      startDateTime.setHours(startHours, startMinutes, 0, 0);
+
+      const [endHours, endMinutes] = data.endTime.split(':').map(Number);
+      const endDateTime = new Date(data.endDate);
+      endDateTime.setHours(endHours, endMinutes, 0, 0);
+
+      // Get project data for enrichment
+      const selectedProject = projects.find(p => p.id === data.projectId);
+
+      // Get member data for enrichment
+      const enrichedMembers = data.assignedMembers
+        ?.map(memberId => {
+          const member = members.find(m => m.id === memberId);
+          return member
+            ? {
+                id: member.id,
+                name: member.name,
+                email: member.email,
+                teams: member.teams,
+              }
+            : null;
+        })
+        .filter(Boolean) as Array<{
+        id: string;
+        name: string;
+        email: string;
+        teams?: string[];
+      }>;
+
+      const createPayload = {
+        title: data.title,
+        projectId: data.projectId,
+        projectData: selectedProject
+          ? {
+              id: selectedProject.id,
+              name: selectedProject.name,
+              status: selectedProject.status,
+            }
+          : undefined,
+        clientId: selectedProject?.client || undefined,
+        clientData:
+          selectedProject?.clientName && selectedProject?.client
+            ? {
+                id: selectedProject.client,
+                name: selectedProject.clientName,
+              }
+            : undefined,
+        status: data.status,
+        assignedMembers: data.assignedMembers || [],
+        assignedMembersData: enrichedMembers,
+        workPeriod: {
+          startDate: startDateTime.toISOString(),
+          endDate: endDateTime.toISOString(),
+        },
+        notes: data.notes || '',
+        addToCalendar: data.addToCalendar,
+      } as Omit<Task, 'id' | 'createdAt' | 'updatedAt'>;
+
+      // Close and perform create
+      onClose();
+      toast.success('Création en cours...');
+
+      try {
+        await onCreate(createPayload);
+      } catch (error) {
+        console.error('Error creating task:', error);
+        toast.error('Erreur de synchronisation', {
+          description: "La création n'a pas pu être synchronisée avec Notion",
+        });
+      }
+      return;
+    }
+
+    // MODE ÉDITION
+    if (!task || !onUpdate) return;
 
     // Build update payload
     const updatePayload: Partial<Task> = {};
@@ -337,7 +453,7 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
 
   // Handle delete
   const handleDelete = async () => {
-    if (!task) return;
+    if (!task || !onDelete) return;
 
     onClose();
     toast.success('Suppression en cours...');
@@ -352,14 +468,14 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
     }
   };
 
-  if (!task) return null;
-
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className='w-[400px] sm:w-[540px] flex flex-col'>
         <SheetHeader>
-          <SheetTitle>Modifier la tâche</SheetTitle>
-          <SheetDescription>Modifiez les informations de la tâche</SheetDescription>
+          <SheetTitle>{isCreateMode ? 'Créer une tâche' : 'Modifier la tâche'}</SheetTitle>
+          <SheetDescription>
+            {isCreateMode ? 'Créez une nouvelle tâche' : 'Modifiez les informations de la tâche'}
+          </SheetDescription>
         </SheetHeader>
 
         <Form {...form}>
@@ -762,8 +878,8 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
                   </AccordionItem>
                 </Accordion>
 
-                {/* SECTION 4: Historique */}
-                {(task.createdAt || task.updatedAt) && (
+                {/* SECTION 4: Historique - Uniquement en mode édition */}
+                {!isCreateMode && task && (task.createdAt || task.updatedAt) && (
                   <div className='space-y-2'>
                     <Label className='text-sm font-medium'>Historique</Label>
                     <div className='space-y-1 text-sm text-muted-foreground'>
@@ -806,32 +922,35 @@ export function TaskEditSheet({ task, open, onClose, onUpdate, onDelete }: TaskE
                   </Tooltip>
                 </div>
               </TooltipProvider>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant='ghost'
-                    size='icon'
-                    type='button'
-                    className='text-destructive hover:text-destructive hover:bg-destructive/10'
-                  >
-                    <Trash2 className='h-5 w-5' />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Cette action est irréversible. La tâche sera définitivement supprimée.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>
-                      Confirmer la suppression
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {/* Bouton Delete - Uniquement en mode édition */}
+              {!isCreateMode && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant='ghost'
+                      size='icon'
+                      type='button'
+                      className='text-destructive hover:text-destructive hover:bg-destructive/10'
+                    >
+                      <Trash2 className='h-5 w-5' />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Cette action est irréversible. La tâche sera définitivement supprimée.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDelete}>
+                        Confirmer la suppression
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </SheetFooter>
           </form>
         </Form>

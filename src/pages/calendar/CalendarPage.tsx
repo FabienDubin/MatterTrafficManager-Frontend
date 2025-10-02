@@ -16,6 +16,7 @@ import { LogOut, Calendar, Settings } from 'lucide-react';
 import { EventInput } from '@fullcalendar/core';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
+import { useOptimisticTaskCreate } from '@/hooks/useOptimisticTaskCreate';
 import { useCalendarEvents } from '@/hooks/calendar/useCalendarEvents';
 import { useCalendarNavigation } from '@/hooks/calendar/useCalendarNavigation';
 import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManagement';
@@ -74,6 +75,11 @@ export default function CalendarPage() {
     // NO onMutationSuccess - we don't want to refresh everything after each update
   });
 
+  // Initialize optimistic create hook
+  const taskCreate = useOptimisticTaskCreate(tasks, setTasks, {
+    tasksMapRef,
+  });
+
   // Use calendar hooks with blacklist support for delete operations
   const {
     selectedTask,
@@ -86,6 +92,12 @@ export default function CalendarPage() {
     addToDeleteBlacklist,
     removeFromDeleteBlacklist,
   });
+
+  // État pour la création de tâche
+  const [createMode, setCreateMode] = useState<{
+    initialDates: { start: Date; end: Date };
+    initialMember?: string;
+  } | null>(null);
 
   const { handleEventClick, handleEventDrop, handleEventResize } = useCalendarEvents(
     setSelectedTask,
@@ -224,6 +236,47 @@ export default function CalendarPage() {
     });
   };
 
+  // Handler pour la sélection dans FullCalendar (Week/Month)
+  const handleSelect = useCallback((selectInfo: any) => {
+    console.log('🎯 FullCalendar selection:', selectInfo);
+
+    setCreateMode({
+      initialDates: {
+        start: selectInfo.start,
+        end: selectInfo.end,
+      },
+    });
+    setSheetOpen(true);
+    setSelectedTask(null); // Mode création
+  }, [setSheetOpen, setSelectedTask]);
+
+  // Handler pour la sélection dans DayView (custom)
+  const handleTimeSlotSelect = useCallback((member: Member | null, startDate: Date, endDate: Date) => {
+    console.log('🎯 DayView selection:', { member, startDate, endDate });
+
+    setCreateMode({
+      initialDates: {
+        start: startDate,
+        end: endDate,
+      },
+      initialMember: member?.id,
+    });
+    setSheetOpen(true);
+    setSelectedTask(null); // Mode création
+  }, [setSheetOpen, setSelectedTask]);
+
+  // Handler pour onCreate (utilise le hook optimiste)
+  const handleTaskCreate = useCallback(
+    async (data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+      try {
+        await taskCreate.mutateAsync(data as any);
+      } catch (error) {
+        console.error('Erreur lors de la création de la tâche:', error);
+      }
+    },
+    [taskCreate]
+  );
+
   return (
     <div className='flex flex-col h-screen bg-background'>
       {/* Header */}
@@ -339,6 +392,7 @@ export default function CalendarPage() {
                         description: `${member ? member.name : 'Non assigné'} - ${hour}:00`,
                       });
                     }}
+                    onTimeSlotSelect={handleTimeSlotSelect}
                     onTaskDrop={(task, newMemberId, newDate, sourceMemberId) => {
                       if (!task.workPeriod) return;
 
@@ -431,6 +485,7 @@ export default function CalendarPage() {
                   onEventClick={handleEventClick}
                   onEventDrop={handleEventDrop}
                   onEventResize={handleEventResize}
+                  onSelect={handleSelect}
                   onDatesChange={handleDatesChange}
                   onNavLinkDayClick={date => {
                     // Switch to day view and set the selected date
@@ -450,16 +505,20 @@ export default function CalendarPage() {
         </div>
       </main>
 
-      {/* Sheet d'édition de tâche */}
+      {/* Sheet d'édition/création de tâche */}
       <TaskEditSheet
         task={selectedTask}
         open={sheetOpen}
         onClose={() => {
           setSheetOpen(false);
           setSelectedTask(null);
+          setCreateMode(null);
         }}
         onUpdate={handleTaskUpdate}
         onDelete={handleTaskDelete}
+        onCreate={handleTaskCreate}
+        initialDates={createMode?.initialDates}
+        initialMember={createMode?.initialMember}
       />
     </div>
   );
