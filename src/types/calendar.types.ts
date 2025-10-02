@@ -47,6 +47,7 @@ export interface MemberColumnProps {
   tasks: Task[];
   date: Date;
   viewConfig?: ViewConfig;
+  hourGridHeight: number; // Hauteur mesurée de la grille des heures
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onTimeSlotSelect?: (member: Member, startDate: Date, endDate: Date) => void;

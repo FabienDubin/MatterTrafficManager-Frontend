@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { Task } from '@/types/task.types';
 import { DayViewProps } from '@/types/calendar.types';
 import { MemberColumn } from './MemberColumn';
@@ -21,6 +21,27 @@ export function DayView({
   onTaskDrop,
   onTaskResize,
 }: DayViewProps) {
+  const hourGridRef = useRef<HTMLDivElement>(null);
+  const [gridHeight, setGridHeight] = useState(0);
+
+  // Measure hour grid height after mount and on resize
+  useEffect(() => {
+    const measureHeight = () => {
+      if (hourGridRef.current) {
+        const height = hourGridRef.current.clientHeight;
+        console.log('📏 DayView - Measured grid height:', height);
+        setGridHeight(height);
+      }
+    };
+
+    // Measure on mount
+    measureHeight();
+
+    // Re-measure on window resize
+    window.addEventListener('resize', measureHeight);
+    return () => window.removeEventListener('resize', measureHeight);
+  }, []);
+
   // Filtrer les tâches pour la journée actuelle
   const dayTasks = useMemo(() => {
     const dayStart = new Date(date);
@@ -141,7 +162,7 @@ export function DayView({
               </div>
 
               {/* Hour labels */}
-              <div className='flex-1 grid grid-rows-[repeat(13,1fr)]'>
+              <div ref={hourGridRef} className='flex-1 grid grid-rows-[repeat(13,1fr)]'>
                 {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => (
                   <div
                     key={hour}
@@ -167,6 +188,7 @@ export function DayView({
                     schoolTask={specialTasksByMember.school.get(member.id)}
                     date={date}
                     viewConfig={viewConfig}
+                    hourGridHeight={gridHeight}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
                     onTimeSlotSelect={(m, startDate, endDate) =>

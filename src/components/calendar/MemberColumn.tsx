@@ -19,6 +19,7 @@ export function MemberColumn({
   tasks,
   date,
   viewConfig,
+  hourGridHeight,
   onTaskClick,
   onTimeSlotClick,
   onTimeSlotSelect,
@@ -61,7 +62,8 @@ export function MemberColumn({
 
   // Calculate task positions to avoid overlaps
   const taskPositions = useMemo(() => {
-    const positions = calculateTaskPositions(tasks, date);
+    console.log('🔍 MemberColumn - hourGridHeight:', hourGridHeight);
+    const positions = calculateTaskPositions(tasks, date, hourGridHeight);
     
     // Override position pour la tâche en cours de resize
     if (resizingTask && resizingTask.tempStartDate && resizingTask.tempEndDate) {
@@ -70,10 +72,9 @@ export function MemberColumn({
         // Recalculer la position avec les dates temporaires
         const startHour = resizingTask.tempStartDate.getHours() + resizingTask.tempStartDate.getMinutes() / 60;
         const endHour = resizingTask.tempEndDate.getHours() + resizingTask.tempEndDate.getMinutes() / 60;
-        
-        const viewportHeight = window.innerHeight;
-        const hourHeight = (viewportHeight - 200) / 13;
-        
+
+        const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
+
         positions[resizeIndex] = {
           ...positions[resizeIndex],
           top: (startHour - 8) * hourHeight,
@@ -81,17 +82,16 @@ export function MemberColumn({
         };
       }
     }
-    
+
     return positions;
-  }, [tasks, date, resizingTask]);
+  }, [tasks, date, resizingTask, hourGridHeight]);
 
   // Gestion du resize avec les événements mouse
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!resizingTask) return;
-      
-      const viewportHeight = window.innerHeight;
-      const hourHeight = (viewportHeight - 200) / 13;
+
+      const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
       
       // Calculer le déplacement en pixels
       const deltaY = e.clientY - resizingTask.startY;
@@ -354,8 +354,7 @@ export function MemberColumn({
       e.preventDefault();
 
       const rect = containerRef.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const hourHeight = (viewportHeight - 200) / 13;
+      const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
 
       const y = e.clientY - rect.top;
       const totalMinutes = (y / hourHeight) * 60;
@@ -371,7 +370,7 @@ export function MemberColumn({
         startMinute,
       });
     },
-    []
+    [hourGridHeight]
   );
 
   const handleSelectionMove = useCallback((e: MouseEvent) => {
@@ -388,8 +387,7 @@ export function MemberColumn({
       return;
     }
 
-    const viewportHeight = window.innerHeight;
-    const hourHeight = (viewportHeight - 200) / 13;
+    const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
 
     // Calculer la différence en minutes
     const deltaY = selecting.currentY - selecting.startY;
@@ -423,7 +421,7 @@ export function MemberColumn({
     onTimeSlotSelect(member, finalStartDate, finalEndDate);
 
     setSelecting(null);
-  }, [selecting, date, member, onTimeSlotSelect]);
+  }, [selecting, date, member, onTimeSlotSelect, hourGridHeight]);
 
   // Gérer les événements mouse au niveau global pendant la sélection
   useEffect(() => {
@@ -457,9 +455,9 @@ export function MemberColumn({
   );
 
   return (
-    <div className={columnClassName}>
+    <div className={cn(columnClassName, 'flex flex-col')}>
       {/* Member header */}
-      <div className='sticky top-0 z-30 bg-muted/30 border-b px-3 h-[4.5rem] flex items-center'>
+      <div className='sticky top-0 z-30 bg-muted/30 border-b px-3 h-[4.5rem] flex items-center flex-shrink-0'>
         <div className='flex items-center gap-2 w-full'>
           <Avatar className='h-7 w-7'>
             <AvatarImage src={`/avatars/${member.id}.png`} alt={member.name} />
@@ -557,28 +555,27 @@ export function MemberColumn({
       {/* Time slots with tasks */}
       <div
         ref={timeSlotsRef}
-        className='relative'
+        className='grid grid-rows-[repeat(13,1fr)] relative'
+        style={{ height: hourGridHeight > 0 ? `${hourGridHeight}px` : undefined }}
         onMouseDown={(e) => {
           if (timeSlotsRef.current) {
             handleSelectionStart(e, timeSlotsRef.current);
           }
         }}
       >
-        {/* Hour slots for drop zones */}
+        {/* Hour slots */}
         {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => {
-          const slotHeight = `calc((100vh - 200px) / 13)`;
           return (
             <div
               key={hour}
-              className='border-b hover:bg-muted/5 cursor-pointer transition-colors'
-              style={{ height: slotHeight }}
+              className='border-b hover:bg-muted/5 cursor-pointer transition-colors relative'
               onDrop={e => handleDrop(e, hour)}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onClick={() => handleTimeSlotClick(hour)}
             >
               {/* Half-hour line */}
-              <div className='border-b border-dashed border-muted-foreground/20' style={{ height: `calc(${slotHeight} / 2)` }} />
+              <div className='absolute top-1/2 left-0 right-0 border-b border-dashed border-muted-foreground/20' />
             </div>
           );
         })}
@@ -623,8 +620,7 @@ export function MemberColumn({
 
         {/* Overlay de sélection */}
         {selecting && (() => {
-          const viewportHeight = window.innerHeight;
-          const hourHeight = (viewportHeight - 200) / 13;
+          const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
 
           const deltaY = selecting.currentY - selecting.startY;
           const startOffset = (selecting.startHour - 8) * hourHeight + (selecting.startMinute / 60) * hourHeight;
@@ -665,14 +661,13 @@ export function MemberColumn({
 /**
  * Calculate non-overlapping positions for tasks
  */
-function calculateTaskPositions(tasks: Task[], date: Date): TaskPosition[] {
+function calculateTaskPositions(tasks: Task[], date: Date, containerHeight: number): TaskPosition[] {
   if (tasks.length === 0) {
     return [];
   }
 
-  // Calculate slot height dynamically (viewport - header - padding) / 13 hours
-  const viewportHeight = window.innerHeight;
-  const hourHeight = (viewportHeight - 200) / 13;
+  // Calculate slot height from measured grid height
+  const hourHeight = containerHeight > 0 ? containerHeight / 13 : 0;
 
   // Filter and sort tasks by start time
   const dayStart = new Date(date);
