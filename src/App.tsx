@@ -4,6 +4,10 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { AppRouter } from '@/router/AppRouter';
 import { Toaster } from '@/components/ui/toaster';
 import { useInitConfigStore } from '@/store/config.store';
+import { runMigrationIfNeeded } from '@/lib/migrateLocalStorage';
+
+// Run localStorage migration on app startup
+runMigrationIfNeeded();
 
 // Create router with v7 future flags
 const router = createBrowserRouter(

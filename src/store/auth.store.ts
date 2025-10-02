@@ -5,21 +5,28 @@ import { useConfigStore } from './config.store';
 
 interface AuthState {
   user: User | null;
+  accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  
+
   // Actions
   setUser: (user: User | null) => void;
+  setTokens: (accessToken: string, refreshToken: string) => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   clearAuth: () => void;
+  getAccessToken: () => string | null;
+  getRefreshToken: () => string | null;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
+      accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
 
@@ -27,16 +34,22 @@ export const useAuthStore = create<AuthState>()(
         set({ user, isAuthenticated: !!user });
       },
 
+      setTokens: (accessToken, refreshToken) => {
+        set({ accessToken, refreshToken });
+      },
+
       login: async (email, password) => {
         set({ isLoading: true });
         try {
           const response = await authService.login({ email, password });
-          set({ 
-            user: response.user, 
+          set({
+            user: response.user,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
             isAuthenticated: true,
-            isLoading: false 
+            isLoading: false
           });
-          
+
           // Preload config after successful login
           // Use setTimeout to avoid blocking the login flow
           setTimeout(() => {
@@ -60,14 +73,17 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authService.logout();
         } finally {
-          set({ user: null, isAuthenticated: false });
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          set({
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+            isAuthenticated: false
+          });
         }
       },
 
       checkAuth: async () => {
-        const token = localStorage.getItem('accessToken');
+        const token = get().accessToken;
         if (!token) {
           set({ user: null, isAuthenticated: false });
           return;
@@ -82,14 +98,21 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearAuth: () => {
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        set({ user: null, isAuthenticated: false });
+        set({
+          user: null,
+          accessToken: null,
+          refreshToken: null,
+          isAuthenticated: false
+        });
       },
+
+      getAccessToken: () => get().accessToken,
+
+      getRefreshToken: () => get().refreshToken,
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({ user: state.user, isAuthenticated: state.isAuthenticated }),
+      // Persist all auth state including tokens in localStorage
     }
   )
 );
