@@ -69,12 +69,20 @@ export function TaskCard({
     }
   };
 
-  const timeString = task.workPeriod
-    ? `${format(new Date(task.workPeriod.startDate), 'HH:mm')} - ${format(
-        new Date(task.workPeriod.endDate),
-        'HH:mm'
-      )}`
-    : '';
+  const timeString = (() => {
+    if (!task.workPeriod) return '';
+
+    // Pour les tâches "journée entière" qui ne sont pas des tâches spéciales
+    if (task.isAllDay && !['holiday', 'remote', 'school'].includes(task.taskType || '')) {
+      return 'Toute la journée';
+    }
+
+    // Horaire normal pour les autres tâches
+    return `${format(new Date(task.workPeriod.startDate), 'HH:mm')} - ${format(
+      new Date(task.workPeriod.endDate),
+      'HH:mm'
+    )}`;
+  })();
 
   const tooltipTitle = `${task.title}${timeString ? '\n' + timeString : ''}`;
 

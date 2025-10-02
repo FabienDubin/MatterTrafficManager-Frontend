@@ -64,21 +64,23 @@ export function MemberColumn({
   const taskPositions = useMemo(() => {
     console.log('🔍 MemberColumn - hourGridHeight:', hourGridHeight);
     const positions = calculateTaskPositions(tasks, date, hourGridHeight);
-    
+
     // Override position pour la tâche en cours de resize
     if (resizingTask && resizingTask.tempStartDate && resizingTask.tempEndDate) {
       const resizeIndex = positions.findIndex(p => p.task.id === resizingTask.taskId);
       if (resizeIndex !== -1) {
         // Recalculer la position avec les dates temporaires
-        const startHour = resizingTask.tempStartDate.getHours() + resizingTask.tempStartDate.getMinutes() / 60;
-        const endHour = resizingTask.tempEndDate.getHours() + resizingTask.tempEndDate.getMinutes() / 60;
+        const startHour =
+          resizingTask.tempStartDate.getHours() + resizingTask.tempStartDate.getMinutes() / 60;
+        const endHour =
+          resizingTask.tempEndDate.getHours() + resizingTask.tempEndDate.getMinutes() / 60;
 
         const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
 
         positions[resizeIndex] = {
           ...positions[resizeIndex],
           top: (startHour - 8) * hourHeight,
-          height: Math.max((endHour - startHour) * hourHeight, 20)
+          height: Math.max((endHour - startHour) * hourHeight, 20),
         };
       }
     }
@@ -92,41 +94,47 @@ export function MemberColumn({
       if (!resizingTask) return;
 
       const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
-      
+
       // Calculer le déplacement en pixels
       const deltaY = e.clientY - resizingTask.startY;
-      
+
       // Convertir en minutes (1 heure = hourHeight pixels)
       const deltaMinutes = (deltaY / hourHeight) * 60;
-      
+
       // Arrondir aux 15 minutes
       const roundedDeltaMinutes = Math.round(deltaMinutes / 15) * 15;
-      
+
       let newStartDate = new Date(resizingTask.originalStartDate);
       let newEndDate = new Date(resizingTask.originalEndDate);
-      
+
       if (resizingTask.type === 'top') {
         // Resize du haut - modifier startDate
-        newStartDate = new Date(resizingTask.originalStartDate.getTime() + roundedDeltaMinutes * 60000);
-        
+        newStartDate = new Date(
+          resizingTask.originalStartDate.getTime() + roundedDeltaMinutes * 60000
+        );
+
         // Contraintes : 8h minimum, ne pas dépasser endDate - 15min
         const minDate = new Date(date);
         minDate.setHours(8, 0, 0, 0);
         const maxDate = new Date(resizingTask.originalEndDate.getTime() - 15 * 60000);
-        
-        newStartDate = new Date(Math.max(minDate.getTime(), Math.min(maxDate.getTime(), newStartDate.getTime())));
+
+        newStartDate = new Date(
+          Math.max(minDate.getTime(), Math.min(maxDate.getTime(), newStartDate.getTime()))
+        );
       } else {
         // Resize du bas - modifier endDate
         newEndDate = new Date(resizingTask.originalEndDate.getTime() + roundedDeltaMinutes * 60000);
-        
+
         // Contraintes : 20h maximum, ne pas être avant startDate + 15min
         const maxDate = new Date(date);
         maxDate.setHours(20, 0, 0, 0);
         const minDate = new Date(resizingTask.originalStartDate.getTime() + 15 * 60000);
-        
-        newEndDate = new Date(Math.max(minDate.getTime(), Math.min(maxDate.getTime(), newEndDate.getTime())));
+
+        newEndDate = new Date(
+          Math.max(minDate.getTime(), Math.min(maxDate.getTime(), newEndDate.getTime()))
+        );
       }
-      
+
       // Contrainte globale : durée maximale de 12h
       const maxDuration = 12 * 60 * 60 * 1000; // 12 heures en ms
       if (newEndDate.getTime() - newStartDate.getTime() > maxDuration) {
@@ -136,35 +144,47 @@ export function MemberColumn({
           newEndDate = new Date(newStartDate.getTime() + maxDuration);
         }
       }
-      
+
       // Mettre à jour l'état temporaire
-      setResizingTask(prev => prev ? {
-        ...prev,
-        tempStartDate: newStartDate,
-        tempEndDate: newEndDate
-      } : null);
-      
+      setResizingTask(prev =>
+        prev
+          ? {
+              ...prev,
+              tempStartDate: newStartDate,
+              tempEndDate: newEndDate,
+            }
+          : null
+      );
+
       // Mettre à jour le tooltip avec les nouvelles heures
-      setResizeTooltip(prev => prev ? {
-        ...prev,
-        x: e.clientX,
-        y: e.clientY - 40,
-        timeRange: `${format(newStartDate, 'HH:mm')} - ${format(newEndDate, 'HH:mm')}`
-      } : null);
+      setResizeTooltip(prev =>
+        prev
+          ? {
+              ...prev,
+              x: e.clientX,
+              y: e.clientY - 40,
+              timeRange: `${format(newStartDate, 'HH:mm')} - ${format(newEndDate, 'HH:mm')}`,
+            }
+          : null
+      );
     };
-    
+
     const handleMouseUp = () => {
       if (resizingTask && resizingTask.tempStartDate && resizingTask.tempEndDate && onTaskResize) {
         // Finaliser le resize
         const taskToResize = tasks.find(t => t.id === resizingTask.taskId);
         if (taskToResize) {
-          onTaskResize(taskToResize as TaskWithConflicts, resizingTask.tempStartDate, resizingTask.tempEndDate);
+          onTaskResize(
+            taskToResize as TaskWithConflicts,
+            resizingTask.tempStartDate,
+            resizingTask.tempEndDate
+          );
         }
       }
       setResizingTask(null);
       setResizeTooltip(null); // Masquer le tooltip
     };
-    
+
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         // Annuler le resize en cours
@@ -173,7 +193,7 @@ export function MemberColumn({
           setResizeTooltip(null); // Masquer le tooltip
           return;
         }
-        
+
         // Annuler le drag en cours
         const draggedElement = document.querySelector('[draggable="true"]:active');
         if (draggedElement) {
@@ -190,7 +210,7 @@ export function MemberColumn({
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     }
-    
+
     document.addEventListener('keydown', handleEscape);
 
     return () => {
@@ -204,71 +224,74 @@ export function MemberColumn({
   }, [resizingTask, tasks, date, onTaskResize]);
 
   // Handler pour démarrer le resize
-  const handleResizeStart = useCallback((e: React.MouseEvent, type: 'top' | 'bottom', task: TaskWithConflicts) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (!task.workPeriod) return;
-    
-    const startDate = new Date(task.workPeriod.startDate);
-    const endDate = new Date(task.workPeriod.endDate);
-    
-    setResizingTask({
-      taskId: task.id,
-      type,
-      startY: e.clientY,
-      originalStartDate: startDate,
-      originalEndDate: endDate
-    });
-    
-    // Afficher le tooltip avec la plage horaire initiale
-    setResizeTooltip({
-      visible: true,
-      x: e.clientX,
-      y: e.clientY - 40, // Au-dessus de la souris
-      timeRange: `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`
-    });
-  }, []);
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent, type: 'top' | 'bottom', task: TaskWithConflicts) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!task.workPeriod) return;
+
+      const startDate = new Date(task.workPeriod.startDate);
+      const endDate = new Date(task.workPeriod.endDate);
+
+      setResizingTask({
+        taskId: task.id,
+        type,
+        startY: e.clientY,
+        originalStartDate: startDate,
+        originalEndDate: endDate,
+      });
+
+      // Afficher le tooltip avec la plage horaire initiale
+      setResizeTooltip({
+        visible: true,
+        x: e.clientX,
+        y: e.clientY - 40, // Au-dessus de la souris
+        timeRange: `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`,
+      });
+    },
+    []
+  );
 
   // Handle drop on time slot
   const handleDrop = useCallback(
     (e: React.DragEvent, hour: number) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       // Récupérer l'offset de drag stocké ou utiliser 0 par défaut
       const dragOffset = parseInt(e.dataTransfer.getData('dragOffsetY') || '0');
-      
+
       // Calculer la position Y relative dans le slot pour déterminer les minutes
       const rect = e.currentTarget.getBoundingClientRect();
       const relativeY = e.clientY - rect.top - dragOffset; // Soustraire l'offset pour positionner selon le haut de la tâche
       const slotHeight = rect.height;
       const minuteOffset = Math.max(0, Math.floor((relativeY / slotHeight) * 60));
-      
+
       // Arrondir aux 15 minutes
       const roundedMinutes = Math.round(minuteOffset / 15) * 15;
 
       const taskData = e.dataTransfer.getData('task');
       const sourceMemberId = e.dataTransfer.getData('sourceMemberId');
-      
+
       if (taskData && onTaskDrop) {
         const task = JSON.parse(taskData) as Task;
         const dropDate = new Date(date);
         dropDate.setHours(hour, roundedMinutes % 60, 0, 0);
-        
+
         // Si les minutes arrondies dépassent 60, ajouter une heure
         if (roundedMinutes >= 60) {
           dropDate.setHours(hour + 1, 0, 0, 0);
         }
 
-        console.log('Drop at', { 
-          hour, 
-          minuteOffset, 
-          roundedMinutes, 
+        console.log('Drop at', {
+          hour,
+          minuteOffset,
+          roundedMinutes,
           finalTime: dropDate.toTimeString(),
           dragOffset,
           sourceMemberId,
-          targetMemberId: member.id
+          targetMemberId: member.id,
         });
 
         // Alertes pour congés et formation (pas pour télétravail)
@@ -287,27 +310,29 @@ export function MemberColumn({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
-    
+
     // Auto-scroll logic
     const container = e.currentTarget.closest('.flex-1.relative.overflow-hidden');
     if (!container) return;
-    
-    const scrollContainer = container.querySelector('.overflow-y-auto, [data-radix-scroll-area-viewport]') as HTMLElement;
+
+    const scrollContainer = container.querySelector(
+      '.overflow-y-auto, [data-radix-scroll-area-viewport]'
+    ) as HTMLElement;
     if (!scrollContainer) return;
-    
+
     const rect = scrollContainer.getBoundingClientRect();
     const y = e.clientY;
-    
+
     // Zone de déclenchement du scroll (50px du bord)
     const scrollZone = 50;
     const scrollSpeed = 10;
-    
+
     // Clear existing interval
     if (dragScrollInterval.current) {
       clearInterval(dragScrollInterval.current);
       dragScrollInterval.current = null;
     }
-    
+
     // Scroll vers le bas
     if (y > rect.bottom - scrollZone) {
       dragScrollInterval.current = setInterval(() => {
@@ -321,7 +346,7 @@ export function MemberColumn({
       }, 20);
     }
   }, []);
-  
+
   const handleDragLeave = useCallback(() => {
     // Stop scrolling when leaving the drop zone
     if (dragScrollInterval.current) {
@@ -373,13 +398,14 @@ export function MemberColumn({
     [hourGridHeight]
   );
 
-  const handleSelectionMove = useCallback((e: MouseEvent) => {
-    if (!selecting) return;
+  const handleSelectionMove = useCallback(
+    (e: MouseEvent) => {
+      if (!selecting) return;
 
-    setSelecting(prev =>
-      prev ? { ...prev, currentY: e.clientY } : null
-    );
-  }, [selecting]);
+      setSelecting(prev => (prev ? { ...prev, currentY: e.clientY } : null));
+    },
+    [selecting]
+  );
 
   const handleSelectionEnd = useCallback(() => {
     if (!selecting || !onTimeSlotSelect) {
@@ -557,7 +583,7 @@ export function MemberColumn({
         ref={timeSlotsRef}
         className='grid grid-rows-[repeat(13,1fr)] relative'
         style={{ height: hourGridHeight > 0 ? `${hourGridHeight}px` : undefined }}
-        onMouseDown={(e) => {
+        onMouseDown={e => {
           if (timeSlotsRef.current) {
             handleSelectionStart(e, timeSlotsRef.current);
           }
@@ -603,11 +629,11 @@ export function MemberColumn({
               draggable={true}
               resizable={true}
               className='h-full hover:scale-[1.02]'
-              onDragStart={(e) => {
+              onDragStart={e => {
                 // Capturer l'offset Y du clic par rapport au haut de la tâche
                 const rect = e.currentTarget.getBoundingClientRect();
                 const offsetY = e.clientY - rect.top;
-                
+
                 e.dataTransfer.setData('task', JSON.stringify(pos.task));
                 e.dataTransfer.setData('dragOffsetY', offsetY.toString());
                 e.dataTransfer.setData('sourceMemberId', member.id); // Ajouter le membre source
@@ -619,41 +645,44 @@ export function MemberColumn({
         ))}
 
         {/* Overlay de sélection */}
-        {selecting && (() => {
-          const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
+        {selecting &&
+          (() => {
+            const hourHeight = hourGridHeight > 0 ? hourGridHeight / 13 : 0;
 
-          const deltaY = selecting.currentY - selecting.startY;
-          const startOffset = (selecting.startHour - 8) * hourHeight + (selecting.startMinute / 60) * hourHeight;
+            const deltaY = selecting.currentY - selecting.startY;
+            const startOffset =
+              (selecting.startHour - 8) * hourHeight + (selecting.startMinute / 60) * hourHeight;
 
-          const height = Math.abs(deltaY);
-          const top = deltaY < 0 ? startOffset + deltaY : startOffset;
+            const height = Math.abs(deltaY);
+            const top = deltaY < 0 ? startOffset + deltaY : startOffset;
 
-          return (
-            <div
-              className='absolute left-0 right-0 bg-primary/20 pointer-events-none'
-              style={{
-                top: `${top}px`,
-                height: `${height}px`,
-                zIndex: 100,
-              }}
-            />
-          );
-        })()}
+            return (
+              <div
+                className='absolute left-0 right-0 bg-primary/20 pointer-events-none'
+                style={{
+                  top: `${top}px`,
+                  height: `${height}px`,
+                  zIndex: 100,
+                }}
+              />
+            );
+          })()}
       </div>
 
       {/* Tooltip de redimensionnement - Rendu via portal */}
-      {resizeTooltip?.visible && ReactDOM.createPortal(
-        <div
-          className="fixed z-[9999] px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none"
-          style={{
-            left: resizeTooltip.x,
-            top: resizeTooltip.y,
-          }}
-        >
-          {resizeTooltip.timeRange}
-        </div>,
-        document.body
-      )}
+      {resizeTooltip?.visible &&
+        ReactDOM.createPortal(
+          <div
+            className='fixed z-[9999] px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none'
+            style={{
+              left: resizeTooltip.x,
+              top: resizeTooltip.y,
+            }}
+          >
+            {resizeTooltip.timeRange}
+          </div>,
+          document.body
+        )}
     </div>
   );
 }
@@ -661,7 +690,11 @@ export function MemberColumn({
 /**
  * Calculate non-overlapping positions for tasks
  */
-function calculateTaskPositions(tasks: Task[], date: Date, containerHeight: number): TaskPosition[] {
+function calculateTaskPositions(
+  tasks: Task[],
+  date: Date,
+  containerHeight: number
+): TaskPosition[] {
   if (tasks.length === 0) {
     return [];
   }
@@ -693,7 +726,7 @@ function calculateTaskPositions(tasks: Task[], date: Date, containerHeight: numb
       startTime = new Date(startTime);
       startTime.setHours(8, 0, 0, 0);
       endTime = new Date(endTime);
-      endTime.setHours(20, 0, 0, 0);
+      endTime.setHours(21, 0, 0, 0);
     }
 
     // Calculate vertical position (top and height)
