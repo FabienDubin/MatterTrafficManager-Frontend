@@ -62,7 +62,6 @@ export function MemberColumn({
 
   // Calculate task positions to avoid overlaps
   const taskPositions = useMemo(() => {
-    console.log('🔍 MemberColumn - hourGridHeight:', hourGridHeight);
     const positions = calculateTaskPositions(tasks, date, hourGridHeight);
 
     // Override position pour la tâche en cours de resize

@@ -29,7 +29,6 @@ export function DayView({
     const measureHeight = () => {
       if (hourGridRef.current) {
         const height = hourGridRef.current.clientHeight;
-        console.log('📏 DayView - Measured grid height:', height);
         setGridHeight(height);
       }
     };
