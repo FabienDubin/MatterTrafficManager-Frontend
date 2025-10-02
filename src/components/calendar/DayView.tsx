@@ -135,18 +135,17 @@ export function DayView({
         <div className='flex-1 relative overflow-hidden'>
           <div className='flex h-full'>
             {/* Fixed Time labels column */}
-            <div className='w-20 flex-shrink-0 border-r sticky left-0 z-20 bg-background'>
-              <div className='bg-muted/30 border-b px-2 h-[4.5rem] flex items-center'>
+            <div className='w-20 flex-shrink-0 border-r sticky left-0 z-20 bg-background flex flex-col'>
+              <div className='bg-muted/30 border-b px-2 h-[4.5rem] flex items-center flex-shrink-0'>
                 <span className='text-xs font-medium text-muted-foreground'>Heures</span>
               </div>
 
               {/* Hour labels */}
-              <div className='relative'>
+              <div className='flex-1 grid grid-rows-[repeat(13,1fr)]'>
                 {Array.from({ length: 13 }, (_, i) => i + 8).map(hour => (
                   <div
                     key={hour}
-                    className='h-16 border-b text-xs text-muted-foreground flex items-start px-2 pt-1 bg-background'
-                    style={{ height: 'calc((100vh - 200px) / 13)' }}
+                    className='border-b text-xs text-muted-foreground flex items-start px-2 pt-1 bg-background'
                   >
                     {hour}:00
                   </div>
@@ -170,7 +169,9 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
-                    onTimeSlotSelect={(m, startDate, endDate) => onTimeSlotSelect?.(m, startDate, endDate)}
+                    onTimeSlotSelect={(m, startDate, endDate) =>
+                      onTimeSlotSelect?.(m, startDate, endDate)
+                    }
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
                       onTaskDrop?.(task, memberId, newDate, sourceMemberId)
                     }
@@ -186,7 +187,9 @@ export function DayView({
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
-                    onTimeSlotSelect={(startDate, endDate) => onTimeSlotSelect?.(null, startDate, endDate)}
+                    onTimeSlotSelect={(startDate, endDate) =>
+                      onTimeSlotSelect?.(null, startDate, endDate)
+                    }
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
                       onTaskDrop?.(task, memberId, newDate, sourceMemberId)
                     }
