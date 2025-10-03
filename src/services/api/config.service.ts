@@ -89,5 +89,43 @@ export const configService = {
       ASYNC_MODE_UPDATE: config.update,
       ASYNC_MODE_DELETE: config.delete,
     });
+  },
+
+  /**
+   * Get teams display configuration
+   */
+  async getTeamsDisplayConfig(): Promise<{
+    teams: Array<{
+      id: string;
+      name: string;
+      icon: string;
+      color: string;
+      order: number;
+    }>;
+  }> {
+    try {
+      const response = await apiClient.get('/config/teams-display');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching teams display config:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update teams display configuration
+   */
+  async updateTeamsDisplayConfig(teams: Array<{
+    id: string;
+    icon: string;
+    color: string;
+    order: number;
+  }>): Promise<void> {
+    try {
+      await apiClient.put('/config/teams-display', { teams });
+    } catch (error) {
+      console.error('Error updating teams display config:', error);
+      throw error;
+    }
   }
 };
