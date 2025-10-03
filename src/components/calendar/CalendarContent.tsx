@@ -1,4 +1,4 @@
-import { RefObject } from 'react';
+import { RefObject, useEffect, useRef } from 'react';
 import { CalendarView } from '@/components/calendar/CalendarView';
 import { DayView } from '@/components/calendar/DayView';
 import { CalendarViewType } from '@/components/calendar/ViewSwitcher';
@@ -70,6 +70,26 @@ export function CalendarContent({
   onTaskDrop,
   onTaskResize,
 }: CalendarContentProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Observe container size changes and update FullCalendar when needed
+  useEffect(() => {
+    if (!containerRef.current || currentView === 'day') return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (calendarRef.current) {
+        const calendarApi = calendarRef.current.getApi();
+        calendarApi.updateSize();
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [calendarRef, currentView]);
+
   // Loading state
   if (isInitialLoad && tasks.length === 0) {
     return (
@@ -132,20 +152,22 @@ export function CalendarContent({
 
   // Render CalendarView (week/month)
   return (
-    <CalendarView
-      ref={calendarRef}
-      events={events}
-      onDateClick={onDateClick}
-      onEventClick={onEventClick}
-      onEventDrop={onEventDrop}
-      onEventResize={onEventResize}
-      onSelect={onSelect}
-      onDatesChange={onDatesChange}
-      onNavLinkDayClick={onNavLinkDayClick}
-      currentView={currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
-      currentDate={currentDate}
-      showWeekends={showWeekends}
-      viewConfig={viewConfig}
-    />
+    <div ref={containerRef} className='h-full'>
+      <CalendarView
+        ref={calendarRef}
+        events={events}
+        onDateClick={onDateClick}
+        onEventClick={onEventClick}
+        onEventDrop={onEventDrop}
+        onEventResize={onEventResize}
+        onSelect={onSelect}
+        onDatesChange={onDatesChange}
+        onNavLinkDayClick={onNavLinkDayClick}
+        currentView={currentView === 'week' ? 'timeGridWeek' : 'dayGridMonth'}
+        currentDate={currentDate}
+        showWeekends={showWeekends}
+        viewConfig={viewConfig}
+      />
+    </div>
   );
 }
