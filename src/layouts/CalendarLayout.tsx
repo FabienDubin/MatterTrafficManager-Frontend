@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { FilterPanel } from '@/components/filters/FilterPanel';
+import { useFilterStore } from '@/store/filter.store';
 
 interface CalendarLayoutProps {
   controls: ReactNode;
@@ -19,9 +20,15 @@ interface CalendarLayoutProps {
  * La sidebar fait la hauteur de la zone calendrier uniquement (après les controls)
  */
 export function CalendarLayout({ controls, children }: CalendarLayoutProps) {
+  const { isPanelOpen, togglePanel } = useFilterStore();
+
   return (
     <div className='h-full flex flex-col'>
-      <SidebarProvider className='flex-1 min-h-0'>
+      <SidebarProvider
+        className='flex-1 min-h-0'
+        open={isPanelOpen}
+        onOpenChange={togglePanel}
+      >
         <FilterPanel />
         <SidebarInset className='h-full flex flex-col overflow-hidden'>
           {/* Controls */}

@@ -21,6 +21,7 @@ import FullCalendar from '@fullcalendar/react';
 
 export default function CalendarPage() {
   const calendarRef = useRef<FullCalendar>(null);
+  const calendarContainerRef = useRef<HTMLDivElement>(null);
 
   // Initialize client colors early for reactivity with admin panel
   useClientColors();
@@ -121,6 +122,21 @@ export default function CalendarPage() {
       }
     }
   }, [currentView, currentDate]);
+
+  // Force FullCalendar to resize when container size changes
+  useEffect(() => {
+    if (!calendarContainerRef.current || !calendarRef.current || currentView === 'day') return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      calendarRef.current?.getApi().updateSize();
+    });
+
+    resizeObserver.observe(calendarContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [currentView]);
 
   // Convert tasks to calendar events with view configuration
   const events = useMemo(() => {
@@ -318,44 +334,46 @@ export default function CalendarPage() {
               />
             }
           >
-            <CalendarContent
-              isInitialLoad={isInitialLoad}
-              tasks={filteredTasks}
-              error={error}
-              currentView={currentView}
-              currentDate={currentDate}
-              calendarRef={calendarRef}
-              showWeekends={calendarConfig?.showWeekends ?? true}
-              viewConfig={
-                currentView === 'day'
-                  ? calendarConfig?.dayView
-                  : currentView === 'week'
-                    ? calendarConfig?.weekView
-                    : calendarConfig?.monthView
-              }
-              events={events}
-              members={members}
-              onDateClick={handleDateClick}
-              onEventClick={handleEventClick}
-              onEventDrop={handleEventDrop}
-              onEventResize={handleEventResize}
-              onSelect={handleSelect}
-              onDatesChange={handleDatesChange}
-              onNavLinkDayClick={(date) => {
-                setCurrentView('day');
-                setCurrentDate(date);
-              }}
-              onTaskClick={(task) => {
-                setSelectedTask(task);
-                setSheetOpen(true);
-              }}
-              onTimeSlotClick={(member, date, hour) => {
-                console.log('Time slot clicked:', { member, date, hour });
-              }}
-              onTimeSlotSelect={handleTimeSlotSelect}
-              onTaskDrop={handleTaskDrop}
-              onTaskResize={handleTaskResize}
-            />
+            <div ref={calendarContainerRef} className="h-full">
+              <CalendarContent
+                isInitialLoad={isInitialLoad}
+                tasks={filteredTasks}
+                error={error}
+                currentView={currentView}
+                currentDate={currentDate}
+                calendarRef={calendarRef}
+                showWeekends={calendarConfig?.showWeekends ?? true}
+                viewConfig={
+                  currentView === 'day'
+                    ? calendarConfig?.dayView
+                    : currentView === 'week'
+                      ? calendarConfig?.weekView
+                      : calendarConfig?.monthView
+                }
+                events={events}
+                members={members}
+                onDateClick={handleDateClick}
+                onEventClick={handleEventClick}
+                onEventDrop={handleEventDrop}
+                onEventResize={handleEventResize}
+                onSelect={handleSelect}
+                onDatesChange={handleDatesChange}
+                onNavLinkDayClick={(date) => {
+                  setCurrentView('day');
+                  setCurrentDate(date);
+                }}
+                onTaskClick={(task) => {
+                  setSelectedTask(task);
+                  setSheetOpen(true);
+                }}
+                onTimeSlotClick={(member, date, hour) => {
+                  console.log('Time slot clicked:', { member, date, hour });
+                }}
+                onTimeSlotSelect={handleTimeSlotSelect}
+                onTaskDrop={handleTaskDrop}
+                onTaskResize={handleTaskResize}
+              />
+            </div>
           </CalendarLayout>
         </div>
       </main>
