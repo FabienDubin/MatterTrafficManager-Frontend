@@ -65,7 +65,7 @@ export function TeamToggles() {
               <Tooltip key={team.id}>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={isSelected ? 'default' : 'secondary'}
+                    variant={isSelected ? 'default' : 'outline'}
                     size='icon'
                     onClick={() => toggleTeam(team.id)}
                     className='h-12 w-12'

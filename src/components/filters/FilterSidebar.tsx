@@ -43,7 +43,7 @@ const FilterSidebar = React.forwardRef<HTMLDivElement, React.ComponentProps<type
     return (
       <Sidebar
         ref={ref}
-        className={cn('border-r bg-white', className)}
+        className={cn('border-r', className)}
         style={
           {
             ...style,

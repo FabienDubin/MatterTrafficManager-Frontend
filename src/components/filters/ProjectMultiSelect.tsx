@@ -85,46 +85,50 @@ export function ProjectMultiSelect() {
         )}
       </div>
 
-      {/* Badges des projets sélectionnés */}
-      {selectedProjects.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedProjects.map((projectId) => {
-            const project = projects.find((p) => p.id === projectId);
-            if (!project) return null;
-            return (
-              <Badge key={projectId} variant="secondary" className="gap-1">
-                {project.name}
-                {project.clientName && (
-                  <span className="text-xs text-muted-foreground">
-                    ({project.clientName})
-                  </span>
-                )}
-                <X
-                  className="h-3 w-3 cursor-pointer"
-                  onClick={() => removeProject(projectId)}
-                />
-              </Badge>
-            );
-          })}
-        </div>
-      )}
+      <div className="space-y-2">
+        {/* Badges des projets sélectionnés */}
+        {selectedProjects.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selectedProjects.map((projectId) => {
+              const project = projects.find((p) => p.id === projectId);
+              if (!project) return null;
+              return (
+                <Badge key={projectId} variant="default" className="gap-1">
+                  {project.name}
+                  {project.clientName && (
+                    <span className="text-xs text-muted-foreground">
+                      ({project.clientName})
+                    </span>
+                  )}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => removeProject(projectId)}
+                  />
+                </Badge>
+              );
+            })}
+          </div>
+        )}
 
-      {/* Combobox pour sélection */}
-      <Popover open={open} onOpenChange={setOpen} modal={true}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {selectedProjects.length > 0
-              ? `${selectedProjects.length} projet(s) sélectionné(s)`
-              : 'Sélectionner des projets'}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        {/* Combobox pour sélection */}
+        <Popover open={open} onOpenChange={setOpen} modal={true}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className={cn(
+                "w-full justify-between",
+                !selectedProjects.length && "text-muted-foreground"
+              )}
+            >
+              {selectedProjects.length > 0
+                ? `${selectedProjects.length} projet(s) sélectionné(s)`
+                : 'Sélectionner des projets'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[300px] p-0">
           <Command>
             <CommandInput placeholder="Rechercher un projet..." />
             <CommandList>
@@ -168,6 +172,7 @@ export function ProjectMultiSelect() {
           </Command>
         </PopoverContent>
       </Popover>
+      </div>
     </div>
   );
 }

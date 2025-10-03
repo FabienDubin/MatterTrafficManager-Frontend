@@ -4,6 +4,9 @@ import { ActiveFiltersIndicator } from '@/components/shared/ActiveFiltersIndicat
 import { PeriodDisplay } from '@/components/calendar/PeriodDisplay';
 import { ViewSwitcher, CalendarViewType } from '@/components/calendar/ViewSwitcher';
 import { DateNavigator } from '@/components/calendar/DateNavigator';
+import { useFilterStore } from '@/store/filter.store';
+import { useGlobalSyncState, useOnlineStatus } from '@/hooks/useOptimisticUpdate';
+import { useSyncStatus } from '@/hooks/useSyncStatus';
 
 interface CalendarControlsProps {
   // Sync indicator props
@@ -38,21 +41,49 @@ export function CalendarControls({
   onViewChange,
   onNavigate,
 }: CalendarControlsProps) {
+  // Check if filters are active
+  const { selectedTeams, selectedMembers, selectedClients, selectedProjects } = useFilterStore();
+  const hasActiveFilters =
+    selectedTeams.length > 0 ||
+    selectedMembers.length > 0 ||
+    selectedClients.length > 0 ||
+    selectedProjects.length > 0;
+
+  // Check if any alert badge is active (same logic as SyncIndicator line 65)
+  const { isSyncing: localSyncing, hasErrors: localErrors } = useGlobalSyncState();
+  const isOnline = useOnlineStatus();
+  const { syncStatus, hasConflicts, hasErrors, isSyncing, isServerDown } = useSyncStatus();
+
+  const actualSyncing = !isServerDown && (syncStatus ? isSyncing : localSyncing);
+  const actualErrors = !isServerDown && (syncStatus ? hasErrors : localErrors);
+  const hasActiveBadge =
+    isServerDown ||
+    !isOnline ||
+    hasConflicts ||
+    actualErrors ||
+    actualSyncing ||
+    hasPendingLocalUpdates;
+
+  // Hide SyncIndicator if filters are active AND no alert badge is active
+  const shouldShowSyncIndicator = !hasActiveFilters || hasActiveBadge;
+
   return (
     <div className='mb-4 flex items-start justify-between'>
       {/* Left column: Sidebar trigger, Sync indicator, Active filters */}
-      <div className='flex flex-col'>
+      <div className='flex gap-2 w-[45%]'>
         <SidebarTrigger className='' />
-        <SyncIndicator
-          showDetails
-          tasksCount={tasksCount}
-          isLoadingBackground={isLoadingBackground}
-          hasPendingLocalUpdates={hasPendingLocalUpdates}
-          lastRefresh={lastRefresh}
-          nextRefresh={nextRefresh}
-          loadedRangesCount={loadedRangesCount}
-          onRefresh={onRefresh}
-        />
+        {shouldShowSyncIndicator && (
+          <SyncIndicator
+            showDetails
+            tasksCount={tasksCount}
+            isLoadingBackground={isLoadingBackground}
+            hasPendingLocalUpdates={hasPendingLocalUpdates}
+            lastRefresh={lastRefresh}
+            nextRefresh={nextRefresh}
+            loadedRangesCount={loadedRangesCount}
+            onRefresh={onRefresh}
+          />
+        )}
         <div className='min-h-[24px] flex items-center'>
           <ActiveFiltersIndicator />
         </div>

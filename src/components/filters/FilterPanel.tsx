@@ -26,11 +26,11 @@ import { ProjectMultiSelect } from './ProjectMultiSelect';
  */
 export function FilterPanel() {
   return (
-    <Sidebar className='border-r bg-white'>
+    <Sidebar className='border-r'>
       {/* Header */}
 
       {/* Scrollable content */}
-      <SidebarContent className='bg-white'>
+      <SidebarContent>
         <ScrollArea className='flex-1'>
           <div className='p-4 space-y-6'>
             {/* Section: Main Controls */}

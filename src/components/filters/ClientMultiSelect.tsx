@@ -90,41 +90,45 @@ export function ClientMultiSelect() {
         )}
       </div>
 
-      {/* Badges des clients sélectionnés */}
-      {selectedClients.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {selectedClients.map((clientId) => {
-            const client = clients.find((c) => c.id === clientId);
-            if (!client) return null;
-            return (
-              <Badge key={clientId} variant="secondary" className="gap-1">
-                {client.name}
-                <X
-                  className="h-3 w-3 cursor-pointer"
-                  onClick={() => removeClient(clientId)}
-                />
-              </Badge>
-            );
-          })}
-        </div>
-      )}
+      <div className="space-y-2">
+        {/* Badges des clients sélectionnés */}
+        {selectedClients.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {selectedClients.map((clientId) => {
+              const client = clients.find((c) => c.id === clientId);
+              if (!client) return null;
+              return (
+                <Badge key={clientId} variant="default" className="gap-1">
+                  {client.name}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => removeClient(clientId)}
+                  />
+                </Badge>
+              );
+            })}
+          </div>
+        )}
 
-      {/* Combobox pour sélection */}
-      <Popover open={open} onOpenChange={setOpen} modal={true}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between"
-          >
-            {selectedClients.length > 0
-              ? `${selectedClients.length} client(s) sélectionné(s)`
-              : 'Sélectionner des clients'}
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        {/* Combobox pour sélection */}
+        <Popover open={open} onOpenChange={setOpen} modal={true}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={open}
+              className={cn(
+                "w-full justify-between",
+                !selectedClients.length && "text-muted-foreground"
+              )}
+            >
+              {selectedClients.length > 0
+                ? `${selectedClients.length} client(s) sélectionné(s)`
+                : 'Sélectionner des clients'}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[300px] p-0">
           <Command>
             <CommandInput placeholder="Rechercher un client..." />
             <CommandList>
@@ -153,6 +157,7 @@ export function ClientMultiSelect() {
           </Command>
         </PopoverContent>
       </Popover>
+      </div>
     </div>
   );
 }
