@@ -10,6 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { TeamToggles } from './TeamToggles';
 import { MemberMultiSelect } from './MemberMultiSelect';
+import { ClientMultiSelect } from './ClientMultiSelect';
+import { ProjectMultiSelect } from './ProjectMultiSelect';
 
 /**
  * FilterPanel - Left sidebar with calendar filtering controls
@@ -52,12 +54,13 @@ export function FilterPanel() {
 
               <Separator />
 
-              {/* Placeholder: VisualizationToggles - Task 5 */}
-              <div>
-                <p className='text-sm text-muted-foreground'>
-                  Visualisation - À implémenter (Task 5)
-                </p>
-              </div>
+              {/* Client filter */}
+              <ClientMultiSelect />
+
+              <Separator />
+
+              {/* Project filter */}
+              <ProjectMultiSelect />
             </div>
 
             <Separator />

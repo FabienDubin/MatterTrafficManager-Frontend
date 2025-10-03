@@ -12,12 +12,18 @@ import * as LucideIcons from 'lucide-react';
  */
 export function TeamToggles() {
   const { displayedTeams, isTeamsLoaded } = useDisplayedTeams();
-  const { selectedTeams, toggleTeam } = useFilterStore();
+  const { selectedTeams, toggleTeam, setSelectedTeams } = useFilterStore();
+
+  const clearAll = () => {
+    setSelectedTeams([]);
+  };
 
   if (!isTeamsLoaded) {
     return (
       <div className='space-y-2'>
-        <label className='text-sm font-medium'>Équipes</label>
+        <div className='flex items-center justify-between'>
+          <label className='text-sm font-medium'>Équipes</label>
+        </div>
         <div className='text-xs text-muted-foreground'>Chargement...</div>
       </div>
     );
@@ -26,7 +32,9 @@ export function TeamToggles() {
   if (displayedTeams.length === 0) {
     return (
       <div className='space-y-2'>
-        <label className='text-sm font-medium'>Équipes</label>
+        <div className='flex items-center justify-between'>
+          <label className='text-sm font-medium'>Équipes</label>
+        </div>
         <div className='text-xs text-muted-foreground'>Aucune équipe configurée</div>
       </div>
     );
@@ -34,7 +42,19 @@ export function TeamToggles() {
 
   return (
     <div className='space-y-2'>
-      <label className='text-sm font-medium'>Équipes</label>
+      <div className='flex items-center justify-between'>
+        <label className='text-sm font-medium'>Équipes</label>
+        {selectedTeams.length > 0 && (
+          <Button
+            variant='ghost'
+            size='sm'
+            onClick={clearAll}
+            className='h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground'
+          >
+            Effacer
+          </Button>
+        )}
+      </div>
       <div className='flex justify-around'>
         <TooltipProvider>
           {displayedTeams.map(team => {

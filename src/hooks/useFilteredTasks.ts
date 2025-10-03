@@ -3,13 +3,13 @@ import { useFilterStore } from '@/store/filter.store';
 import { Task } from '@/types/task.types';
 
 /**
- * Hook to filter tasks based on active filters (teams, members, etc.)
+ * Hook to filter tasks based on active filters (teams, members, clients, projects)
  *
  * @param tasks - All tasks to filter
  * @returns Filtered tasks based on current filter state
  */
 export function useFilteredTasks(tasks: Task[]): Task[] {
-  const { selectedTeams, selectedMembers } = useFilterStore();
+  const { selectedTeams, selectedMembers, selectedClients, selectedProjects } = useFilterStore();
 
   return useMemo(() => {
     let filtered = tasks;
@@ -39,6 +39,36 @@ export function useFilteredTasks(tasks: Task[]): Task[] {
       });
     }
 
+    // Filter by clients
+    if (selectedClients.length > 0) {
+      filtered = filtered.filter(task => {
+        // Check if task has client and if it's in selectedClients
+        if (task.clientId) {
+          return selectedClients.includes(task.clientId);
+        }
+        // Fallback to clientData if clientId is not present
+        if (task.clientData && task.clientData.id) {
+          return selectedClients.includes(task.clientData.id);
+        }
+        return false; // Don't show tasks without client data when filtering by client
+      });
+    }
+
+    // Filter by projects
+    if (selectedProjects.length > 0) {
+      filtered = filtered.filter(task => {
+        // Check if task has project and if it's in selectedProjects
+        if (task.projectId) {
+          return selectedProjects.includes(task.projectId);
+        }
+        // Fallback to projectData if projectId is not present
+        if (task.projectData && task.projectData.id) {
+          return selectedProjects.includes(task.projectData.id);
+        }
+        return false; // Don't show tasks without project data when filtering by project
+      });
+    }
+
     return filtered;
-  }, [tasks, selectedTeams, selectedMembers]);
+  }, [tasks, selectedTeams, selectedMembers, selectedClients, selectedProjects]);
 }

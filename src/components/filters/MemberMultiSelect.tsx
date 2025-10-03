@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useFilterStore } from '@/store/filter.store';
 import { membersService, Member } from '@/services/api/members.service';
 import { MemberCombobox } from '@/components/shared/MemberCombobox';
+import { Button } from '@/components/ui/button';
 
 /**
  * MemberMultiSelect - Multi-select combobox for filtering by members
@@ -37,10 +38,16 @@ export function MemberMultiSelect() {
     }
   };
 
+  const clearAll = () => {
+    setSelectedMembers([]);
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-2">
-        <label className="text-sm font-medium">Membres</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium">Membres</label>
+        </div>
         <div className="text-xs text-muted-foreground">Chargement...</div>
       </div>
     );
@@ -48,7 +55,19 @@ export function MemberMultiSelect() {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">Membres</label>
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium">Membres</label>
+        {selectedMembers.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearAll}
+            className="h-auto py-0 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            Effacer
+          </Button>
+        )}
+      </div>
       <MemberCombobox
         members={members}
         selectedMembers={selectedMembers}
