@@ -61,15 +61,15 @@ export default function CalendarPage() {
   const filteredTasks = useFilteredTasks(tasks);
 
   // Use calendar hooks with blacklist support for delete operations
-  const {
-    selectedTask,
-    setSelectedTask,
-    sheetOpen,
-    setSheetOpen,
-  } = useCalendarTaskManagement(taskUpdate, tasksMapRef, setTasks, {
-    addToDeleteBlacklist,
-    removeFromDeleteBlacklist,
-  });
+  const { selectedTask, setSelectedTask, sheetOpen, setSheetOpen } = useCalendarTaskManagement(
+    taskUpdate,
+    tasksMapRef,
+    setTasks,
+    {
+      addToDeleteBlacklist,
+      removeFromDeleteBlacklist,
+    }
+  );
 
   // État pour la création de tâche
   const [createMode, setCreateMode] = useState<{
@@ -207,28 +207,34 @@ export default function CalendarPage() {
     console.log('Date clicked:', arg.dateStr);
   };
 
-  const handleSelect = useCallback((selectInfo: any) => {
-    setCreateMode({
-      initialDates: {
-        start: selectInfo.start,
-        end: selectInfo.end,
-      },
-    });
-    setSheetOpen(true);
-    setSelectedTask(null);
-  }, [setSheetOpen, setSelectedTask]);
+  const handleSelect = useCallback(
+    (selectInfo: any) => {
+      setCreateMode({
+        initialDates: {
+          start: selectInfo.start,
+          end: selectInfo.end,
+        },
+      });
+      setSheetOpen(true);
+      setSelectedTask(null);
+    },
+    [setSheetOpen, setSelectedTask]
+  );
 
-  const handleTimeSlotSelect = useCallback((member: Member | null, startDate: Date, endDate: Date) => {
-    setCreateMode({
-      initialDates: {
-        start: startDate,
-        end: endDate,
-      },
-      initialMember: member?.id,
-    });
-    setSheetOpen(true);
-    setSelectedTask(null);
-  }, [setSheetOpen, setSelectedTask]);
+  const handleTimeSlotSelect = useCallback(
+    (member: Member | null, startDate: Date, endDate: Date) => {
+      setCreateMode({
+        initialDates: {
+          start: startDate,
+          end: endDate,
+        },
+        initialMember: member?.id,
+      });
+      setSheetOpen(true);
+      setSelectedTask(null);
+    },
+    [setSheetOpen, setSelectedTask]
+  );
 
   // handleTaskCreate is now handled directly by TaskEditSheet via useOptimisticTaskCreate
 
@@ -311,7 +317,7 @@ export default function CalendarPage() {
       <CalendarHeader />
 
       {/* Main content with CalendarLayout */}
-      <main className='flex-1 p-6 overflow-hidden'>
+      <main className='flex-1 p-6 pt-4 overflow-hidden'>
         <div className='h-full max-w-[1600px] mx-auto'>
           <CalendarLayout
             controls={
@@ -334,7 +340,7 @@ export default function CalendarPage() {
               />
             }
           >
-            <div ref={calendarContainerRef} className="h-full">
+            <div ref={calendarContainerRef} className='h-full'>
               <CalendarContent
                 isInitialLoad={isInitialLoad}
                 tasks={filteredTasks}
@@ -358,11 +364,11 @@ export default function CalendarPage() {
                 onEventResize={handleEventResize}
                 onSelect={handleSelect}
                 onDatesChange={handleDatesChange}
-                onNavLinkDayClick={(date) => {
+                onNavLinkDayClick={date => {
                   setCurrentView('day');
                   setCurrentDate(date);
                 }}
-                onTaskClick={(task) => {
+                onTaskClick={task => {
                   setSelectedTask(task);
                   setSheetOpen(true);
                 }}

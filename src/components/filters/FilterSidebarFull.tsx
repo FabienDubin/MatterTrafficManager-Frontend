@@ -135,7 +135,7 @@ const SidebarProvider = React.forwardRef<
               } as React.CSSProperties
             }
             className={cn(
-              'group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar',
+              'group/sidebar-wrapper flex h-full w-full has-[[data-variant=inset]]:bg-sidebar',
               className
             )}
             ref={ref}
@@ -232,7 +232,7 @@ const Sidebar = React.forwardRef<
         />
         <div
           className={cn(
-            'fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex',
+            'fixed bottom-0 top-[var(--header-height,64px)] z-10 hidden w-[--sidebar-width] border-t transition-[left,right,width] duration-200 ease-linear md:flex',
             side === 'left'
               ? 'left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]'
               : 'right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]',
@@ -261,13 +261,13 @@ const SidebarTrigger = React.forwardRef<
   React.ElementRef<typeof Button>,
   React.ComponentProps<typeof Button>
 >(({ className, onClick, ...props }, ref) => {
-  const { toggleSidebar } = useSidebar();
+  const { toggleSidebar, open } = useSidebar();
 
   return (
     <Button
       ref={ref}
       data-sidebar='trigger'
-      variant='outline'
+      variant={open ? 'default' : 'outline'}
       size='icon'
       className={cn('h-10 w-10', className)}
       onClick={event => {

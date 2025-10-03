@@ -53,7 +53,7 @@ export function CalendarControls({
           loadedRangesCount={loadedRangesCount}
           onRefresh={onRefresh}
         />
-        <div className='min-h-[20px] flex items-center'>
+        <div className='min-h-[24px] flex items-center'>
           <ActiveFiltersIndicator />
         </div>
       </div>
