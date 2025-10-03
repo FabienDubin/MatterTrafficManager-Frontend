@@ -28,15 +28,6 @@ export function FilterPanel() {
   return (
     <Sidebar className='border-r bg-white'>
       {/* Header */}
-      <SidebarHeader className='border-b bg-white'>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size='lg' className='font-semibold'>
-              Filtres
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
 
       {/* Scrollable content */}
       <SidebarContent className='bg-white'>
