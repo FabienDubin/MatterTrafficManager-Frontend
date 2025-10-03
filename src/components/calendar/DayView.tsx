@@ -148,6 +148,22 @@ export function DayView({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Message si aucune donnée à afficher
+  if (members.length === 0) {
+    return (
+      <div className='h-full border border-border rounded-lg overflow-hidden flex items-center justify-center'>
+        <div className='text-center p-8 space-y-2'>
+          <p className='text-lg font-medium text-muted-foreground'>
+            Aucun membre ne correspond aux filtres sélectionnés
+          </p>
+          <p className='text-sm text-muted-foreground'>
+            Modifie tes filtres pour afficher des résultats
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className='h-full border border-border rounded-lg overflow-hidden'>
       <div className='flex flex-col h-full bg-background'>

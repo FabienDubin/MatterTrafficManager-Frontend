@@ -7,6 +7,7 @@ import { TaskEditSheet } from '@/components/calendar/TaskEditSheet';
 import { useCalendarStore } from '@/store/calendar.store';
 import { useCalendarConfigStore } from '@/store/calendar-config.store';
 import { useClientColors } from '@/store/config.store';
+import { useFilterStore } from '@/store/filter.store';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
 import { useCalendarEvents } from '@/hooks/calendar/useCalendarEvents';
@@ -14,6 +15,7 @@ import { useCalendarNavigation } from '@/hooks/calendar/useCalendarNavigation';
 import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManagement';
 import { tasksToCalendarEvents } from '@/utils/taskMapper';
 import { useFilteredTasks } from '@/hooks/useFilteredTasks';
+import { useMembers } from '@/hooks/api/useMembers';
 import { addDays } from 'date-fns';
 import { Task } from '@/types/task.types';
 import { Member } from '@/types/calendar.types';
@@ -28,6 +30,9 @@ export default function CalendarPage() {
 
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
+
+  // Get sidebar state and filters from filter store
+  const { isPanelOpen, selectedTeams, selectedMembers } = useFilterStore();
 
   // Get calendar configuration
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
@@ -56,6 +61,9 @@ export default function CalendarPage() {
 
   // Initialize optimistic update hook WITHOUT automatic refresh
   const taskUpdate = useOptimisticTaskUpdate(tasks, setTasks, { tasksMapRef });
+
+  // Get all members from API
+  const { data: allMembers = [] } = useMembers();
 
   // Apply filters to tasks
   const filteredTasks = useFilteredTasks(tasks);
@@ -138,6 +146,22 @@ export default function CalendarPage() {
     };
   }, [currentView]);
 
+  // Handle sidebar transition to fix calendar resize after page refresh
+  // When sidebar state changes via Zustand, wait for CSS transition to complete (200ms)
+  // then force FullCalendar to recalculate its size
+  useEffect(() => {
+    if (!calendarRef.current || currentView === 'day') return;
+
+    // Wait for sidebar CSS transition (200ms) + small margin for safety
+    const timeoutId = setTimeout(() => {
+      calendarRef.current?.getApi().updateSize();
+    }, 250);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [isPanelOpen, currentView]);
+
   // Convert tasks to calendar events with view configuration
   const events = useMemo(() => {
     if (filteredTasks && filteredTasks.length > 0) {
@@ -202,6 +226,56 @@ export default function CalendarPage() {
 
     return Array.from(memberMap.values());
   }, [filteredTasks]);
+
+  // Filter visible members for DayView based on active filters
+  const visibleMembers = useMemo(() => {
+    // Si aucun filtre actif, montrer tous les membres qui ont des tâches
+    if (selectedTeams.length === 0 && selectedMembers.length === 0) {
+      return members;
+    }
+
+    // Si des membres spécifiques sont sélectionnés, ne montrer que ceux-là (depuis allMembers)
+    if (selectedMembers.length > 0) {
+      return allMembers
+        .filter(member => selectedMembers.includes(member.id))
+        .map(member => ({
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          teams: member.teams || [],
+        }));
+    }
+
+    // Si des équipes sont sélectionnées, montrer les membres de ces équipes (depuis allMembers)
+    if (selectedTeams.length > 0) {
+      // Build a map of team IDs to team names from tasks
+      const teamIdToName = new Map(
+        filteredTasks.flatMap(task =>
+          [...(task.teamsData || []), ...(task.involvedTeamsData || [])]
+            .map(t => [t.id, t.name])
+        )
+      );
+
+      return allMembers
+        .filter(member => {
+          if (!member.teams) return false;
+          return member.teams.some(teamName => {
+            // Find the team ID from the name
+            const teamId = Array.from(teamIdToName.entries())
+              .find(([_, name]) => name === teamName)?.[0];
+            return teamId && selectedTeams.includes(teamId);
+          });
+        })
+        .map(member => ({
+          id: member.id,
+          name: member.name,
+          email: member.email,
+          teams: member.teams || [],
+        }));
+    }
+
+    return members;
+  }, [members, allMembers, filteredTasks, selectedTeams, selectedMembers]);
 
   const handleDateClick = (arg: any) => {
     console.log('Date clicked:', arg.dateStr);
@@ -357,7 +431,7 @@ export default function CalendarPage() {
                       : calendarConfig?.monthView
                 }
                 events={events}
-                members={members}
+                members={currentView === 'day' ? visibleMembers : members}
                 onDateClick={handleDateClick}
                 onEventClick={handleEventClick}
                 onEventDrop={handleEventDrop}
