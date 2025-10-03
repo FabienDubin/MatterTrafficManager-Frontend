@@ -9,7 +9,6 @@ import { useCalendarConfigStore } from '@/store/calendar-config.store';
 import { useClientColors } from '@/store/config.store';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
-import { useOptimisticTaskCreate } from '@/hooks/useOptimisticTaskCreate';
 import { useCalendarEvents } from '@/hooks/calendar/useCalendarEvents';
 import { useCalendarNavigation } from '@/hooks/calendar/useCalendarNavigation';
 import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManagement';
@@ -56,17 +55,12 @@ export default function CalendarPage() {
   // Initialize optimistic update hook WITHOUT automatic refresh
   const taskUpdate = useOptimisticTaskUpdate(tasks, setTasks, { tasksMapRef });
 
-  // Initialize optimistic create hook
-  const taskCreate = useOptimisticTaskCreate(tasks, setTasks, { tasksMapRef });
-
   // Use calendar hooks with blacklist support for delete operations
   const {
     selectedTask,
     setSelectedTask,
     sheetOpen,
     setSheetOpen,
-    handleTaskUpdate,
-    handleTaskDelete,
   } = useCalendarTaskManagement(taskUpdate, tasksMapRef, setTasks, {
     addToDeleteBlacklist,
     removeFromDeleteBlacklist,
@@ -216,16 +210,7 @@ export default function CalendarPage() {
     setSelectedTask(null);
   }, [setSheetOpen, setSelectedTask]);
 
-  const handleTaskCreate = useCallback(
-    async (data: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-      try {
-        await taskCreate.mutateAsync(data as any);
-      } catch (error) {
-        console.error('Erreur lors de la création de la tâche:', error);
-      }
-    },
-    [taskCreate]
-  );
+  // handleTaskCreate is now handled directly by TaskEditSheet via useOptimisticTaskCreate
 
   // Handler for DayView task drop with member management
   const handleTaskDrop = useCallback(
@@ -380,9 +365,8 @@ export default function CalendarPage() {
           setSelectedTask(null);
           setCreateMode(null);
         }}
-        onUpdate={handleTaskUpdate}
-        onDelete={handleTaskDelete}
-        onCreate={handleTaskCreate}
+        tasks={tasks}
+        setTasks={setTasks}
         initialDates={createMode?.initialDates}
         initialMember={createMode?.initialMember}
       />
