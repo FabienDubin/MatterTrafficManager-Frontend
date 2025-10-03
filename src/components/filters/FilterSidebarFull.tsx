@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Slot } from '@radix-ui/react-slot';
 import { VariantProps, cva } from 'class-variance-authority';
-import { PanelLeft } from 'lucide-react';
+import { ListFilterPlus } from 'lucide-react';
 
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -20,8 +20,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 const SIDEBAR_COOKIE_NAME = 'sidebar_state';
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
-const SIDEBAR_WIDTH = '16rem';
-const SIDEBAR_WIDTH_MOBILE = '18rem';
+const SIDEBAR_WIDTH = '18rem';
+const SIDEBAR_WIDTH_MOBILE = '20rem';
 const SIDEBAR_WIDTH_ICON = '3rem';
 const SIDEBAR_KEYBOARD_SHORTCUT = 'b';
 
@@ -267,17 +267,17 @@ const SidebarTrigger = React.forwardRef<
     <Button
       ref={ref}
       data-sidebar='trigger'
-      variant='ghost'
+      variant='outline'
       size='icon'
-      className={cn('h-7 w-7', className)}
+      className={cn('h-10 w-10', className)}
       onClick={event => {
         onClick?.(event);
         toggleSidebar();
       }}
       {...props}
     >
-      <PanelLeft />
-      <span className='sr-only'>Toggle Sidebar</span>
+      <ListFilterPlus />
+      <span className='sr-only'>Toggle Filtres</span>
     </Button>
   );
 });

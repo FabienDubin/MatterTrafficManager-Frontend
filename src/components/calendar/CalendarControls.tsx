@@ -1,4 +1,4 @@
-import { SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarTrigger } from '@/components/filters/FilterSidebarFull';
 import { SyncIndicator } from '@/components/shared/SyncIndicator';
 import { PeriodDisplay } from '@/components/calendar/PeriodDisplay';
 import { ViewSwitcher, CalendarViewType } from '@/components/calendar/ViewSwitcher';
@@ -41,7 +41,7 @@ export function CalendarControls({
     <div className='mb-4 flex items-start justify-between'>
       {/* Left side: Sidebar toggle + Sync indicator */}
       <div className='flex items-start gap-3'>
-        <SidebarTrigger />
+        <SidebarTrigger className='' />
         <SyncIndicator
           showDetails
           tasksCount={tasksCount}

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { UseFormReturn } from 'react-hook-form';
 import { format } from 'date-fns';
-import { Check, ChevronsUpDown, X, ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon } from 'lucide-react';
 import { TaskEditFormData } from '@/schemas/taskEdit.schema';
 import { Member } from '@/services/api/members.service';
 import { cn } from '@/lib/utils';
+import { MemberCombobox } from '@/components/shared/MemberCombobox';
 
 // UI Components
 import {
@@ -14,18 +15,9 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 
 export interface TaskFormAssignmentSectionProps {
@@ -42,9 +34,17 @@ export function TaskFormAssignmentSection({
   members,
   selectedMembers
 }: TaskFormAssignmentSectionProps) {
-  const [openMembersCombobox, setOpenMembersCombobox] = useState(false);
   const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
   const [openEndDatePicker, setOpenEndDatePicker] = useState(false);
+
+  const toggleMember = (memberId: string) => {
+    const currentMembers = form.getValues('assignedMembers') || [];
+    if (currentMembers.includes(memberId)) {
+      form.setValue('assignedMembers', currentMembers.filter(id => id !== memberId));
+    } else {
+      form.setValue('assignedMembers', [...currentMembers, memberId]);
+    }
+  };
 
   return (
     <div className='space-y-4'>
@@ -52,100 +52,16 @@ export function TaskFormAssignmentSection({
       <FormField
         control={form.control}
         name='assignedMembers'
-        render={({ field }) => (
+        render={() => (
           <FormItem className='flex flex-col'>
             <FormLabel>Assignée à</FormLabel>
-            {/* Selected members badges */}
-            {selectedMembers && selectedMembers.length > 0 && (
-              <div className='flex flex-wrap gap-2 mt-2'>
-                {selectedMembers.map(memberId => {
-                  const member = members.find(m => m.id === memberId);
-                  if (!member) {
-                    return null;
-                  }
-                  return (
-                    <Badge key={memberId} variant='default' className='gap-1'>
-                      {member.name}
-                      <X
-                        className='h-3 w-3 cursor-pointer'
-                        onClick={() => {
-                          const currentMembers = selectedMembers || [];
-                          form.setValue(
-                            'assignedMembers',
-                            currentMembers.filter(id => id !== memberId)
-                          );
-                        }}
-                      />
-                    </Badge>
-                  );
-                })}
-              </div>
-            )}
-            <Popover
-              open={openMembersCombobox}
-              onOpenChange={setOpenMembersCombobox}
-              modal={true}
-            >
-              <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    variant='outline'
-                    role='combobox'
-                    className={cn(
-                      'w-full justify-between',
-                      !selectedMembers?.length && 'text-muted-foreground'
-                    )}
-                  >
-                    {selectedMembers?.length
-                      ? `${selectedMembers.length} membre(s) sélectionné(s)`
-                      : 'Sélectionner des membres'}
-                    <ChevronsUpDown className='ml-2 h-4 w-4 shrink-0 opacity-50' />
-                  </Button>
-                </FormControl>
-              </PopoverTrigger>
-              <PopoverContent className='w-[400px] p-0'>
-                <Command>
-                  <CommandInput placeholder='Rechercher un membre...' />
-                  <CommandList>
-                    <CommandEmpty>Aucun membre trouvé.</CommandEmpty>
-                    <CommandGroup>
-                      {members.map(member => (
-                        <CommandItem
-                          key={member.id}
-                          value={member.name}
-                          onSelect={() => {
-                            const currentMembers = field.value || [];
-                            const isSelected = currentMembers.includes(member.id);
-
-                            if (isSelected) {
-                              form.setValue(
-                                'assignedMembers',
-                                currentMembers.filter(id => id !== member.id)
-                              );
-                            } else {
-                              form.setValue('assignedMembers', [
-                                ...currentMembers,
-                                member.id,
-                              ]);
-                            }
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              selectedMembers?.includes(member.id)
-                                ? 'opacity-100'
-                                : 'opacity-0'
-                            )}
-                          />
-                          {member.name}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+            <FormControl>
+              <MemberCombobox
+                members={members}
+                selectedMembers={selectedMembers}
+                onToggleMember={toggleMember}
+              />
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}

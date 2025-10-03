@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarInset } from '@/components/filters/FilterSidebarFull';
 import { FilterPanel } from '@/components/filters/FilterPanel';
 import { useFilterStore } from '@/store/filter.store';
 

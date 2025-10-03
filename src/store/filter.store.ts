@@ -12,6 +12,12 @@ interface FilterState {
   selectedMembers: string[];
   setSelectedMembers: (members: string[]) => void;
 
+  selectedClients: string[];
+  setSelectedClients: (clients: string[]) => void;
+
+  selectedProjects: string[];
+  setSelectedProjects: (projects: string[]) => void;
+
   showAvailability: boolean;
   toggleShowAvailability: () => void;
 
@@ -39,6 +45,12 @@ export const useFilterStore = create<FilterState>()(
         selectedMembers: [],
         setSelectedMembers: (members) => set({ selectedMembers: members }),
 
+        selectedClients: [],
+        setSelectedClients: (clients) => set({ selectedClients: clients }),
+
+        selectedProjects: [],
+        setSelectedProjects: (projects) => set({ selectedProjects: projects }),
+
         showAvailability: false,
         toggleShowAvailability: () => set((state) => ({ showAvailability: !state.showAvailability })),
 
@@ -48,6 +60,8 @@ export const useFilterStore = create<FilterState>()(
         resetFilters: () => set({
           selectedTeams: [],
           selectedMembers: [],
+          selectedClients: [],
+          selectedProjects: [],
           showAvailability: false,
           colorMode: 'client',
         }),
