@@ -7,6 +7,7 @@ interface FilterState {
 
   selectedTeams: string[];
   setSelectedTeams: (teams: string[]) => void;
+  toggleTeam: (teamId: string) => void;
 
   selectedMembers: string[];
   setSelectedMembers: (members: string[]) => void;
@@ -29,6 +30,11 @@ export const useFilterStore = create<FilterState>()(
 
         selectedTeams: [],
         setSelectedTeams: (teams) => set({ selectedTeams: teams }),
+        toggleTeam: (teamId) => set((state) => ({
+          selectedTeams: state.selectedTeams.includes(teamId)
+            ? state.selectedTeams.filter((id) => id !== teamId)
+            : [...state.selectedTeams, teamId],
+        })),
 
         selectedMembers: [],
         setSelectedMembers: (members) => set({ selectedMembers: members }),

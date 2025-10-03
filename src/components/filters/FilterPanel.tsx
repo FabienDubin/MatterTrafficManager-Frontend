@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { TeamToggles } from './TeamToggles';
 
 /**
  * FilterPanel - Left sidebar with calendar filtering controls
@@ -38,12 +39,8 @@ export function FilterPanel() {
           <div className="p-4 space-y-6">
             {/* Section: Main Controls */}
             <div className="space-y-4">
-              {/* Placeholder: TeamToggles - Task 3 */}
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  Équipes - À implémenter (Task 3)
-                </p>
-              </div>
+              {/* Team filter */}
+              <TeamToggles />
 
               <Separator />
 

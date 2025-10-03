@@ -13,6 +13,7 @@ import { useCalendarEvents } from '@/hooks/calendar/useCalendarEvents';
 import { useCalendarNavigation } from '@/hooks/calendar/useCalendarNavigation';
 import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManagement';
 import { tasksToCalendarEvents } from '@/utils/taskMapper';
+import { useFilteredTasks } from '@/hooks/useFilteredTasks';
 import { addDays } from 'date-fns';
 import { Task } from '@/types/task.types';
 import { Member } from '@/types/calendar.types';
@@ -54,6 +55,9 @@ export default function CalendarPage() {
 
   // Initialize optimistic update hook WITHOUT automatic refresh
   const taskUpdate = useOptimisticTaskUpdate(tasks, setTasks, { tasksMapRef });
+
+  // Apply filters to tasks
+  const filteredTasks = useFilteredTasks(tasks);
 
   // Use calendar hooks with blacklist support for delete operations
   const {
@@ -120,7 +124,7 @@ export default function CalendarPage() {
 
   // Convert tasks to calendar events with view configuration
   const events = useMemo(() => {
-    if (tasks && tasks.length > 0) {
+    if (filteredTasks && filteredTasks.length > 0) {
       let viewConfig = undefined;
       if (calendarConfig) {
         switch (currentView) {
@@ -135,17 +139,17 @@ export default function CalendarPage() {
             break;
         }
       }
-      return tasksToCalendarEvents(tasks, viewConfig);
+      return tasksToCalendarEvents(filteredTasks, viewConfig);
     }
     return [];
-  }, [tasks, calendarConfig, currentView]);
+  }, [filteredTasks, calendarConfig, currentView]);
 
   // Extract members from tasks for DayView
   const members: Member[] = useMemo(() => {
     const memberMap = new Map<string, Member>();
     const allTeamsMap = new Map<string, string>();
 
-    tasks.forEach(task => {
+    filteredTasks.forEach(task => {
       if (task.teamsData) {
         task.teamsData.forEach(team => {
           allTeamsMap.set(team.id, team.name);
@@ -158,7 +162,7 @@ export default function CalendarPage() {
       }
     });
 
-    tasks.forEach(task => {
+    filteredTasks.forEach(task => {
       if (task.assignedMembersData) {
         task.assignedMembersData.forEach(memberData => {
           if (!memberMap.has(memberData.id)) {
@@ -181,7 +185,7 @@ export default function CalendarPage() {
     });
 
     return Array.from(memberMap.values());
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const handleDateClick = (arg: any) => {
     console.log('Date clicked:', arg.dateStr);
@@ -296,7 +300,7 @@ export default function CalendarPage() {
           <CalendarLayout
             controls={
               <CalendarControls
-                tasksCount={tasks.length}
+                tasksCount={filteredTasks.length}
                 isLoadingBackground={isLoadingBackground}
                 hasPendingLocalUpdates={taskUpdate.hasPendingUpdates}
                 lastRefresh={lastRefresh}
@@ -316,7 +320,7 @@ export default function CalendarPage() {
           >
             <CalendarContent
               isInitialLoad={isInitialLoad}
-              tasks={tasks}
+              tasks={filteredTasks}
               error={error}
               currentView={currentView}
               currentDate={currentDate}
@@ -365,7 +369,7 @@ export default function CalendarPage() {
           setSelectedTask(null);
           setCreateMode(null);
         }}
-        tasks={tasks}
+        tasks={filteredTasks}
         setTasks={setTasks}
         initialDates={createMode?.initialDates}
         initialMember={createMode?.initialMember}

@@ -8,7 +8,7 @@ import { Loader2, Palette, RefreshCw, Shuffle } from 'lucide-react';
 import { generateRandomPastelColor, isValidHexColor, getContrastColor } from '@/utils/colorUtils';
 import type { Client } from '@/types/client.types';
 
-export const ClientColorsTab = () => {
+export function ClientsTab() {
   const { 
     clients, 
     clientColors, 
@@ -224,4 +224,4 @@ export const ClientColorsTab = () => {
       </Card>
     </div>
   );
-};
+}
