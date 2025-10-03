@@ -131,35 +131,12 @@ export default function CalendarPage() {
     }
   }, [currentView, currentDate]);
 
-  // Force FullCalendar to resize when container size changes
-  useEffect(() => {
-    if (!calendarContainerRef.current || !calendarRef.current || currentView === 'day') return;
-
-    const resizeObserver = new ResizeObserver(() => {
-      calendarRef.current?.getApi().updateSize();
-    });
-
-    resizeObserver.observe(calendarContainerRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, [currentView]);
-
-  // Handle sidebar transition to fix calendar resize after page refresh
-  // When sidebar state changes via Zustand, wait for CSS transition to complete (200ms)
-  // then force FullCalendar to recalculate its size
+  // Force FullCalendar to recalculate size when sidebar state changes
+  // Following FullCalendar's recommendation to call updateSize() when parent container changes
+  // No transition on sidebar = instant resize, no jumping
   useEffect(() => {
     if (!calendarRef.current || currentView === 'day') return;
-
-    // Wait for sidebar CSS transition (200ms) + small margin for safety
-    const timeoutId = setTimeout(() => {
-      calendarRef.current?.getApi().updateSize();
-    }, 250);
-
-    return () => {
-      clearTimeout(timeoutId);
-    };
+    calendarRef.current.getApi().updateSize();
   }, [isPanelOpen, currentView]);
 
   // Convert tasks to calendar events with view configuration

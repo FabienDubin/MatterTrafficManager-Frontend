@@ -31,7 +31,8 @@ export const useFilterStore = create<FilterState>()(
   devtools(
     persist(
       (set) => ({
-        isPanelOpen: true,
+        // isPanelOpen is NOT persisted - always starts closed on refresh
+        isPanelOpen: false,
         togglePanel: () => set((state) => ({ isPanelOpen: !state.isPanelOpen })),
 
         selectedTeams: [],
@@ -66,7 +67,18 @@ export const useFilterStore = create<FilterState>()(
           colorMode: 'client',
         }),
       }),
-      { name: 'filter-state' }
+      {
+        name: 'filter-state',
+        // Exclude isPanelOpen from persistence
+        partialize: (state) => ({
+          selectedTeams: state.selectedTeams,
+          selectedMembers: state.selectedMembers,
+          selectedClients: state.selectedClients,
+          selectedProjects: state.selectedProjects,
+          showAvailability: state.showAvailability,
+          colorMode: state.colorMode,
+        }),
+      }
     ),
     { name: 'FilterStore' }
   )
