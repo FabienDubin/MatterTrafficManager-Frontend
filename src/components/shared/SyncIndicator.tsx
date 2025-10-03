@@ -183,17 +183,17 @@ export function SyncIndicator({
   const renderCarousel = () => {
     const messageCount = carouselMessages.length;
     const carouselClass = messageCount === 2 ? 'sync-carousel-2' : 'sync-carousel-3';
-    
+
     // Duplicate first message at the end for smooth loop (if we have 2 messages)
-    const displayMessages = messageCount === 2 
+    const displayMessages = messageCount === 2
       ? [...carouselMessages, carouselMessages[0]] // For 2 messages, add the first one at the end
       : [...carouselMessages]; // For 3 messages, use as is
-    
+
     const carouselContent = (
-      <div className="h-7 overflow-hidden relative cursor-default select-none">
+      <div className="h-[28px] overflow-hidden relative cursor-default select-none">
         <div className={carouselClass}>
           {displayMessages.map((message, i) => (
-            <div key={i} className="h-7 flex items-center text-sm text-muted-foreground whitespace-nowrap">
+            <div key={i} className="h-[28px] flex items-center text-xs text-muted-foreground whitespace-nowrap">
               {message || '\u00A0'} {/* Non-breaking space for empty messages */}
             </div>
           ))}
@@ -232,7 +232,7 @@ export function SyncIndicator({
           size="icon"
           onClick={onRefresh}
           disabled={isLoadingBackground}
-          className="h-7 w-7"
+          className="h-[28px] w-[28px]"
         >
           <RefreshCw className={cn("h-3.5 w-3.5", isLoadingBackground && "animate-spin")} />
           <span className="sr-only">Actualiser</span>

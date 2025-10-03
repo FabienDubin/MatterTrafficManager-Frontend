@@ -1,5 +1,6 @@
 import { SidebarTrigger } from '@/components/filters/FilterSidebarFull';
 import { SyncIndicator } from '@/components/shared/SyncIndicator';
+import { ActiveFiltersIndicator } from '@/components/shared/ActiveFiltersIndicator';
 import { PeriodDisplay } from '@/components/calendar/PeriodDisplay';
 import { ViewSwitcher, CalendarViewType } from '@/components/calendar/ViewSwitcher';
 import { DateNavigator } from '@/components/calendar/DateNavigator';
@@ -22,7 +23,7 @@ interface CalendarControlsProps {
 }
 
 /**
- * CalendarControls - Barre de contrôle avec sidebar toggle, sync, navigation
+ * CalendarControls - Barre de contrôle avec sidebar toggle, sync, navigation et filtres actifs
  */
 export function CalendarControls({
   tasksCount,
@@ -39,8 +40,8 @@ export function CalendarControls({
 }: CalendarControlsProps) {
   return (
     <div className='mb-4 flex items-start justify-between'>
-      {/* Left side: Sidebar toggle + Sync indicator */}
-      <div className='flex items-start gap-3'>
+      {/* Left column: Sidebar trigger, Sync indicator, Active filters */}
+      <div className='flex flex-col'>
         <SidebarTrigger className='' />
         <SyncIndicator
           showDetails
@@ -52,9 +53,12 @@ export function CalendarControls({
           loadedRangesCount={loadedRangesCount}
           onRefresh={onRefresh}
         />
+        <div className='min-h-[20px] flex items-center'>
+          <ActiveFiltersIndicator />
+        </div>
       </div>
 
-      {/* Right side: Period display, view switcher and date navigator */}
+      {/* Right column: Period display, view switcher and date navigator */}
       <div className='flex flex-col items-end gap-2'>
         {/* Top row: Period display + View switcher */}
         <div className='flex items-center gap-4'>
@@ -62,7 +66,7 @@ export function CalendarControls({
           <ViewSwitcher currentView={currentView} onViewChange={onViewChange} />
         </div>
 
-        {/* Bottom row: Date navigator aligned under view switcher */}
+        {/* Bottom row: Date navigator */}
         <DateNavigator onNavigate={onNavigate} />
       </div>
     </div>
