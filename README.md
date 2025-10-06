@@ -1,310 +1,721 @@
-# Matter Traffic Frontend
+# 📅 Matter Traffic Manager - Frontend
 
-Interface utilisateur pour Matter Traffic Manager - Gestionnaire de trafic intelligent basé sur Notion.
+> Interface utilisateur moderne pour Matter Traffic Manager - Gestionnaire de trafic intelligent synchronisé avec Notion
 
-## 🚀 Stack Technologique
+[![React](https://img.shields.io/badge/React-19.0-61dafb.svg)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.7+-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-6.0+-646cff.svg)](https://vitejs.dev/)
+[![Tailwind](https://img.shields.io/badge/Tailwind-3.4+-38bdf8.svg)](https://tailwindcss.com/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-- **Framework**: React 19.0
-- **Build Tool**: Vite 6.0+
-- **Langage**: TypeScript 5.7+
-- **State Management**: Zustand 5.0+
-- **UI Framework**: Tailwind CSS 3.4+
-- **Calendar**: FullCalendar 6.1+
-- **Tests**: Vitest 2.1+ + React Testing Library
-- **Qualité**: ESLint + Prettier + Husky
+## ✨ Fonctionnalités
 
-## 📋 Prérequis
+- 📅 **Calendrier interactif** avec FullCalendar et drag & drop
+- 🎯 **3 vues calendrier** : Jour (par membre), Semaine, Mois
+- ✏️ **Édition complète** des tâches via panneau latéral
+- 🎨 **Thèmes** clair/sombre avec switch instantané
+- 🔍 **Filtres avancés** multi-critères (membres, équipes, clients, projets)
+- ⚡ **Updates optimistes** avec rollback automatique
+- 🔄 **Synchronisation temps réel** via webhooks Notion
+- 🎨 **Couleurs personnalisables** par client ou membre
+- 📊 **Dashboard admin** complet avec métriques
+- 🧪 **Tests complets** avec Vitest et React Testing Library
 
-- Node.js 20 ou supérieur
-- npm ou yarn
-- Backend API en fonctionnement (port 5005)
-- Docker et Docker Compose (optionnel mais recommandé)
+## 📋 Table des matières
 
-## 🔧 Installation
+- [Stack Technologique](#-stack-technologique)
+- [Prérequis](#-prérequis)
+- [Installation Rapide](#-installation-rapide)
+- [Configuration](#-configuration)
+- [Scripts Disponibles](#-scripts-disponibles)
+- [Structure du Projet](#-structure-du-projet)
+- [Pages & Fonctionnalités](#-pages--fonctionnalités)
+- [Architecture](#-architecture)
+- [Composants UI](#-composants-ui)
+- [State Management](#-state-management)
+- [Tests](#-tests)
+- [Build & Déploiement](#-build--déploiement)
+- [Contribution](#-contribution)
 
-### Méthode 1: Installation locale
+## 🛠️ Stack Technologique
+
+| Technologie | Version | Description |
+|------------|---------|-------------|
+| **React** | 19.0 | Library UI moderne |
+| **Vite** | 6.0+ | Build tool ultra-rapide |
+| **TypeScript** | 5.7+ | Typage statique |
+| **Tailwind CSS** | 3.4+ | Framework CSS utility-first |
+| **Zustand** | 5.0+ | State management léger |
+| **FullCalendar** | 6.1+ | Composant calendrier |
+| **Radix UI** | Latest | Composants accessibles headless |
+| **TanStack Query** | 5.85+ | Gestion des requêtes async |
+| **React Hook Form** | 7.63+ | Gestion des formulaires |
+| **Zod** | 3.25+ | Validation de schémas |
+| **Vitest** | 3.2+ | Framework de tests |
+
+## 📦 Prérequis
+
+- **Node.js** 20 ou supérieur
+- **npm** ou **yarn**
+- **Backend API** en fonctionnement sur port 5005
+- **Docker** & **Docker Compose** (optionnel mais recommandé)
+
+## 🚀 Installation Rapide
+
+### Option 1: Installation Locale (3 minutes)
 
 ```bash
-# Cloner le projet
+# 1. Cloner et installer
 cd matter-traffic-frontend
-
-# Installer les dépendances
 npm install
 
-# Copier le fichier d'environnement
+# 2. Configurer l'environnement
 cp .env.example .env
+# Par défaut: VITE_API_URL=http://localhost:5005
 
-# Configurer l'URL de l'API dans .env
-echo "VITE_API_URL=http://localhost:5005" > .env
-
-# Démarrer en mode développement
+# 3. Démarrer en mode développement
 npm run dev
 ```
 
-### Méthode 2: Avec Docker (recommandé)
+✅ L'application démarre sur **http://localhost:5173**
+
+### Option 2: Avec Docker (Recommandé)
 
 ```bash
 # Depuis la racine du projet MatterTrafficManager
-docker-compose up frontend
+docker-compose up frontend -d
 ```
 
-L'application sera accessible sur: http://localhost:5173
+✅ Frontend + hot reload Docker activé
 
-## 🌍 Variables d'environnement
+## ⚙️ Configuration
+
+### Variables d'Environnement
 
 Copier `.env.example` vers `.env` et configurer:
 
 ```bash
-# URL de l'API backend
+# 🔗 URL de l'API backend
 VITE_API_URL=http://localhost:5005
 
-# Mode de développement
+# 🌍 Mode de développement
 VITE_MODE=development
 
-# Outils de développement
+# 🔑 Clé localStorage pour JWT
+VITE_JWT_LOCAL_STORAGE_KEY=matter_traffic_token
+
+# 🛠️ Outils de développement
 VITE_DEV_TOOLS=true
 VITE_LOG_LEVEL=debug
 
-# Pour Docker hot reload
+# ⏱️ Timeout des requêtes API (ms)
+VITE_API_TIMEOUT=10000
+
+# 🐳 Hot reload pour Docker
 CHOKIDAR_USEPOLLING=true
+
+# 🚀 URLs par environnement
+VITE_API_URL_DEV=http://localhost:5005
+VITE_API_URL_STAGING=https://staging-api.mattertraffic.com
+VITE_API_URL_PROD=https://api.mattertraffic.com
 ```
 
-## 📜 Scripts disponibles
+## 📜 Scripts Disponibles
+
+### Développement
 
 ```bash
-# Développement avec hot reload
-npm run dev
-
-# Build de production
-npm run build
-
-# Prévisualiser le build
-npm run preview
-
-# Tests
-npm test                # Tests unitaires
-npm run test:ui        # Interface de test Vitest
-npm run test:watch     # Tests en mode watch
-npm run test:coverage  # Coverage des tests
-
-# Qualité de code
-npm run lint           # Linter ESLint
-npm run lint:fix       # Fix automatique
-npm run format         # Formatage Prettier
-npm run type-check     # Vérification TypeScript
+npm run dev              # Démarrer en mode développement (port 5173)
+npm run build            # Build de production
+npm run preview          # Prévisualiser le build de production
 ```
 
-## 🗂️ Structure du projet
+### Tests
 
-```
-src/
-├── assets/           # Images, fonts, styles globaux
-├── components/       # Composants React réutilisables
-├── features/         # Modules fonctionnels
-├── hooks/           # Custom React hooks
-├── layouts/         # Layouts de page
-├── pages/           # Composants de pages
-├── services/        # Services API et utilitaires
-├── store/           # Zustand store
-├── types/           # Définitions TypeScript
-├── utils/           # Fonctions utilitaires
-├── App.tsx
-└── main.tsx
-
-tests/
-├── unit/           # Tests unitaires
-├── integration/    # Tests d'intégration
-└── e2e/           # Tests end-to-end
-
-public/
-├── favicon.ico
-└── manifest.json
+```bash
+npm test                 # Lancer tous les tests
+npm run test:ui          # Interface graphique Vitest
+npm run test:watch       # Tests en mode watch
+npm run test:coverage    # Rapport de couverture
 ```
 
-## ✨ Fonctionnalités principales
+### Qualité de Code
 
-- 📅 **Calendrier interactif**: Gestion des tâches avec drag & drop
-- 🎨 **Interface moderne**: Design responsive avec Tailwind CSS
-- ⚡ **Performance**: Hot reload ultra-rapide avec Vite
-- 🔄 **État global**: Gestion avec Zustand
-- 🌐 **API Integration**: Communication avec le backend Express
-- 🧪 **Tests complets**: Unitaires, intégration et E2E
-- 🎯 **TypeScript**: Typage fort pour la fiabilité
+```bash
+npm run lint             # Vérifier le code (ESLint)
+npm run lint:fix         # Corriger automatiquement
+npm run format           # Formater avec Prettier
+npm run type-check       # Vérification TypeScript sans build
+```
 
-## 🔌 Services API
+## 🗂️ Structure du Projet
+
+```
+matter-traffic-frontend/
+│
+├── src/
+│   ├── components/          # Composants réutilisables
+│   │   ├── admin/           # Composants admin
+│   │   │   ├── AdminSidebar.tsx
+│   │   │   ├── NotionMappingTab.tsx
+│   │   │   └── monitoring/
+│   │   ├── auth/            # Composants authentification
+│   │   │   └── LoginForm.tsx
+│   │   ├── calendar/        # Composants calendrier
+│   │   │   ├── CalendarView.tsx
+│   │   │   ├── CalendarHeader.tsx
+│   │   │   ├── CalendarControls.tsx
+│   │   │   ├── TaskCard.tsx
+│   │   │   ├── TaskEditSheet.tsx
+│   │   │   ├── DayView.tsx
+│   │   │   ├── MemberColumn.tsx
+│   │   │   ├── UnassignedColumn.tsx
+│   │   │   └── columns/
+│   │   ├── filters/         # Composants de filtrage
+│   │   ├── shared/          # Composants partagés
+│   │   │   ├── SyncIndicator.tsx
+│   │   │   ├── ActiveFiltersIndicator.tsx
+│   │   │   └── MemberCombobox.tsx
+│   │   └── ui/              # Composants UI de base (shadcn)
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── dialog.tsx
+│   │       ├── form.tsx
+│   │       ├── input.tsx
+│   │       ├── sheet.tsx
+│   │       ├── sidebar.tsx
+│   │       └── ... (40+ composants Radix UI)
+│   │
+│   ├── hooks/               # Custom React hooks
+│   │   ├── api/
+│   │   │   ├── useTasks.ts
+│   │   │   └── useMembers.ts
+│   │   ├── calendar/
+│   │   │   ├── useCalendarTasks.ts
+│   │   │   └── useProgressiveCalendarTasks.ts
+│   │   ├── useCalendarConfig.ts
+│   │   ├── useFilteredTasks.ts
+│   │   ├── useOptimisticUpdate.ts
+│   │   ├── useSyncStatus.ts
+│   │   └── use-toast.ts
+│   │
+│   ├── layouts/             # Layouts de page
+│   │   ├── MainLayout.tsx
+│   │   └── AdminLayout.tsx
+│   │
+│   ├── pages/               # Pages de l'application
+│   │   ├── auth/
+│   │   │   └── Login.tsx
+│   │   ├── calendar/
+│   │   │   ├── CalendarPage.tsx
+│   │   │   └── DayViewTest.tsx
+│   │   └── admin/
+│   │       ├── Dashboard.tsx
+│   │       ├── configuration/
+│   │       │   ├── NotionConnectionPage.tsx
+│   │       │   ├── MappingBasesPage.tsx
+│   │       │   └── CalendarConfigPage.tsx
+│   │       ├── monitoring/
+│   │       │   ├── GlobalView.tsx
+│   │       │   ├── CacheDashboard.tsx
+│   │       │   └── HealthMemoryPage.tsx
+│   │       ├── synchronisation/
+│   │       │   ├── SyncControlPage.tsx
+│   │       │   ├── ConflictsPage.tsx
+│   │       │   └── WebhookLogsPage.tsx
+│   │       └── users/
+│   │           └── UsersPage.tsx
+│   │
+│   ├── providers/           # Context providers
+│   │   ├── AuthProvider.tsx
+│   │   └── ThemeProvider.tsx
+│   │
+│   ├── router/              # Configuration routing
+│   │   └── AppRouter.tsx
+│   │
+│   ├── schemas/             # Schémas de validation Zod
+│   │
+│   ├── services/            # Services API
+│   │   └── api/
+│   │       ├── client.ts           # Client API Axios
+│   │       ├── tasks.service.ts
+│   │       ├── members.service.ts
+│   │       ├── projects.service.ts
+│   │       ├── teams.service.ts
+│   │       ├── clients.service.ts
+│   │       ├── cache.service.ts
+│   │       ├── sync.service.ts
+│   │       ├── metrics.service.ts
+│   │       └── monitoring.service.ts
+│   │
+│   ├── store/               # Zustand stores
+│   │   ├── auth.store.ts
+│   │   ├── calendar.store.ts
+│   │   ├── calendar-config.store.ts
+│   │   ├── config.store.ts
+│   │   └── filter.store.ts
+│   │
+│   ├── types/               # Définitions TypeScript
+│   │   ├── calendar.types.ts
+│   │   ├── task.types.ts
+│   │   └── client.types.ts
+│   │
+│   ├── utils/               # Fonctions utilitaires
+│   │   ├── cn.ts                # Merge classes Tailwind
+│   │   ├── dateHelpers.ts
+│   │   ├── taskMapper.ts
+│   │   ├── taskFormatter.ts
+│   │   ├── taskHelpers.ts
+│   │   ├── colorUtils.ts
+│   │   └── storage.ts
+│   │
+│   ├── lib/                 # Librairies configurées
+│   │   └── migrateLocalStorage.ts
+│   │
+│   ├── index.css            # Styles globaux Tailwind
+│   ├── App.tsx              # Composant racine
+│   └── main.tsx             # Point d'entrée
+│
+├── public/
+│   ├── Monogram.svg         # Logo
+│   └── favicon.ico
+│
+├── tests/
+│   ├── unit/                # Tests unitaires
+│   ├── integration/         # Tests d'intégration
+│   └── e2e/                 # Tests end-to-end
+│
+├── .env.example             # Template de configuration
+├── tailwind.config.js       # Configuration Tailwind
+├── vite.config.ts           # Configuration Vite
+├── tsconfig.json            # Configuration TypeScript
+└── package.json
+```
+
+## 📄 Pages & Fonctionnalités
+
+### 🔐 Authentification
+
+- **Login** (`/login`) : Connexion email/password
+
+### 📅 Calendrier Principal
+
+- **CalendarPage** (`/calendar`) : Vue principale avec 3 modes
+  - 👤 **Vue Jour** : Colonnes par membre avec scroll horizontal
+  - 📆 **Vue Semaine** : Grille hebdomadaire classique
+  - 📊 **Vue Mois** : Calendrier mensuel avec aperçu
+- Drag & drop des tâches
+- Redimensionnement des tâches
+- Sheet d'édition latéral complet
+- Filtres multi-critères (membres, équipes, clients, projets)
+- Couleurs par client ou par membre
+- Indicateurs de conflits temps réel
+
+### 🔧 Administration
+
+#### Configuration
+
+- **NotionConnectionPage** : Configuration des bases Notion
+- **MappingBasesPage** : Mapping des champs Notion
+- **CalendarConfigPage** : Personnalisation du calendrier
+  - Configuration des équipes affichées
+  - Couleurs clients
+  - Paramètres d'affichage
+
+#### Monitoring
+
+- **GlobalView** : Vue d'ensemble système
+- **CacheDashboard** : Métriques du cache
+- **HealthMemoryPage** : Santé & mémoire
+
+#### Synchronisation
+
+- **SyncControlPage** : Contrôles de synchronisation
+- **ConflictsPage** : Gestion des conflits
+- **WebhookLogsPage** : Logs webhooks Notion
+
+#### Utilisateurs
+
+- **UsersPage** : CRUD utilisateurs avec rôles
+
+## 🏗️ Architecture
+
+### Flux de Données
+
+```
+User Action
+    ↓
+Component (React)
+    ↓
+Custom Hook (useXxx)
+    ↓
+TanStack Query / Zustand Store
+    ↓
+API Service (Axios)
+    ↓
+Backend API
+    ↓
+Notion / MongoDB
+```
+
+### Optimistic Updates
 
 ```typescript
-// Exemple d'utilisation du service API
-import { apiClient } from '@/services/api';
+// Exemple d'update optimiste
+const updateTask = useOptimisticTaskUpdate();
 
-// Récupérer les tâches
-const tasks = await apiClient.get('/tasks');
+const handleUpdate = (taskId, updates) => {
+  updateTask.mutate(
+    { taskId, updates },
+    {
+      // UI mise à jour immédiatement
+      onMutate: async (newData) => {
+        // Annuler les requêtes en cours
+        await queryClient.cancelQueries(['tasks']);
 
-// Créer une nouvelle tâche
-const newTask = await apiClient.post('/tasks', {
-  title: 'Nouvelle tâche',
-  description: 'Description de la tâche'
+        // Snapshot de l'état actuel
+        const previousTasks = queryClient.getQueryData(['tasks']);
+
+        // Mise à jour optimiste
+        queryClient.setQueryData(['tasks'], (old) =>
+          updateTaskInList(old, newData)
+        );
+
+        return { previousTasks };
+      },
+
+      // Rollback si erreur
+      onError: (err, newData, context) => {
+        queryClient.setQueryData(['tasks'], context.previousTasks);
+        toast.error('Erreur lors de la mise à jour');
+      }
+    }
+  );
+};
+```
+
+## 🎨 Composants UI
+
+### Radix UI + Tailwind
+
+Tous les composants UI sont basés sur **Radix UI** (accessibilité native) + **Tailwind CSS** :
+
+- **Formulaires** : Form, Input, Textarea, Select, Checkbox, Radio, Switch
+- **Navigation** : Sidebar, Tabs, Accordion, Collapsible
+- **Overlays** : Dialog, Sheet, Popover, Tooltip, AlertDialog
+- **Feedback** : Toast (Sonner), Progress, Skeleton
+- **Data Display** : Card, Avatar, Badge, Separator
+- **Actions** : Button, Toggle, Command
+
+### Composants Calendrier
+
+- **CalendarView** : Conteneur principal FullCalendar
+- **CalendarHeader** : Navigation + contrôles
+- **CalendarControls** : Filtres rapides
+- **TaskCard** : Carte de tâche avec drag & drop
+- **TaskEditSheet** : Panneau d'édition complet
+- **MemberColumn** : Colonne par membre (vue Jour)
+- **UnassignedColumn** : Tâches non assignées
+
+## 📦 State Management
+
+### Zustand Stores
+
+```typescript
+// auth.store.ts - Authentification
+const useAuthStore = create<AuthStore>((set) => ({
+  user: null,
+  token: null,
+  login: (user, token) => set({ user, token }),
+  logout: () => set({ user: null, token: null }),
+}));
+
+// calendar.store.ts - État du calendrier
+const useCalendarStore = create<CalendarStore>((set) => ({
+  view: 'dayGridMonth',
+  selectedDate: new Date(),
+  setView: (view) => set({ view }),
+  setSelectedDate: (date) => set({ selectedDate: date }),
+}));
+
+// filter.store.ts - Filtres actifs
+const useFilterStore = create<FilterStore>((set) => ({
+  selectedTeams: [],
+  selectedMembers: [],
+  selectedClients: [],
+  toggleTeam: (teamId) => set((state) => ({
+    selectedTeams: state.selectedTeams.includes(teamId)
+      ? state.selectedTeams.filter(id => id !== teamId)
+      : [...state.selectedTeams, teamId]
+  })),
+}));
+```
+
+### TanStack Query
+
+Gestion des requêtes async avec cache automatique :
+
+```typescript
+// Récupérer les tâches avec cache
+const { data: tasks, isLoading } = useQuery({
+  queryKey: ['tasks', filters],
+  queryFn: () => tasksService.getTasks(filters),
+  staleTime: 30000, // 30 secondes
+  refetchOnWindowFocus: true,
+});
+
+// Mutation avec invalidation
+const createTaskMutation = useMutation({
+  mutationFn: tasksService.createTask,
+  onSuccess: () => {
+    queryClient.invalidateQueries(['tasks']);
+    toast.success('Tâche créée !');
+  },
 });
 ```
 
 ## 🧪 Tests
 
+### Lancer les Tests
+
 ```bash
-# Lancer tous les tests
+# Tous les tests
 npm test
 
-# Tests avec interface graphique
+# Interface graphique
 npm run test:ui
 
-# Tests avec surveillance
+# Mode watch
 npm run test:watch
 
-# Rapport de couverture
+# Couverture
 npm run test:coverage
-
-# Tests E2E avec Playwright
-npm run test:e2e
 ```
 
-### Structure des tests:
-- **Unitaires**: Tests des composants isolés
-- **Intégration**: Tests des interactions entre composants
-- **E2E**: Tests du parcours utilisateur complet
-
-## 🎨 Styling et Thème
-
-### Tailwind CSS
-- Configuration personnalisée dans `tailwind.config.js`
-- Classes utilitaires pour un développement rapide
-- Responsive design mobile-first
-
-### Variables CSS personnalisées
-```css
-:root {
-  --primary-color: #your-color;
-  --secondary-color: #your-color;
-}
-```
-
-## 📱 Responsive Design
-
-- **Mobile First**: Design optimisé pour mobile
-- **Breakpoints Tailwind**: sm, md, lg, xl, 2xl
-- **Components adaptatifs**: Menus, calendrier, cartes
-
-## 🚢 Déploiement
-
-### Build de production
-```bash
-npm run build
-```
-
-### Serveur de production (avec Nginx)
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-    
-    root /path/to/dist;
-    index index.html;
-    
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-    
-    location /api {
-        proxy_pass http://backend:5005;
-    }
-}
-```
-
-## ⚡ Optimisations
-
-### Vite optimisations:
-- **Tree shaking**: Elimination du code mort
-- **Code splitting**: Chargement lazy des routes
-- **Cache busting**: Noms de fichiers avec hash
-- **Compression**: Gzip/Brotli automatique
-
-### React optimisations:
-- **React.memo**: Mémoization des composants
-- **useMemo/useCallback**: Optimisation des recalculs
-- **Lazy loading**: Chargement différé des composants
-
-## 🔧 Configuration Vite
+### Structure des Tests
 
 ```typescript
-// vite.config.ts
-export default defineConfig({
-  plugins: [react()],
-  server: {
-    port: 5173,
-    host: true, // Pour Docker
-    hmr: { port: 5173 }
-  },
-  resolve: {
-    alias: {
-      "@": resolve(__dirname, "./src"),
-    },
-  }
+// Exemple de test composant
+import { render, screen, fireEvent } from '@testing-library/react';
+import { TaskCard } from './TaskCard';
+
+describe('TaskCard', () => {
+  it('should display task title', () => {
+    const task = { id: '1', title: 'Test Task' };
+    render(<TaskCard task={task} />);
+
+    expect(screen.getByText('Test Task')).toBeInTheDocument();
+  });
+
+  it('should handle drag and drop', () => {
+    const onDrop = jest.fn();
+    render(<TaskCard task={task} onDrop={onDrop} />);
+
+    const card = screen.getByTestId('task-card');
+    fireEvent.dragStart(card);
+    fireEvent.drop(card);
+
+    expect(onDrop).toHaveBeenCalled();
+  });
 });
 ```
 
+### Couverture Cible
+
+- **Composants** : > 80%
+- **Hooks** : > 90%
+- **Utils** : > 95%
+- **Services** : > 70%
+
+## 🚢 Build & Déploiement
+
+### Build de Production
+
+```bash
+# Build optimisé
+npm run build
+
+# Dossier dist/ généré avec :
+# - Code minifié et tree-shaken
+# - Assets avec hash pour cache busting
+# - Chunks optimisés pour lazy loading
+```
+
+### Optimisations Vite
+
+- **Tree shaking** : Élimination code mort
+- **Code splitting** : Routes lazy loaded
+- **Asset optimization** : Images et fonts optimisés
+- **Compression** : Gzip/Brotli automatique
+- **Cache busting** : Hash dans les noms de fichiers
+
+### Déploiement
+
+#### Serveur Statique (Nginx)
+
+```nginx
+server {
+    listen 80;
+    server_name mattertraffic.com;
+
+    root /var/www/matter-traffic-frontend/dist;
+    index index.html;
+
+    # SPA routing
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Proxy API
+    location /api {
+        proxy_pass http://backend:5005;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    # Cache assets
+    location /assets {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+#### Azure Static Web Apps
+
+```bash
+# Déploiement automatique via GitHub Actions
+# Configuration dans azure-static-web-apps-xxx.yml
+```
+
+## ⚡ Performance
+
+### Optimisations React
+
+```typescript
+// Mémoization des composants
+const TaskCard = React.memo(({ task }) => {
+  return <div>{task.title}</div>;
+});
+
+// useMemo pour calculs coûteux
+const filteredTasks = useMemo(() =>
+  tasks.filter(task => filters.includes(task.teamId)),
+  [tasks, filters]
+);
+
+// useCallback pour fonctions
+const handleTaskClick = useCallback((taskId) => {
+  setSelectedTask(taskId);
+}, []);
+
+// Lazy loading des routes
+const AdminPage = lazy(() => import('./pages/admin/Dashboard'));
+```
+
+### Métriques Cibles
+
+- ⏱️ **Time to Interactive** : < 3s
+- 📦 **Bundle size** : < 500kb (gzipped)
+- 🎨 **First Contentful Paint** : < 1.5s
+- ♻️ **Cache hit rate** : > 90%
+
 ## 🤝 Contribution
 
-1. Créer une branche feature: `git checkout -b feature/nom-feature`
-2. Développer avec les hooks pre-commit activés
-3. Tests passants: `npm test`
-4. Linting correct: `npm run lint`
-5. Type-check OK: `npm run type-check`
-6. Pull Request vers `develop`
+### Workflow Git
+
+```bash
+# 1. Créer une branche
+git checkout -b feature/nom-feature
+
+# 2. Développer
+# ... code ...
+
+# 3. Tests + Linting
+npm test
+npm run lint
+npm run type-check
+
+# 4. Commit
+git commit -m "feat: ajout composant TaskEditSheet"
+
+# 5. Pull Request vers develop
+git push origin feature/nom-feature
+```
+
+### Standards de Code
+
+- **Commits** : Convention Conventional Commits
+- **Composants** : PascalCase, un composant par fichier
+- **Hooks** : Préfixe `use`, fichiers `.ts`
+- **Types** : Définitions centralisées dans `types/`
+- **Styles** : Tailwind classes uniquement
+
+### Pre-commit Hooks
+
+Husky configuré pour vérifier :
+- ✅ Linting (ESLint)
+- ✅ Formatage (Prettier)
+- ✅ Type checking (TypeScript)
 
 ## 🔍 Debugging
 
-### DevTools disponibles:
-- React DevTools
-- Redux DevTools (Zustand)
-- Vite DevTools
+### DevTools
 
-### Logs de développement:
+```bash
+# React DevTools
+# Extension Chrome/Firefox
+
+# TanStack Query DevTools
+# Activé automatiquement en dev
+
+# Zustand DevTools
+# Via Redux DevTools Extension
+```
+
+### Logs
+
 ```typescript
 // Activer les logs détaillés
 localStorage.setItem('debug', '*');
 
 // Logs API uniquement
 localStorage.setItem('debug', 'api:*');
+
+// Logs calendar uniquement
+localStorage.setItem('debug', 'calendar:*');
 ```
 
-## 🛠️ Outils de développement
+### Problèmes Courants
 
-- **Vite**: Build tool ultra-rapide
-- **React DevTools**: Inspection des composants
-- **Zustand DevTools**: Debug du state management
-- **Vitest**: Framework de test moderne
-- **ESLint**: Linting avancé pour React/TypeScript
-- **Prettier**: Formatage automatique
-- **Husky**: Git hooks pour la qualité
+| Problème | Solution |
+|----------|----------|
+| API unreachable | Vérifier `VITE_API_URL` et backend démarré |
+| CORS errors | Vérifier `FRONTEND_URL` dans backend .env |
+| Hot reload ne fonctionne pas | Activer `CHOKIDAR_USEPOLLING=true` |
+| JWT expired | Re-login ou vérifier refresh token |
+| Build errors | `npm run type-check` pour voir les erreurs TS |
 
-## 🌐 Multi-environnements
+## 📚 Documentation Supplémentaire
 
-```bash
-# Développement
-VITE_API_URL=http://localhost:5005
+- 🎨 [Design System](./docs/design-system.md) - Guide des composants UI
+- 🏗️ [Architecture](./docs/architecture.md) - Décisions techniques
+- 📘 [API Integration](./docs/api.md) - Guide d'intégration API
+- 📝 [Changelog](./CHANGELOG.md) - Historique des versions
 
-# Staging  
-VITE_API_URL=https://staging-api.mattertraffic.com
+## 📄 Licence
 
-# Production
-VITE_API_URL=https://api.mattertraffic.com
-```
+MIT © FabLab - Voir [LICENSE](LICENSE) pour plus de détails
 
-## 📊 Monitoring et Analytics
+---
 
-- Bundle analyzer intégré
-- Performance monitoring
-- Error tracking (optionnel)
-- User analytics (optionnel)
+<div align="center">
 
-## 📝 Licence
+**[⬆ Retour en haut](#-matter-traffic-manager---frontend)**
 
-MIT - Voir fichier LICENSE
+Made with ❤️ by the FabLab team
+
+</div>
