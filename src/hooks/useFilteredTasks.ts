@@ -15,7 +15,7 @@ export function useFilteredTasks(tasks: Task[]): Task[] {
     let filtered = tasks;
 
     // Filter by teams
-    if (selectedTeams.length > 0) {
+    if (Array.isArray(selectedTeams) && selectedTeams.length > 0) {
       filtered = filtered.filter(task => {
         // Check if task has team data and if any of the task's teams is in selectedTeams
         const hasTeamsData = task.teamsData && Array.isArray(task.teamsData);
@@ -29,7 +29,7 @@ export function useFilteredTasks(tasks: Task[]): Task[] {
     }
 
     // Filter by members
-    if (selectedMembers.length > 0) {
+    if (Array.isArray(selectedMembers) && selectedMembers.length > 0) {
       filtered = filtered.filter(task => {
         // Check if task has assigned members and if any of them is in selectedMembers
         if (task.assignedMembersData && Array.isArray(task.assignedMembersData)) {
@@ -40,7 +40,7 @@ export function useFilteredTasks(tasks: Task[]): Task[] {
     }
 
     // Filter by clients
-    if (selectedClients.length > 0) {
+    if (Array.isArray(selectedClients) && selectedClients.length > 0) {
       filtered = filtered.filter(task => {
         // Check if task has client and if it's in selectedClients
         if (task.clientId) {
@@ -55,7 +55,7 @@ export function useFilteredTasks(tasks: Task[]): Task[] {
     }
 
     // Filter by projects
-    if (selectedProjects.length > 0) {
+    if (Array.isArray(selectedProjects) && selectedProjects.length > 0) {
       filtered = filtered.filter(task => {
         // Check if task has project and if it's in selectedProjects
         if (task.projectId) {
