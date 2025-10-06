@@ -12,7 +12,7 @@ const getApiUrl = () => {
   }
 
   // Production (déployé depuis branch main)
-  if (hostname.includes('mattertraffic.com')) {
+  if (hostname.includes('prod')) {
     return 'https://api.mattertrafficmanager.com/api/v1';
   }
 
