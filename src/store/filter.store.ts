@@ -38,9 +38,9 @@ export const useFilterStore = create<FilterState>()(
         selectedTeams: [],
         setSelectedTeams: (teams) => set({ selectedTeams: teams }),
         toggleTeam: (teamId) => set((state) => ({
-          selectedTeams: state.selectedTeams.includes(teamId)
+          selectedTeams: Array.isArray(state.selectedTeams) && state.selectedTeams.includes(teamId)
             ? state.selectedTeams.filter((id) => id !== teamId)
-            : [...state.selectedTeams, teamId],
+            : [...(Array.isArray(state.selectedTeams) ? state.selectedTeams : []), teamId],
         })),
 
         selectedMembers: [],
@@ -78,6 +78,18 @@ export const useFilterStore = create<FilterState>()(
           showAvailability: state.showAvailability,
           colorMode: state.colorMode,
         }),
+        // Migrate/validate persisted data to ensure arrays
+        migrate: (persistedState: any, version: number) => {
+          const state = persistedState as Partial<FilterState>;
+          return {
+            ...state,
+            selectedTeams: Array.isArray(state.selectedTeams) ? state.selectedTeams : [],
+            selectedMembers: Array.isArray(state.selectedMembers) ? state.selectedMembers : [],
+            selectedClients: Array.isArray(state.selectedClients) ? state.selectedClients : [],
+            selectedProjects: Array.isArray(state.selectedProjects) ? state.selectedProjects : [],
+          };
+        },
+        version: 1, // Increment this to force migration
       }
     ),
     { name: 'FilterStore' }
