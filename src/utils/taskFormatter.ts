@@ -11,6 +11,12 @@ export function formatTaskTitle(
 ): string {
   const parts: string[] = [];
 
+  // Defensive check: ensure fields is an array
+  if (!Array.isArray(fields)) {
+    console.error('[taskFormatter] fields is not an array:', fields);
+    return task.title;
+  }
+
   // Always include the title first if it's in the fields
   if (fields.includes('title')) {
     parts.push(task.title);

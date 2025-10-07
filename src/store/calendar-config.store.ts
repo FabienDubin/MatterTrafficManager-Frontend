@@ -78,7 +78,9 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
       const parseValue = (value: any) => {
         if (typeof value === 'string') {
           try {
-            return JSON.parse(value);
+            const parsed = JSON.parse(value);
+            // Ensure it's an array
+            return Array.isArray(parsed) ? parsed : value;
           } catch {
             return value;
           }
@@ -86,21 +88,40 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
         return value;
       };
 
+      // Helper to ensure fields is always an array
+      const ensureFieldsArray = (fields: any, defaultFields: FieldType[]): FieldType[] => {
+        if (Array.isArray(fields)) {
+          return fields;
+        }
+        // If it's a comma-separated string, split it
+        if (typeof fields === 'string' && fields.includes(',')) {
+          return fields.split(',').map(f => f.trim()) as FieldType[];
+        }
+        // Fallback to default
+        return defaultFields;
+      };
+
       const config: CalendarConfig = {
         dayView: {
-          fields: dayFields.status === 'fulfilled' && dayFields.value 
-            ? parseValue(dayFields.value.value)
-            : DEFAULT_CONFIG.dayView.fields,
+          fields: ensureFieldsArray(
+            dayFields.status === 'fulfilled' && dayFields.value
+              ? parseValue(dayFields.value.value)
+              : undefined,
+            DEFAULT_CONFIG.dayView.fields
+          ),
           maxTitleLength: dayMaxLength.status === 'fulfilled' && dayMaxLength.value
-            ? typeof dayMaxLength.value.value === 'string' 
+            ? typeof dayMaxLength.value.value === 'string'
               ? parseInt(dayMaxLength.value.value, 10)
               : dayMaxLength.value.value
             : DEFAULT_CONFIG.dayView.maxTitleLength,
         },
         weekView: {
-          fields: weekFields.status === 'fulfilled' && weekFields.value
-            ? parseValue(weekFields.value.value)
-            : DEFAULT_CONFIG.weekView.fields,
+          fields: ensureFieldsArray(
+            weekFields.status === 'fulfilled' && weekFields.value
+              ? parseValue(weekFields.value.value)
+              : undefined,
+            DEFAULT_CONFIG.weekView.fields
+          ),
           maxTitleLength: weekMaxLength.status === 'fulfilled' && weekMaxLength.value
             ? typeof weekMaxLength.value.value === 'string'
               ? parseInt(weekMaxLength.value.value, 10)
@@ -108,9 +129,12 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
             : DEFAULT_CONFIG.weekView.maxTitleLength,
         },
         monthView: {
-          fields: monthFields.status === 'fulfilled' && monthFields.value
-            ? parseValue(monthFields.value.value)
-            : DEFAULT_CONFIG.monthView.fields,
+          fields: ensureFieldsArray(
+            monthFields.status === 'fulfilled' && monthFields.value
+              ? parseValue(monthFields.value.value)
+              : undefined,
+            DEFAULT_CONFIG.monthView.fields
+          ),
           maxTitleLength: monthMaxLength.status === 'fulfilled' && monthMaxLength.value
             ? typeof monthMaxLength.value.value === 'string'
               ? parseInt(monthMaxLength.value.value, 10)
