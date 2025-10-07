@@ -27,6 +27,11 @@ interface FilterState {
   resetFilters: () => void;
 }
 
+// Helper to ensure array values
+const ensureArray = (value: any): string[] => {
+  return Array.isArray(value) ? value : [];
+};
+
 export const useFilterStore = create<FilterState>()(
   devtools(
     persist(
@@ -36,21 +41,24 @@ export const useFilterStore = create<FilterState>()(
         togglePanel: () => set((state) => ({ isPanelOpen: !state.isPanelOpen })),
 
         selectedTeams: [],
-        setSelectedTeams: (teams) => set({ selectedTeams: teams }),
-        toggleTeam: (teamId) => set((state) => ({
-          selectedTeams: Array.isArray(state.selectedTeams) && state.selectedTeams.includes(teamId)
-            ? state.selectedTeams.filter((id) => id !== teamId)
-            : [...(Array.isArray(state.selectedTeams) ? state.selectedTeams : []), teamId],
-        })),
+        setSelectedTeams: (teams) => set({ selectedTeams: ensureArray(teams) }),
+        toggleTeam: (teamId) => set((state) => {
+          const teams = ensureArray(state.selectedTeams);
+          return {
+            selectedTeams: teams.includes(teamId)
+              ? teams.filter((id) => id !== teamId)
+              : [...teams, teamId],
+          };
+        }),
 
         selectedMembers: [],
-        setSelectedMembers: (members) => set({ selectedMembers: members }),
+        setSelectedMembers: (members) => set({ selectedMembers: ensureArray(members) }),
 
         selectedClients: [],
-        setSelectedClients: (clients) => set({ selectedClients: clients }),
+        setSelectedClients: (clients) => set({ selectedClients: ensureArray(clients) }),
 
         selectedProjects: [],
-        setSelectedProjects: (projects) => set({ selectedProjects: projects }),
+        setSelectedProjects: (projects) => set({ selectedProjects: ensureArray(projects) }),
 
         showAvailability: false,
         toggleShowAvailability: () => set((state) => ({ showAvailability: !state.showAvailability })),

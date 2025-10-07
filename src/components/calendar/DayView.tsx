@@ -92,7 +92,7 @@ export function DayView({
       const isSpecialAllDay =
         task.isAllDay && ['holiday', 'remote', 'school'].includes(task.taskType || '');
 
-      if (!task.assignedMembers || task.assignedMembers.length === 0) {
+      if (!Array.isArray(task.assignedMembers) || task.assignedMembers.length === 0) {
         // Ne pas ajouter les tâches spéciales journée entière aux non assignées
         if (!isSpecialAllDay) {
           unassigned.push(task);
