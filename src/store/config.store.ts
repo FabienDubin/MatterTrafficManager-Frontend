@@ -37,7 +37,9 @@ interface ConfigStore {
   updateClientColors: (colors: Record<string, string>) => Promise<void>;
   loadClients: () => Promise<void>;
   loadDisplayedTeams: () => Promise<void>; // NEW
-  updateDisplayedTeams: (teams: Array<{ id: string; icon: string; color: string; order: number }>) => Promise<void>; // NEW
+  updateDisplayedTeams: (
+    teams: Array<{ id: string; icon: string; color: string; order: number }>
+  ) => Promise<void>; // NEW
   refreshConfig: () => Promise<void>;
   getAsyncMode: () => AsyncModeConfig;
   getClientColor: (clientId: string) => string | undefined;
@@ -68,7 +70,9 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
     const { isLoading } = get();
 
     // Prevent multiple concurrent loads
-    if (isLoading) {return;}
+    if (isLoading) {
+      return;
+    }
 
     set({ isLoading: true });
 
@@ -113,15 +117,15 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   loadClientColors: async () => {
     try {
       const response = await clientsService.getClientColors();
-      set({ 
+      set({
         clientColors: response.data,
-        isColorsLoaded: true 
+        isColorsLoaded: true,
       });
     } catch (error) {
       console.error('Failed to load client colors:', error);
-      set({ 
+      set({
         clientColors: {},
-        isColorsLoaded: true // Even on error, mark as loaded 
+        isColorsLoaded: true, // Even on error, mark as loaded
       });
     }
   },
@@ -159,21 +163,23 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   loadDisplayedTeams: async () => {
     try {
       const response = await configService.getTeamsDisplayConfig();
+
       set({
         displayedTeams: response.teams,
-        isTeamsLoaded: true
+        isTeamsLoaded: true,
       });
     } catch (error) {
-      console.error('Failed to load displayed teams:', error);
       set({
         displayedTeams: [],
-        isTeamsLoaded: true // Even on error, mark as loaded
+        isTeamsLoaded: true, // Even on error, mark as loaded
       });
     }
   },
 
   // Update displayed teams configuration (called from admin panel)
-  updateDisplayedTeams: async (teams: Array<{ id: string; icon: string; color: string; order: number }>) => {
+  updateDisplayedTeams: async (
+    teams: Array<{ id: string; icon: string; color: string; order: number }>
+  ) => {
     try {
       await configService.updateTeamsDisplayConfig(teams);
       // Reload the teams after update to get the enriched data
@@ -198,7 +204,7 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
       get().loadAsyncConfig(),
       get().loadClientColors(),
       get().loadClients(),
-      get().loadDisplayedTeams()
+      get().loadDisplayedTeams(),
     ]);
   },
 
@@ -211,7 +217,9 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
   // Check if config is stale (older than TTL)
   isConfigStale: () => {
     const { lastFetched } = get();
-    if (!lastFetched) {return true;}
+    if (!lastFetched) {
+      return true;
+    }
 
     const age = Date.now() - new Date(lastFetched).getTime();
     return age > CONFIG_TTL;
@@ -233,7 +241,6 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
 
     // Check if config is stale and refresh in background if needed
     if (isConfigStale()) {
-      console.log('[ConfigStore] Config is stale, refreshing in background...');
       get().loadAsyncConfig(); // Non-blocking background refresh
     }
 
@@ -243,22 +250,46 @@ export const useConfigStore = create<ConfigStore>((set, get) => ({
 
 // Hook to auto-load config on app startup
 export const useInitConfigStore = () => {
-  const { loadAsyncConfig, loadClientColors, loadClients, loadDisplayedTeams, isLoaded } = useConfigStore();
+  const {
+    loadAsyncConfig,
+    loadClientColors,
+    loadClients,
+    loadDisplayedTeams,
+    isLoaded,
+    isColorsLoaded,
+    isTeamsLoaded,
+  } = useConfigStore();
 
   // Load config once when hook is first used
   React.useEffect(() => {
+    const promises = [];
+
     if (!isLoaded) {
-      // Load all in parallel for best performance
-      Promise.all([
-        loadAsyncConfig(),
-        loadClientColors(),
-        loadClients(),
-        loadDisplayedTeams()
-      ]).catch(error => {
+      promises.push(loadAsyncConfig());
+    }
+    if (!isColorsLoaded) {
+      promises.push(loadClientColors());
+    }
+    if (!isTeamsLoaded) {
+      promises.push(loadDisplayedTeams());
+    }
+    // Always load clients (no flag for this resource)
+    promises.push(loadClients());
+
+    if (promises.length > 0) {
+      Promise.all(promises).catch(error => {
         console.error('Failed to initialize config store:', error);
       });
     }
-  }, [loadAsyncConfig, loadClientColors, loadClients, loadDisplayedTeams, isLoaded]);
+  }, [
+    loadAsyncConfig,
+    loadClientColors,
+    loadClients,
+    loadDisplayedTeams,
+    isLoaded,
+    isColorsLoaded,
+    isTeamsLoaded,
+  ]);
 
   // Listen for config changes from other tabs/windows
   React.useEffect(() => {

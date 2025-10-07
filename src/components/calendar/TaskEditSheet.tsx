@@ -45,6 +45,7 @@ export interface TaskEditSheetProps {
   setTasks: Dispatch<SetStateAction<Task[]>>;
   initialDates?: { start: Date; end: Date };
   initialMember?: string;
+  initialMembers?: string[];
 }
 
 export function TaskEditSheet({
@@ -54,7 +55,8 @@ export function TaskEditSheet({
   tasks,
   setTasks,
   initialDates,
-  initialMember
+  initialMember,
+  initialMembers
 }: TaskEditSheetProps) {
   const isCreateMode = !task;
 
@@ -85,6 +87,7 @@ export function TaskEditSheet({
     open,
     initialDates,
     initialMember,
+    initialMembers,
     form
   });
 

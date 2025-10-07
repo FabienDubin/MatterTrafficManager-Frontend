@@ -11,6 +11,7 @@ export interface UseTaskFormInitializationOptions {
   open: boolean;
   initialDates?: { start: Date; end: Date };
   initialMember?: string;
+  initialMembers?: string[];
   form: UseFormReturn<TaskEditFormData>;
 }
 
@@ -23,6 +24,7 @@ export function useTaskFormInitialization({
   open,
   initialDates,
   initialMember,
+  initialMembers,
   form
 }: UseTaskFormInitializationOptions) {
   useEffect(() => {
@@ -52,11 +54,20 @@ export function useTaskFormInitialization({
       const startDate = initialDates?.start;
       const endDate = initialDates?.end;
 
+      // PRIORITY LOGIC for member assignment:
+      // 1. If initialMembers provided (filter active) → use initialMembers
+      // 2. Else, if initialMember provided (DayView column) → use [initialMember]
+      // 3. Else → []
+      const membersToAssign =
+        initialMembers && initialMembers.length > 0
+          ? initialMembers
+          : (initialMember ? [initialMember] : []);
+
       form.reset({
         title: '',
         projectId: '',
         status: 'not_started',
-        assignedMembers: initialMember ? [initialMember] : [],
+        assignedMembers: membersToAssign,
         startDate,
         startTime: startDate ? format(startDate, 'HH:mm') : '09:00',
         endDate,
@@ -65,5 +76,5 @@ export function useTaskFormInitialization({
         addToCalendar: false,
       });
     }
-  }, [task, form, isCreateMode, open, initialDates, initialMember]);
+  }, [task, form, isCreateMode, open, initialDates, initialMember, initialMembers]);
 }

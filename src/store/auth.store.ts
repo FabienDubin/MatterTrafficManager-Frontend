@@ -58,7 +58,8 @@ export const useAuthStore = create<AuthState>()(
             Promise.all([
               configStore.loadAsyncConfig(),
               configStore.loadClientColors(),
-              configStore.loadClients()
+              configStore.loadClients(),
+              configStore.loadDisplayedTeams()
             ]).catch(error => {
               console.error('Failed to preload config after login:', error);
             });

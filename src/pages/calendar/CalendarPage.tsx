@@ -84,6 +84,7 @@ export default function CalendarPage() {
   const [createMode, setCreateMode] = useState<{
     initialDates: { start: Date; end: Date };
     initialMember?: string;
+    initialMembers?: string[];
   } | null>(null);
 
   const { handleEventClick, handleEventDrop, handleEventResize } = useCalendarEvents(
@@ -214,11 +215,16 @@ export default function CalendarPage() {
 
   const handleSelect = useCallback(
     (selectInfo: any) => {
+      // Get filtered members from filter store
+      const { selectedMembers } = useFilterStore.getState();
+
       setCreateMode({
         initialDates: {
           start: selectInfo.start,
           end: selectInfo.end,
         },
+        // Pass filtered members if any are active
+        initialMembers: selectedMembers.length > 0 ? selectedMembers : undefined,
       });
       setSheetOpen(true);
       setSelectedTask(null);
@@ -228,12 +234,19 @@ export default function CalendarPage() {
 
   const handleTimeSlotSelect = useCallback(
     (member: Member | null, startDate: Date, endDate: Date) => {
+      // Get filtered members from filter store
+      const { selectedMembers } = useFilterStore.getState();
+
       setCreateMode({
         initialDates: {
           start: startDate,
           end: endDate,
         },
-        initialMember: member?.id,
+        // PRIORITY LOGIC:
+        // 1. If member filter active → use filtered members
+        // 2. Else, if column member provided → use that member
+        initialMembers: selectedMembers.length > 0 ? selectedMembers : undefined,
+        initialMember: selectedMembers.length === 0 && member?.id ? member.id : undefined,
       });
       setSheetOpen(true);
       setSelectedTask(null);
@@ -402,6 +415,7 @@ export default function CalendarPage() {
         setTasks={setTasks}
         initialDates={createMode?.initialDates}
         initialMember={createMode?.initialMember}
+        initialMembers={createMode?.initialMembers}
       />
     </div>
   );
