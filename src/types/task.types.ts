@@ -49,6 +49,7 @@ export interface Task {
   createdAt?: string;
   updatedAt?: string;
   syncedAt?: string;
+  notionUrl?: string; // URL de la tâche dans Notion
 
   // Champs ajoutés côté client
   _pendingSync?: boolean; // Indique que la tâche est en attente de sync avec Notion
