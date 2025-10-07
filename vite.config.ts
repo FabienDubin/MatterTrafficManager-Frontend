@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
   build: {
+    sourcemap: true, // Enable source maps for production debugging
     rollupOptions: {
       output: {
         // Force new hash generation on every build
