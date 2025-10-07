@@ -90,6 +90,11 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
 
       // Helper to ensure fields is always an array
       const ensureFieldsArray = (fields: any, defaultFields: FieldType[]): FieldType[] => {
+        // If it's an object with a 'fields' property (backend format), extract it
+        if (fields && typeof fields === 'object' && 'fields' in fields) {
+          fields = fields.fields;
+        }
+
         if (Array.isArray(fields)) {
           return fields;
         }
