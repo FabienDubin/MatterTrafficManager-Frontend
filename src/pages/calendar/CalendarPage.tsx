@@ -16,6 +16,7 @@ import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManag
 import { tasksToCalendarEvents } from '@/utils/taskMapper';
 import { useFilteredTasks } from '@/hooks/useFilteredTasks';
 import { useMembers } from '@/hooks/api/useMembers';
+import { useVisibleMembers } from '@/hooks/useVisibleMembers';
 import { addDays } from 'date-fns';
 import { Task } from '@/types/task.types';
 import { Member } from '@/types/calendar.types';
@@ -31,8 +32,8 @@ export default function CalendarPage() {
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
 
-  // Get sidebar state and filters from filter store
-  const { isPanelOpen, selectedTeams, selectedMembers } = useFilterStore();
+  // Get sidebar state from filter store
+  const { isPanelOpen } = useFilterStore();
 
   // Get calendar configuration
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
@@ -205,54 +206,7 @@ export default function CalendarPage() {
   }, [filteredTasks]);
 
   // Filter visible members for DayView based on active filters
-  const visibleMembers = useMemo(() => {
-    // Si aucun filtre actif, montrer tous les membres qui ont des tâches
-    if ((!Array.isArray(selectedTeams) || selectedTeams.length === 0) && (!Array.isArray(selectedMembers) || selectedMembers.length === 0)) {
-      return members;
-    }
-
-    // Si des membres spécifiques sont sélectionnés, ne montrer que ceux-là (depuis allMembers)
-    if (Array.isArray(selectedMembers) && selectedMembers.length > 0) {
-      return allMembers
-        .filter(member => selectedMembers.includes(member.id))
-        .map(member => ({
-          id: member.id,
-          name: member.name,
-          email: member.email,
-          teams: member.teams || [],
-        }));
-    }
-
-    // Si des équipes sont sélectionnées, montrer les membres de ces équipes (depuis allMembers)
-    if (Array.isArray(selectedTeams) && selectedTeams.length > 0) {
-      // Build a map of team IDs to team names from tasks
-      const teamIdToName = new Map(
-        filteredTasks.flatMap(task =>
-          [...(task.teamsData || []), ...(task.involvedTeamsData || [])]
-            .map(t => [t.id, t.name])
-        )
-      );
-
-      return allMembers
-        .filter(member => {
-          if (!member.teams) return false;
-          return member.teams.some(teamName => {
-            // Find the team ID from the name
-            const teamId = Array.from(teamIdToName.entries())
-              .find(([_, name]) => name === teamName)?.[0];
-            return teamId && selectedTeams.includes(teamId);
-          });
-        })
-        .map(member => ({
-          id: member.id,
-          name: member.name,
-          email: member.email,
-          teams: member.teams || [],
-        }));
-    }
-
-    return members;
-  }, [members, allMembers, filteredTasks, selectedTeams, selectedMembers]);
+  const visibleMembers = useVisibleMembers(members, allMembers);
 
   const handleDateClick = (arg: any) => {
     console.log('Date clicked:', arg.dateStr);
