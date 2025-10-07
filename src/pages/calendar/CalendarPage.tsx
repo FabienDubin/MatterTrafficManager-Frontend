@@ -207,12 +207,12 @@ export default function CalendarPage() {
   // Filter visible members for DayView based on active filters
   const visibleMembers = useMemo(() => {
     // Si aucun filtre actif, montrer tous les membres qui ont des tâches
-    if (selectedTeams.length === 0 && selectedMembers.length === 0) {
+    if ((!Array.isArray(selectedTeams) || selectedTeams.length === 0) && (!Array.isArray(selectedMembers) || selectedMembers.length === 0)) {
       return members;
     }
 
     // Si des membres spécifiques sont sélectionnés, ne montrer que ceux-là (depuis allMembers)
-    if (selectedMembers.length > 0) {
+    if (Array.isArray(selectedMembers) && selectedMembers.length > 0) {
       return allMembers
         .filter(member => selectedMembers.includes(member.id))
         .map(member => ({
@@ -224,7 +224,7 @@ export default function CalendarPage() {
     }
 
     // Si des équipes sont sélectionnées, montrer les membres de ces équipes (depuis allMembers)
-    if (selectedTeams.length > 0) {
+    if (Array.isArray(selectedTeams) && selectedTeams.length > 0) {
       // Build a map of team IDs to team names from tasks
       const teamIdToName = new Map(
         filteredTasks.flatMap(task =>
