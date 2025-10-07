@@ -1,6 +1,6 @@
-import { Building2 } from 'lucide-react';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
+import { Logo } from '@/components/shared/Logo';
 
 export default function LoginPage() {
   return (
@@ -8,10 +8,8 @@ export default function LoginPage() {
       <div className='flex flex-col gap-4 p-6 md:p-10 bg-background'>
         <div className='flex justify-between items-center'>
           <a href='#' className='flex items-center gap-2 font-medium text-foreground'>
-            <div className='bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md'>
-              <Building2 className='size-4' />
-            </div>
-            MatterTraffic
+            <Logo className='size-6' />
+            Matter Traffic Manager
           </a>
           <ThemeToggle />
         </div>

@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Settings, LogOut } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/feedback/ThemeToggle';
 import { useAuthStore } from '@/store/auth.store';
 import { toast } from 'sonner';
+import { Logo } from '../shared/Logo';
 
 /**
  * CalendarHeader - Header avec logo, user info, admin et déconnexion
@@ -28,8 +29,8 @@ export function CalendarHeader() {
     <header className='border-b'>
       <div className='flex items-center justify-between px-6 py-4'>
         <div className='flex items-center gap-3'>
-          <Calendar className='h-6 w-6 text-primary' />
-          <h1 className='text-2xl font-semibold text-foreground'>MatterTraffic Calendar</h1>
+          <Logo className='size-6' />
+          <h1 className='text-2xl font-semibold text-foreground'>Matter Traffic Manager</h1>
         </div>
 
         <div className='flex items-center gap-4'>

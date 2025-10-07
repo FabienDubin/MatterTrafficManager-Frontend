@@ -66,9 +66,9 @@ export function LoginForm({ className, ...props }: LoginFormProps) {
       {...props}
     >
       <div className='flex flex-col items-center gap-2 text-center'>
-        <h1 className='text-2xl font-bold text-foreground'>Connexion à MatterTraffic</h1>
+        <h1 className='text-2xl font-bold text-foreground'>Connexion au Traffic Manager</h1>
         <p className='text-muted-foreground text-sm text-balance'>
-          Entrez vos identifiants pour accéder à votre compte
+          Entre tes identifiants pour accéder à ton compte
         </p>
       </div>
 

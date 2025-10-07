@@ -38,7 +38,12 @@ interface CalendarContentProps {
   onTaskClick: (task: Task) => void;
   onTimeSlotClick: (member: Member | null, date: Date, hour: number) => void;
   onTimeSlotSelect: (member: Member | null, startDate: Date, endDate: Date) => void;
-  onTaskDrop: (task: Task, newMemberId: string | null, newDate: Date, sourceMemberId?: string) => void;
+  onTaskDrop: (
+    task: Task,
+    newMemberId: string | null,
+    newDate: Date,
+    sourceMemberId?: string
+  ) => void;
   onTaskResize: (task: Task, newStartDate: Date, newEndDate: Date) => void;
 }
 
