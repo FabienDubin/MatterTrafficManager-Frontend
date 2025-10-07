@@ -48,15 +48,17 @@ export function ClientMultiSelect() {
   }, []);
 
   const toggleClient = (clientId: string) => {
-    if (selectedClients.includes(clientId)) {
-      setSelectedClients(selectedClients.filter(id => id !== clientId));
+    const clients = Array.isArray(selectedClients) ? selectedClients : [];
+    if (clients.includes(clientId)) {
+      setSelectedClients(clients.filter(id => id !== clientId));
     } else {
-      setSelectedClients([...selectedClients, clientId]);
+      setSelectedClients([...clients, clientId]);
     }
   };
 
   const removeClient = (clientId: string) => {
-    setSelectedClients(selectedClients.filter(id => id !== clientId));
+    const clients = Array.isArray(selectedClients) ? selectedClients : [];
+    setSelectedClients(clients.filter(id => id !== clientId));
   };
 
   const clearAll = () => {

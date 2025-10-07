@@ -31,10 +31,11 @@ export function MemberMultiSelect() {
   }, []);
 
   const toggleMember = (memberId: string) => {
-    if (selectedMembers.includes(memberId)) {
-      setSelectedMembers(selectedMembers.filter(id => id !== memberId));
+    const members = Array.isArray(selectedMembers) ? selectedMembers : [];
+    if (members.includes(memberId)) {
+      setSelectedMembers(members.filter(id => id !== memberId));
     } else {
-      setSelectedMembers([...selectedMembers, memberId]);
+      setSelectedMembers([...members, memberId]);
     }
   };
 

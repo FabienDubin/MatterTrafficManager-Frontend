@@ -43,15 +43,17 @@ export function ProjectMultiSelect() {
   }, []);
 
   const toggleProject = (projectId: string) => {
-    if (selectedProjects.includes(projectId)) {
-      setSelectedProjects(selectedProjects.filter(id => id !== projectId));
+    const projects = Array.isArray(selectedProjects) ? selectedProjects : [];
+    if (projects.includes(projectId)) {
+      setSelectedProjects(projects.filter(id => id !== projectId));
     } else {
-      setSelectedProjects([...selectedProjects, projectId]);
+      setSelectedProjects([...projects, projectId]);
     }
   };
 
   const removeProject = (projectId: string) => {
-    setSelectedProjects(selectedProjects.filter(id => id !== projectId));
+    const projects = Array.isArray(selectedProjects) ? selectedProjects : [];
+    setSelectedProjects(projects.filter(id => id !== projectId));
   };
 
   const clearAll = () => {
