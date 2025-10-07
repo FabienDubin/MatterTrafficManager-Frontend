@@ -106,9 +106,12 @@ export default function CalendarPage() {
 
   // Track if initial load is complete
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const mountTimeRef = useRef<number>(performance.now());
 
   useEffect(() => {
     if (tasks.length > 0 && isInitialLoad) {
+      const timeToDisplay = performance.now() - mountTimeRef.current;
+      console.log(`📅 [Calendar] Calendar displayed with ${tasks.length} tasks in ${timeToDisplay.toFixed(0)}ms`);
       setIsInitialLoad(false);
     }
   }, [tasks.length, isInitialLoad]);

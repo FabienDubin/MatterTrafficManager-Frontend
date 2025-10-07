@@ -263,18 +263,57 @@ export function useProgressiveCalendarTasks(
   }, [enablePolling, REACTIVATION_THRESHOLD, refreshAllRanges, scheduleNextPoll]);
 
   /**
-   * Initial load: current view + margins
+   * Initial load: Progressive strategy for fast UX
+   * Phase 1: Load ±7 days immediately (fast display)
+   * Phase 2: Load extended ranges in background (smooth navigation)
    */
   useEffect(() => {
     const now = new Date();
-    const initialStart = addDays(now, -30);
-    const initialEnd = addDays(now, 30);
-    
-    fetchAdditionalRange(initialStart, initialEnd).then(() => {
-      // Start polling after initial load
-      if (enablePolling) {
-        scheduleNextPoll();
-      }
+    const startTime = performance.now();
+
+    // Phase 1: Fast initial load (±7 days) - displayed immediately
+    const quickStart = addDays(now, -7);
+    const quickEnd = addDays(now, 7);
+
+    console.log('⚡ [Progressive] Phase 1: Loading visible period (±7 days)...');
+    const phase1Start = performance.now();
+
+    fetchAdditionalRange(quickStart, quickEnd).then(() => {
+      const phase1Duration = performance.now() - phase1Start;
+      const totalElapsed = performance.now() - startTime;
+      console.log(`✅ [Progressive] Phase 1: Complete! Calendar ready in ${phase1Duration.toFixed(0)}ms (total: ${totalElapsed.toFixed(0)}ms)`);
+
+      // Phase 2a: Load past data (-30 to -7 days) in background
+      const pastStart = addDays(now, -30);
+      const pastEnd = addDays(now, -7);
+
+      console.log('🔄 [Progressive] Phase 2a: Loading past data (-30 to -7 days) in background...');
+      const phase2aStart = performance.now();
+
+      fetchAdditionalRange(pastStart, pastEnd).then(() => {
+        const phase2aDuration = performance.now() - phase2aStart;
+        const totalElapsed = performance.now() - startTime;
+        console.log(`✅ [Progressive] Phase 2a: Past data loaded in ${phase2aDuration.toFixed(0)}ms (total: ${totalElapsed.toFixed(0)}ms)`);
+
+        // Phase 2b: Load future data (+7 to +60 days) in background
+        const futureStart = addDays(now, 7);
+        const futureEnd = addDays(now, 60);
+
+        console.log('🔄 [Progressive] Phase 2b: Loading future data (+7 to +60 days) in background...');
+        const phase2bStart = performance.now();
+
+        fetchAdditionalRange(futureStart, futureEnd).then(() => {
+          const phase2bDuration = performance.now() - phase2bStart;
+          const totalElapsed = performance.now() - startTime;
+          console.log(`✅ [Progressive] Phase 2b: Complete! Total: 90 days cached in ${phase2bDuration.toFixed(0)}ms (total: ${totalElapsed.toFixed(0)}ms)`);
+          console.log(`🎉 [Progressive] TOTAL LOADING TIME: ${totalElapsed.toFixed(0)}ms for 90 days`);
+
+          // Start polling after all data is loaded
+          if (enablePolling) {
+            scheduleNextPoll();
+          }
+        });
+      });
     });
   }, []); // Run once on mount
   
