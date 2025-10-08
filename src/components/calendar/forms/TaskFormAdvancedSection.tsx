@@ -21,13 +21,15 @@ import { Textarea } from '@/components/ui/textarea';
 
 export interface TaskFormAdvancedSectionProps {
   form: UseFormReturn<TaskEditFormData>;
+  readOnly?: boolean;
 }
 
 /**
  * Advanced options section of task form: accordion with calendar checkbox and notes
  */
 export function TaskFormAdvancedSection({
-  form
+  form,
+  readOnly
 }: TaskFormAdvancedSectionProps) {
   return (
     <Accordion type='single' collapsible>
@@ -42,7 +44,7 @@ export function TaskFormAdvancedSection({
               render={({ field }) => (
                 <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={readOnly} />
                   </FormControl>
                   <div className='space-y-1 leading-none'>
                     <FormLabel>Ajouter au Calendrier Notion</FormLabel>
@@ -64,6 +66,7 @@ export function TaskFormAdvancedSection({
                       className='resize-none'
                       rows={4}
                       {...field}
+                      disabled={readOnly}
                     />
                   </FormControl>
                   <FormDescription className='text-right'>

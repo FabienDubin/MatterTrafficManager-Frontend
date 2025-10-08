@@ -21,6 +21,7 @@ export interface MemberComboboxProps {
   placeholder?: string;
   emptyText?: string;
   className?: string;
+  disabled?: boolean;
 }
 
 /**
@@ -34,6 +35,7 @@ export function MemberCombobox({
   placeholder = 'Sélectionner des membres',
   emptyText = 'Aucun membre trouvé.',
   className,
+  disabled = false,
 }: MemberComboboxProps) {
   const [open, setOpen] = useState(false);
 
@@ -49,10 +51,12 @@ export function MemberCombobox({
             return (
               <Badge key={memberId} variant="default" className="gap-1">
                 {member.name}
-                <X
-                  className="h-3 w-3 cursor-pointer"
-                  onClick={() => onToggleMember(memberId)}
-                />
+                {!disabled && (
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => onToggleMember(memberId)}
+                  />
+                )}
               </Badge>
             );
           })}
@@ -61,10 +65,11 @@ export function MemberCombobox({
 
       {/* Combobox */}
       <Popover open={open} onOpenChange={setOpen} modal={true}>
-        <PopoverTrigger asChild>
+        <PopoverTrigger asChild disabled={disabled}>
           <Button
             variant="outline"
             role="combobox"
+            disabled={disabled}
             className={cn(
               'w-full justify-between',
               !selectedMembers.length && 'text-muted-foreground'

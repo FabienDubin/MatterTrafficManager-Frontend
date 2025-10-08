@@ -11,6 +11,7 @@ import { useTaskFormKeyboardShortcuts } from '@/hooks/calendar/useTaskFormKeyboa
 import { useOptimisticTaskCreate } from '@/hooks/useOptimisticTaskCreate';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
 import { useOptimisticTaskDelete } from '@/hooks/useOptimisticTaskDelete';
+import { useAuth } from '@/providers/AuthProvider';
 
 // Utils
 import { buildCreatePayload, buildUpdatePayload } from '@/utils/taskPayloadBuilder';
@@ -59,6 +60,8 @@ export function TaskEditSheet({
   initialMembers
 }: TaskEditSheetProps) {
   const isCreateMode = !task;
+  const { user } = useAuth();
+  const isReadOnly = user?.role === 'chef_projet' && !isCreateMode;
 
   // 1. Form setup
   const form = useForm<TaskEditFormData>({
@@ -196,6 +199,7 @@ export function TaskEditSheet({
                   form={form}
                   projects={projects}
                   selectedProject={selectedProject}
+                  readOnly={isReadOnly}
                 />
 
                 <Separator />
@@ -205,12 +209,13 @@ export function TaskEditSheet({
                   form={form}
                   members={members}
                   selectedMembers={selectedMembers}
+                  readOnly={isReadOnly}
                 />
 
                 <Separator />
 
                 {/* Section 3: Advanced options */}
-                <TaskFormAdvancedSection form={form} />
+                <TaskFormAdvancedSection form={form} readOnly={isReadOnly} />
 
                 {/* Section 4: History (edit mode only) */}
                 <TaskFormHistorySection
@@ -226,6 +231,7 @@ export function TaskEditSheet({
               onCancel={onClose}
               onDelete={isCreateMode ? undefined : handleDelete}
               isPending={isPending}
+              readOnly={isReadOnly}
             />
           </form>
         </Form>

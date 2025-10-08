@@ -18,6 +18,7 @@ export interface TaskFormActionsProps {
   onCancel: () => void;
   onDelete?: () => void;
   isPending?: boolean;
+  readOnly?: boolean;
 }
 
 /**
@@ -27,27 +28,30 @@ export function TaskFormActions({
   isCreateMode,
   onCancel,
   onDelete,
-  isPending
+  isPending,
+  readOnly
 }: TaskFormActionsProps) {
   return (
     <div className='flex justify-between items-center pt-4 border-t mt-4'>
       <TooltipProvider>
         <div className='flex gap-2'>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button type='submit' disabled={isPending}>
-                Enregistrer
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'} + ↩︎</p>
-            </TooltipContent>
-          </Tooltip>
+          {!readOnly && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button type='submit' disabled={isPending}>
+                  Enregistrer
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{navigator.userAgent.includes('Mac') ? '⌘' : 'Ctrl'} + ↩︎</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant='outline' onClick={onCancel} type='button' disabled={isPending}>
-                Annuler
+                {readOnly ? 'Fermer' : 'Annuler'}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
@@ -57,8 +61,8 @@ export function TaskFormActions({
         </div>
       </TooltipProvider>
 
-      {/* Bouton Delete - Uniquement en mode édition */}
-      {!isCreateMode && onDelete && (
+      {/* Bouton Delete - Uniquement en mode édition et si pas readOnly */}
+      {!isCreateMode && onDelete && !readOnly && (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button

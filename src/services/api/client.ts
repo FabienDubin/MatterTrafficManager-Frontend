@@ -30,9 +30,10 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as any;
 
     // Don't try to refresh on auth endpoints (login, register, refresh)
-    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
-                          originalRequest.url?.includes('/auth/register') ||
-                          originalRequest.url?.includes('/auth/refresh');
+    const isAuthEndpoint =
+      originalRequest.url?.includes('/auth/login') ||
+      originalRequest.url?.includes('/auth/register') ||
+      originalRequest.url?.includes('/auth/refresh');
 
     // Si c'est une erreur 401 et qu'on n'a pas encore essayé de refresh
     if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
@@ -87,8 +88,18 @@ apiClient.interceptors.response.use(
     // Pour les erreurs 403, c'est clairement un problème de permissions
     if (error.response?.status === 403) {
       console.error('Access forbidden: Insufficient permissions');
-      // Ne pas rediriger, laisser le composant gérer l'erreur
-      return Promise.reject(error);
+
+      // Créer une erreur avec un message personnalisé
+      const customError = new Error(
+        "Désolé, tu n'es pas autorisé(e) à modifier cette tâche. Rapproche-toi du Traffic Manager pour effectuer cette modification."
+      );
+
+      // Copier les propriétés importantes de l'erreur originale
+      (customError as any).response = error.response;
+      (customError as any).config = error.config;
+      (customError as any).status = 403;
+
+      return Promise.reject(customError);
     }
 
     return Promise.reject(error);

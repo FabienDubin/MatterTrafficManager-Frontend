@@ -38,6 +38,7 @@ export interface TaskFormMainSectionProps {
   form: UseFormReturn<TaskEditFormData>;
   projects: Project[];
   selectedProject?: Project;
+  readOnly?: boolean;
 }
 
 /**
@@ -46,7 +47,8 @@ export interface TaskFormMainSectionProps {
 export function TaskFormMainSection({
   form,
   projects,
-  selectedProject
+  selectedProject,
+  readOnly
 }: TaskFormMainSectionProps) {
   const [openProjectCombobox, setOpenProjectCombobox] = useState(false);
 
@@ -62,7 +64,7 @@ export function TaskFormMainSection({
               Nom de la tâche <span className='text-red-500'>*</span>
             </FormLabel>
             <FormControl>
-              <Input placeholder='Entrez le nom de la tâche' {...field} />
+              <Input placeholder='Entrez le nom de la tâche' {...field} disabled={readOnly} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -83,11 +85,12 @@ export function TaskFormMainSection({
               onOpenChange={setOpenProjectCombobox}
               modal={true}
             >
-              <PopoverTrigger asChild>
+              <PopoverTrigger asChild disabled={readOnly}>
                 <FormControl>
                   <Button
                     variant='outline'
                     role='combobox'
+                    disabled={readOnly}
                     className={cn(
                       'w-full justify-between',
                       !field.value && 'text-muted-foreground'
@@ -151,9 +154,9 @@ export function TaskFormMainSection({
         render={({ field }) => (
           <FormItem>
             <FormLabel>Statut</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={readOnly}>
               <FormControl>
-                <SelectTrigger>
+                <SelectTrigger disabled={readOnly}>
                   <SelectValue placeholder='Sélectionner un statut' />
                 </SelectTrigger>
               </FormControl>

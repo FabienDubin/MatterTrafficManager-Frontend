@@ -24,6 +24,7 @@ export interface TaskFormAssignmentSectionProps {
   form: UseFormReturn<TaskEditFormData>;
   members: Member[];
   selectedMembers: string[];
+  readOnly?: boolean;
 }
 
 /**
@@ -32,7 +33,8 @@ export interface TaskFormAssignmentSectionProps {
 export function TaskFormAssignmentSection({
   form,
   members,
-  selectedMembers
+  selectedMembers,
+  readOnly
 }: TaskFormAssignmentSectionProps) {
   const [openStartDatePicker, setOpenStartDatePicker] = useState(false);
   const [openEndDatePicker, setOpenEndDatePicker] = useState(false);
@@ -60,6 +62,7 @@ export function TaskFormAssignmentSection({
                 members={members}
                 selectedMembers={selectedMembers}
                 onToggleMember={toggleMember}
+                disabled={readOnly}
               />
             </FormControl>
             <FormMessage />
@@ -82,10 +85,11 @@ export function TaskFormAssignmentSection({
                 onOpenChange={setOpenStartDatePicker}
                 modal={true}
               >
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild disabled={readOnly}>
                   <FormControl>
                     <Button
                       variant='outline'
+                      disabled={readOnly}
                       className={cn(
                         'w-full justify-start text-left font-normal',
                         !field.value && 'text-muted-foreground'
@@ -119,7 +123,7 @@ export function TaskFormAssignmentSection({
             <FormItem>
               <FormLabel>Heure</FormLabel>
               <FormControl>
-                <Input type='time' {...field} />
+                <Input type='time' {...field} disabled={readOnly} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -141,10 +145,11 @@ export function TaskFormAssignmentSection({
                 onOpenChange={setOpenEndDatePicker}
                 modal={true}
               >
-                <PopoverTrigger asChild>
+                <PopoverTrigger asChild disabled={readOnly}>
                   <FormControl>
                     <Button
                       variant='outline'
+                      disabled={readOnly}
                       className={cn(
                         'w-full justify-start text-left font-normal',
                         !field.value && 'text-muted-foreground'
@@ -179,7 +184,7 @@ export function TaskFormAssignmentSection({
             <FormItem>
               <FormLabel>Heure</FormLabel>
               <FormControl>
-                <Input type='time' {...field} />
+                <Input type='time' {...field} disabled={readOnly} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -120,13 +120,25 @@ export function useOptimisticUpdate<TData = unknown, TVariables = void, TContext
       }
       
       if (showToast) {
-        toast.error(toastMessages.error, {
-          description: error.message,
-          action: {
-            label: 'Réessayer',
-            onClick: () => mutation.mutate(variables),
-          },
-        });
+        // Check if it's a 403 permission error
+        const isForbidden = (error as any).status === 403;
+
+        if (isForbidden) {
+          // For permission errors, show a warning without retry button
+          toast.warning('Permission refusée', {
+            description: error.message,
+            duration: 5000, // Show longer for permission errors
+          });
+        } else {
+          // For other errors, show error toast with retry button
+          toast.error(toastMessages.error, {
+            description: error.message,
+            action: {
+              label: 'Réessayer',
+              onClick: () => mutation.mutate(variables),
+            },
+          });
+        }
       }
       
       if (onError) {
