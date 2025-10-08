@@ -4,15 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from '@/components/ui/table';
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -30,12 +30,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Search, 
-  UserPlus, 
-  MoreHorizontal, 
-  Mail, 
+import {
+  Search,
+  UserPlus,
+  MoreHorizontal,
+  Mail,
   Shield,
   Briefcase,
   Users,
@@ -52,6 +61,8 @@ export default function UsersPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -60,8 +71,12 @@ export default function UsersPage() {
   const [tempPassword, setTempPassword] = useState<string | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['users', searchTerm],
-    queryFn: () => usersService.getUsers({ search: searchTerm }),
+    queryKey: ['users', searchTerm, currentPage, pageSize],
+    queryFn: () => usersService.getUsers({
+      search: searchTerm,
+      page: currentPage,
+      limit: pageSize,
+    }),
   });
 
   const createUserMutation = useMutation({
@@ -137,6 +152,18 @@ export default function UsersPage() {
   });
 
   const users = data?.users || [];
+  const totalPages = data?.pages || 1;
+  const totalUsers = data?.total || 0;
+
+  // Calculate displayed range
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalUsers);
+
+  // Reset to page 1 when search term changes
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
 
   const handleCreateUser = async (data: CreateUserInput) => {
     await createUserMutation.mutateAsync(data);
@@ -251,7 +278,7 @@ export default function UsersPage() {
                 <Input
                   placeholder="Rechercher par nom ou email..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-9"
                 />
               </div>
@@ -357,6 +384,75 @@ export default function UsersPage() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Pagination */}
+            {totalUsers > 0 && (
+              <div className="flex items-center justify-between pt-4">
+                <div className="text-sm text-muted-foreground">
+                  Affichage {startIndex}-{endIndex} sur {totalUsers} utilisateur{totalUsers > 1 ? 's' : ''}
+                </div>
+                {totalPages > 1 && (
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Show first page, last page, current page, and pages around current
+                        const showPage =
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1);
+
+                        const showEllipsisBefore = page === currentPage - 2 && currentPage > 3;
+                        const showEllipsisAfter = page === currentPage + 2 && currentPage < totalPages - 2;
+
+                        if (showEllipsisBefore) {
+                          return (
+                            <PaginationItem key={`ellipsis-before-${page}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+
+                        if (showEllipsisAfter) {
+                          return (
+                            <PaginationItem key={`ellipsis-after-${page}`}>
+                              <PaginationEllipsis />
+                            </PaginationItem>
+                          );
+                        }
+
+                        if (!showPage) {return null;}
+
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              onClick={() => setCurrentPage(page)}
+                              isActive={currentPage === page}
+                              className="cursor-pointer"
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      })}
+
+                      <PaginationItem>
+                        <PaginationNext
+                          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                          className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
