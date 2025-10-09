@@ -34,47 +34,36 @@ export function MemberColumn({
   holidayTask,
   remoteTask,
   schoolTask,
+  publicHolidayTask,
 }: MemberColumnProps) {
   const timeSlotsRef = useRef<HTMLDivElement>(null);
 
   // 1. Drag & drop
-  const {
-    handleDrop,
-    handleDragOver,
-    handleDragLeave,
-    handleDragStart
-  } = useTaskDragAndDrop({
+  const { handleDrop, handleDragOver, handleDragLeave, handleDragStart } = useTaskDragAndDrop({
     date,
     memberId: member.id,
     onTaskDrop,
     holidayTask,
     schoolTask,
-    memberName: member.name
+    memberName: member.name,
   });
 
   // 2. Resize
-  const {
-    resizingTask,
-    resizeTooltip,
-    handleResizeStart
-  } = useTaskResize({
+  const { resizingTask, resizeTooltip, handleResizeStart } = useTaskResize({
     date,
     hourGridHeight,
     onTaskResize,
-    tasks
+    tasks,
   });
 
   // 3. Time slot selection
-  const {
-    handleSelectionStart,
-    getSelectionOverlay
-  } = useTimeSlotSelection({
+  const { handleSelectionStart, getSelectionOverlay } = useTimeSlotSelection({
     date,
     hourGridHeight,
     onTimeSlotSelect: onTimeSlotSelect
       ? (start, end) => onTimeSlotSelect(member, start, end)
       : undefined,
-    enabled: !!onTimeSlotSelect
+    enabled: !!onTimeSlotSelect,
   });
 
   // 4. Calculate task positions with resize overrides
@@ -84,7 +73,7 @@ export function MemberColumn({
     if (resizingTask?.tempStartDate && resizingTask?.tempEndDate) {
       overrides.set(resizingTask.taskId, {
         startDate: resizingTask.tempStartDate,
-        endDate: resizingTask.tempEndDate
+        endDate: resizingTask.tempEndDate,
       });
     }
 
@@ -104,7 +93,8 @@ export function MemberColumn({
   const columnClassName = cn(
     'flex-1 min-w-[200px] border-r flex flex-col',
     holidayTask && 'bg-muted/80',
-    schoolTask && 'bg-blue-50/80 dark:bg-blue-950/20'
+    schoolTask && 'bg-blue-50/80 dark:bg-blue-950/20',
+    publicHolidayTask && 'bg-muted/80' // Fond gris pour jour férié
   );
 
   // 7. Selection overlay
@@ -150,10 +140,7 @@ export function MemberColumn({
 
           {/* Selection overlay */}
           {selectionOverlay && (
-            <SelectionOverlay
-              top={selectionOverlay.top}
-              height={selectionOverlay.height}
-            />
+            <SelectionOverlay top={selectionOverlay.top} height={selectionOverlay.height} />
           )}
         </TimeGrid>
       </div>

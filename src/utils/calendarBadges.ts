@@ -8,6 +8,7 @@ const TASK_TYPE_EMOJIS: Record<string, string> = {
   holiday: '🏖️',
   remote: '🏠',
   school: '📚',
+  public_holiday: '🎉',
 };
 
 export interface BadgeInfo {
@@ -36,13 +37,20 @@ export function getSpecialTasksForDate(events: EventInput[], date: Date): BadgeI
 
         // Pour les événements all-day, vérifier si la date est dans la plage
         if (date >= eventStart && date < eventEnd) {
-          // Récupérer le prénom depuis les données des membres
-          const memberName = task.assignedMembersData?.[0]?.name || 'Inconnu';
-          const firstName = memberName.split(' ')[0]; // Prendre juste le prénom
+          let displayName;
+          
+          if (taskType === 'public_holiday') {
+            // Pour les jours fériés, garder le nom complet
+            displayName = task.assignedMembersData?.[0]?.name || 'Jour férié';
+          } else {
+            // Pour les autres types (congés, TT), prendre juste le prénom
+            const memberName = task.assignedMembersData?.[0]?.name || 'Inconnu';
+            displayName = memberName.split(' ')[0];
+          }
 
           badges.push({
             emoji: TASK_TYPE_EMOJIS[taskType],
-            name: firstName,
+            name: displayName,
             type: taskType,
           });
         }

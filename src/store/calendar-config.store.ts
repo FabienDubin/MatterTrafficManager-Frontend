@@ -24,6 +24,7 @@ interface CalendarConfig {
   weekView: CalendarViewConfig;
   monthView: CalendarViewConfig;
   showWeekends: boolean;
+  showHolidays: boolean;
 }
 
 interface CalendarConfigState {
@@ -52,6 +53,7 @@ const DEFAULT_CONFIG: CalendarConfig = {
     maxTitleLength: 15,
   },
   showWeekends: true,
+  showHolidays: true,
 };
 
 export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => ({
@@ -63,7 +65,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
     set({ isLoading: true, error: null });
     try {
       // Fetch all calendar config keys in parallel
-      const [dayFields, weekFields, monthFields, dayMaxLength, weekMaxLength, monthMaxLength, showWeekends] = 
+      const [dayFields, weekFields, monthFields, dayMaxLength, weekMaxLength, monthMaxLength, showWeekends, showHolidays] = 
         await Promise.allSettled([
           configService.getConfig('CALENDAR_DAY_VIEW_FIELDS'),
           configService.getConfig('CALENDAR_WEEK_VIEW_FIELDS'),
@@ -72,6 +74,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
           configService.getConfig('CALENDAR_TITLE_MAX_LENGTH_WEEK'),
           configService.getConfig('CALENDAR_TITLE_MAX_LENGTH_MONTH'),
           configService.getConfig('SHOW_WEEKENDS'),
+          configService.getConfig('SHOW_HOLIDAYS'),
         ]);
 
       // Helper function to parse value - handles both string and object
@@ -149,6 +152,9 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
         showWeekends: showWeekends.status === 'fulfilled' && showWeekends.value
           ? showWeekends.value.value === true || showWeekends.value.value === 'true'
           : DEFAULT_CONFIG.showWeekends,
+        showHolidays: showHolidays.status === 'fulfilled' && showHolidays.value
+          ? showHolidays.value.value === true || showHolidays.value.value === 'true'
+          : DEFAULT_CONFIG.showHolidays,
       };
 
       set({ config, isLoading: false });
@@ -188,6 +194,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
         CALENDAR_TITLE_MAX_LENGTH_WEEK: String(config.weekView.maxTitleLength || 20),
         CALENDAR_TITLE_MAX_LENGTH_MONTH: String(config.monthView.maxTitleLength || 15),
         SHOW_WEEKENDS: config.showWeekends,
+        SHOW_HOLIDAYS: config.showHolidays,
       });
 
       set({ isLoading: false });

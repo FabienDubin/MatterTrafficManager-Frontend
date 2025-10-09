@@ -36,6 +36,7 @@ export function ConfigTab() {
 
   const [localTeams, setLocalTeams] = useState<TeamConfig[]>([]);
   const [showWeekends, setShowWeekends] = useState(true);
+  const [showHolidays, setShowHolidays] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<TeamConfig | null>(null);
   const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
@@ -59,6 +60,7 @@ export function ConfigTab() {
   useEffect(() => {
     if (calendarConfig) {
       setShowWeekends(calendarConfig.showWeekends ?? true);
+      setShowHolidays(calendarConfig.showHolidays ?? true);
     }
   }, [calendarConfig]);
 
@@ -154,9 +156,9 @@ export function ConfigTab() {
       }));
       await updateDisplayedTeams(teamsToSave);
 
-      // Save weekends config
+      // Save weekends and holidays config
       if (calendarConfig) {
-        const updatedConfig = { ...calendarConfig, showWeekends };
+        const updatedConfig = { ...calendarConfig, showWeekends, showHolidays };
         useCalendarConfigStore.setState({ config: updatedConfig });
         await saveCalendarConfig();
       }
@@ -173,13 +175,15 @@ export function ConfigTab() {
   const handleReset = () => {
     setLocalTeams(displayedTeams);
     setShowWeekends(calendarConfig?.showWeekends ?? true);
+    setShowHolidays(calendarConfig?.showHolidays ?? true);
     toast.info('Modifications annulées');
   };
 
   const hasChanges =
     JSON.stringify(localTeams.map(t => ({ id: t.id, icon: t.icon, color: t.color, order: t.order }))) !==
     JSON.stringify(displayedTeams.map(t => ({ id: t.id, icon: t.icon, color: t.color, order: t.order }))) ||
-    showWeekends !== (calendarConfig?.showWeekends ?? true);
+    showWeekends !== (calendarConfig?.showWeekends ?? true) ||
+    showHolidays !== (calendarConfig?.showHolidays ?? true);
 
   if (!isTeamsLoaded || !calendarConfig) {
     return (
@@ -212,6 +216,31 @@ export function ConfigTab() {
           </div>
           <p className="text-sm text-muted-foreground mt-2">
             Affiche ou masque les samedis et dimanches dans les vues semaine et mois
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Holidays toggle */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Jours fériés</CardTitle>
+          <CardDescription>
+            Afficher les jours fériés français dans le calendrier
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-3">
+            <Switch
+              id="show-holidays"
+              checked={showHolidays}
+              onCheckedChange={setShowHolidays}
+            />
+            <Label htmlFor="show-holidays" className="cursor-pointer">
+              Afficher les jours fériés 🎉
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Affiche les badges et le fond gris pour les jours fériés français
           </p>
         </CardContent>
       </Card>

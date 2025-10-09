@@ -40,7 +40,7 @@ export const CalendarHeaderBadges: React.FC<CalendarHeaderBadgesProps> = ({
             className="h-4 py-0 px-1 text-[0.6rem] bg-muted/50 hover:bg-muted/50 inline-flex items-center"
           >
             <span className="text-[0.7rem] mr-0.5">{badge.emoji}</span>
-            <span className="truncate max-w-[60px]">{badge.name}</span>
+            <span className="truncate max-w-[120px]">{badge.name}</span>
           </Badge>
         ))}
         

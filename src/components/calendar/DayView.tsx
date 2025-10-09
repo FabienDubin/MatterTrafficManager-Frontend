@@ -4,6 +4,8 @@ import { DayViewProps } from '@/types/calendar.types';
 import { MemberColumn } from './MemberColumn';
 import { UnassignedColumn } from './UnassignedColumn';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { useHolidays } from '@/hooks/useHolidays';
+import { useHolidayAlert } from '@/hooks/useHolidayAlert';
 
 /**
  * Vue Jour personnalisée avec colonnes par membre
@@ -23,6 +25,15 @@ export function DayView({
 }: DayViewProps) {
   const hourGridRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState(0);
+
+  // Hook pour détecter les jours fériés
+  const holidays = useHolidays({
+    startDate: date,
+    endDate: date, // Juste la journée courante
+  });
+
+  // Hook pour les alertes de jours fériés
+  const { isPublicHoliday, withHolidayAlert } = useHolidayAlert({ date });
 
   // Measure hour grid height after mount and on resize
   useEffect(() => {
@@ -201,14 +212,15 @@ export function DayView({
                     holidayTask={specialTasksByMember.holiday.get(member.id)}
                     remoteTask={specialTasksByMember.remote.get(member.id)}
                     schoolTask={specialTasksByMember.school.get(member.id)}
+                    publicHolidayTask={isPublicHoliday}
                     date={date}
                     viewConfig={viewConfig}
                     hourGridHeight={gridHeight}
                     onTaskClick={onTaskClick}
-                    onTimeSlotClick={(date, hour) => onTimeSlotClick?.(member, date, hour)}
-                    onTimeSlotSelect={(m, startDate, endDate) =>
+                    onTimeSlotClick={withHolidayAlert((date, hour) => onTimeSlotClick?.(member, date, hour))}
+                    onTimeSlotSelect={withHolidayAlert((m, startDate, endDate) =>
                       onTimeSlotSelect?.(m, startDate, endDate)
-                    }
+                    )}
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
                       onTaskDrop?.(task, memberId, newDate, sourceMemberId)
                     }
@@ -223,10 +235,10 @@ export function DayView({
                     date={date}
                     viewConfig={viewConfig}
                     onTaskClick={onTaskClick}
-                    onTimeSlotClick={(date, hour) => onTimeSlotClick?.(null, date, hour)}
-                    onTimeSlotSelect={(startDate, endDate) =>
+                    onTimeSlotClick={withHolidayAlert((date, hour) => onTimeSlotClick?.(null, date, hour))}
+                    onTimeSlotSelect={withHolidayAlert((startDate, endDate) =>
                       onTimeSlotSelect?.(null, startDate, endDate)
-                    }
+                    )}
                     onTaskDrop={(task, memberId, newDate, sourceMemberId) =>
                       onTaskDrop?.(task, memberId, newDate, sourceMemberId)
                     }

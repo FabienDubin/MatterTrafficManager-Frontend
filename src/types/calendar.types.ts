@@ -56,6 +56,7 @@ export interface MemberColumnProps {
   holidayTask?: Task; // Tâche de congé pour ce membre
   remoteTask?: Task;  // Tâche de télétravail pour ce membre
   schoolTask?: Task;  // Tâche de formation pour ce membre
+  publicHolidayTask?: boolean; // Jour férié (pas une tâche spécifique)
 }
 
 export interface UnassignedColumnProps {

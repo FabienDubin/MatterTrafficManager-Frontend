@@ -10,6 +10,8 @@ import { FullCalendarTaskCard } from './FullCalendarTaskCard';
 import { generateDayHeaderContent, generateDayCellContent } from '@/utils/calendarBadges';
 import { format } from 'date-fns';
 import ReactDOM from 'react-dom';
+import { useHolidays } from '@/hooks/useHolidays';
+import { useHolidayAlert } from '@/hooks/useHolidayAlert';
 
 interface CalendarViewProps {
   events?: EventInput[];
@@ -55,6 +57,31 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       y: number;
       timeRange: string;
     } | null>(null);
+
+    // État pour les dates visibles du calendrier
+    const [visibleDates, setVisibleDates] = useState<{
+      start: Date;
+      end: Date;
+    } | null>(null);
+
+    // Hook pour récupérer les jours fériés pour la période visible
+    const holidays = useHolidays(
+      visibleDates ? {
+        startDate: visibleDates.start,
+        endDate: visibleDates.end,
+      } : {
+        startDate: new Date(),
+        endDate: new Date(),
+      }
+    );
+
+    // Hook pour les alertes de jours fériés
+    const { showHolidayAlert } = useHolidayAlert(
+      visibleDates ? {
+        startDate: visibleDates.start,
+        endDate: visibleDates.end,
+      } : {}
+    );
 
     // Navigate to currentDate when it changes or view changes
     useEffect(() => {
@@ -136,6 +163,59 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
       return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
+    // Appliquer les styles des jours fériés directement au DOM
+    useEffect(() => {
+      if (!holidays.showHolidays || holidays.holidays.length === 0) {
+        return;
+      }
+
+      const applyHolidayStyles = () => {
+        holidays.holidays.forEach(holiday => {
+          const date = new Date(holiday.date);
+          const dateStr = date.toISOString().split('T')[0];
+          
+          // Sélecteur pour les cellules de cette date spécifique
+          const dayCells = document.querySelectorAll(`[data-date="${dateStr}"]`);
+          
+          dayCells.forEach(cell => {
+            cell.classList.add('fc-holiday');
+            
+            // Ajouter tooltip avec le nom du jour férié
+            cell.setAttribute('title', holiday.name);
+          });
+        });
+      };
+
+      // Appliquer immédiatement
+      applyHolidayStyles();
+
+      // Appliquer aussi après un court délai pour s'assurer que le DOM est prêt
+      const timer = setTimeout(applyHolidayStyles, 100);
+
+      return () => clearTimeout(timer);
+    }, [holidays.holidays, holidays.showHolidays]);
+
+    // Créer des événements fictifs pour les jours fériés (pour les badges)
+    const holidayEvents = holidays.showHolidays ? holidays.holidays.map(holiday => ({
+      id: `holiday-${holiday.date}`,
+      title: holiday.name,
+      start: holiday.date + 'T00:00:00',
+      end: holiday.date + 'T23:59:59',
+      allDay: true,
+      extendedProps: {
+        task: {
+          taskType: 'public_holiday',
+          shouldSplitDaily: true,
+          assignedMembersData: [{ name: holiday.name }],
+        },
+        isBadgeOnly: true, // Pour que ces événements ne s'affichent que comme badges
+      },
+      display: 'none', // Ne pas afficher visuellement ces événements
+    })) : [];
+
+    // Combiner les événements normaux avec les événements de jours fériés
+    const allEvents = [...events, ...holidayEvents];
+
     return (
       <div className='calendar-container h-full'>
         <FullCalendar
@@ -173,6 +253,12 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
               allDay: info.allDay,
               view: info.view.type,
             });
+            
+            // Vérifier si la sélection commence sur un jour férié
+            if (holidays.showHolidays && holidays.isHoliday(info.start)) {
+              showHolidayAlert(info.start);
+            }
+            
             if (onSelect) {
               onSelect(info);
             }
@@ -183,8 +269,8 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           moreLinkClick='popover'
           events={
             currentView === 'timeGridWeek' || currentView === 'dayGridMonth'
-              ? events?.filter(event => !event.extendedProps?.isBadgeOnly)
-              : events
+              ? allEvents?.filter(event => !event.extendedProps?.isBadgeOnly)
+              : allEvents
           }
           dateClick={onDateClick}
           eventClick={onEventClick}
@@ -207,6 +293,11 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
               escPressedRef.current = false;
               return;
             }
+            // Vérifier si le drop est sur un jour férié
+            if (holidays.showHolidays && info.event.start && holidays.isHoliday(info.event.start)) {
+              showHolidayAlert(info.event.start);
+            }
+            
             // Sinon on traite le drop normalement
             if (onEventDrop) {
               onEventDrop(info);
@@ -269,8 +360,8 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           // Personnalisation des headers de colonnes pour afficher les badges
           dayHeaderContent={arg => {
             // Uniquement pour la vue semaine
-            if (currentView === 'timeGridWeek' && events) {
-              return generateDayHeaderContent(events, arg.date, arg.text);
+            if (currentView === 'timeGridWeek' && allEvents) {
+              return generateDayHeaderContent(allEvents, arg.date, arg.text);
             }
             // Pour les autres vues, garder le comportement par défaut
             return arg.text;
@@ -278,10 +369,10 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           // Personnalisation des cellules de jour pour la vue mois
           dayCellContent={arg => {
             // Uniquement pour la vue mois
-            if (currentView === 'dayGridMonth' && events) {
+            if (currentView === 'dayGridMonth' && allEvents) {
               // Extraire le numéro du jour depuis arg.dayNumberText
               const dayNumber = arg.dayNumberText || new Date(arg.date).getDate().toString();
-              return generateDayCellContent(events, arg.date, dayNumber);
+              return generateDayCellContent(allEvents, arg.date, dayNumber);
             }
             // Pour les autres vues, garder le comportement par défaut
             return arg.dayNumberText;
@@ -289,6 +380,11 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
           // Callbacks pour détecter les changements de vue et de dates
           datesSet={dateInfo => {
             // Appelé quand les dates visibles changent (navigation ou changement de vue)
+            setVisibleDates({
+              start: dateInfo.start,
+              end: dateInfo.end,
+            });
+            
             if (onDatesChange) {
               onDatesChange(dateInfo.start, dateInfo.end);
             }
@@ -654,6 +750,32 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
         
         .dark .fc-timegrid-axis-cushion {
           color: hsl(var(--muted-foreground));
+        }
+        
+        /* Styles pour les jours fériés */
+        .fc-holiday {
+          background: hsl(var(--muted) / 0.4) !important;
+        }
+        
+        .fc-holiday .fc-col-header-cell,
+        .fc-holiday .fc-daygrid-day-frame,
+        .fc-holiday .fc-timegrid-col {
+          background: hsl(var(--muted) / 0.4) !important;
+        }
+        
+        /* Week view - colonne du jour férié en gris */
+        .fc-timeGridWeek .fc-holiday .fc-timegrid-col {
+          background: hsl(var(--muted) / 0.4) !important;
+        }
+        
+        /* Month view - cellule du jour férié en gris */
+        .fc-dayGridMonth .fc-holiday .fc-daygrid-day-frame {
+          background: hsl(var(--muted) / 0.4) !important;
+        }
+        
+        /* Day view - toute la vue en gris si c'est un jour férié */
+        .fc-timeGridDay .fc-holiday {
+          background: hsl(var(--muted) / 0.4) !important;
         }
       `}</style>
 
