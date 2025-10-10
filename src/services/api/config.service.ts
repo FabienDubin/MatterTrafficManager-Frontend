@@ -132,7 +132,7 @@ export const configService = {
   // Client colors methods moved to clientsService to avoid duplication
 
   /**
-   * Get task status colors configuration
+   * Get task status colors configuration using generic config endpoint
    */
   async getTaskStatusColors(): Promise<{
     not_started: string;
@@ -140,8 +140,8 @@ export const configService = {
     completed: string;
   }> {
     try {
-      const response = await apiClient.get('/config/task-status-colors');
-      return response.data.data;
+      const response = await apiClient.get('/config/TASK_STATUS_COLORS');
+      return response.data.data.value;
     } catch (error) {
       console.error('Error fetching task status colors:', error);
       throw error;
@@ -149,7 +149,7 @@ export const configService = {
   },
 
   /**
-   * Update task status colors configuration
+   * Update task status colors configuration using generic config endpoint
    */
   async updateTaskStatusColors(colors: {
     not_started: string;
@@ -157,7 +157,9 @@ export const configService = {
     completed: string;
   }): Promise<void> {
     try {
-      await apiClient.put('/config/task-status-colors', colors);
+      await apiClient.put('/config', { 
+        'TASK_STATUS_COLORS': colors 
+      });
     } catch (error) {
       console.error('Error updating task status colors:', error);
       throw error;
