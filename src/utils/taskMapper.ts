@@ -7,11 +7,11 @@ import { FieldType } from '@/store/calendar-config.store';
  * Convert a Task object to a FullCalendar EventInput
  */
 export function taskToCalendarEvent(
-  task: Task,
+  task: Task & { dynamicColor?: string },
   viewConfig?: { fields: FieldType[]; maxTitleLength?: number }
 ): EventInput {
-  // Determine event color based on status
-  // const color = getStatusColor(task.status); // Géré dans TaskCard maintenant
+  // Use dynamic color if available
+  const backgroundColor = (task as any).dynamicColor;
   
   // Ensure we have valid dates
   const startDate = task.workPeriod?.startDate || new Date().toISOString();
@@ -41,7 +41,8 @@ export function taskToCalendarEvent(
     start: startDate,
     end: adjustedEndDate,
     allDay: isAllDay, // FullCalendar gère automatiquement l'affichage des événements allDay
-    // Retirer les couleurs, on les gère dans TaskCard avec le thème
+    backgroundColor, // Utiliser la couleur dynamique
+    borderColor: backgroundColor, // Même couleur pour la bordure
     extendedProps: {
       task, // Passer la tâche complète pour le rendu personnalisé
       status: task.status,

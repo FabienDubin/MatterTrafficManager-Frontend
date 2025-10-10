@@ -46,9 +46,16 @@ export function TaskCard({
   const { getClientColor, isColorsLoaded } = useClientColors();
   const { theme } = useTheme();
   
-  // Get client color if available - now using clientId instead of client name
-  const clientId = task.clientId; // Use clientId from enriched data
-  const clientColor = isColorsLoaded && clientId ? getClientColor(clientId) : undefined;
+  // Use dynamic color if available, otherwise fallback to client color
+  const taskWithDynamicColor = task as Task & { dynamicColor?: string };
+  const dynamicColor = taskWithDynamicColor.dynamicColor;
+  
+  // Fallback to original client color logic if no dynamic color
+  const clientId = task.clientId;
+  const fallbackClientColor = isColorsLoaded && clientId ? getClientColor(clientId) : undefined;
+  
+  // Prefer dynamic color over client-specific color
+  const clientColor = dynamicColor || fallbackClientColor;
   const isDarkTheme = theme === 'dark';
   const textColor = clientColor ? getContrastColor(clientColor, isDarkTheme) : undefined;
 

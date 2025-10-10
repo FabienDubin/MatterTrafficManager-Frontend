@@ -21,8 +21,8 @@ interface FilterState {
   showAvailability: boolean;
   toggleShowAvailability: () => void;
 
-  colorMode: 'client' | 'member' | 'taskStatus';
-  setColorMode: (mode: 'client' | 'member' | 'taskStatus') => void;
+  colorMode: 'client' | 'taskStatus';
+  setColorMode: (mode: 'client' | 'taskStatus') => void;
 
   resetFilters: () => void;
 }

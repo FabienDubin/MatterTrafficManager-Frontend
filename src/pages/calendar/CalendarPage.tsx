@@ -6,7 +6,7 @@ import { CalendarLayout } from '@/layouts/CalendarLayout';
 import { TaskEditSheet } from '@/components/calendar/TaskEditSheet';
 import { useCalendarStore } from '@/store/calendar.store';
 import { useCalendarConfigStore } from '@/store/calendar-config.store';
-import { useClientColors } from '@/store/config.store';
+import { useClientColors, useTaskColors } from '@/store/config.store';
 import { useFilterStore } from '@/store/filter.store';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
@@ -15,6 +15,7 @@ import { useCalendarNavigation } from '@/hooks/calendar/useCalendarNavigation';
 import { useCalendarTaskManagement } from '@/hooks/calendar/useCalendarTaskManagement';
 import { tasksToCalendarEvents } from '@/utils/taskMapper';
 import { useFilteredTasks } from '@/hooks/useFilteredTasks';
+import { useTasksWithColors } from '@/hooks/useTasksWithColors';
 import { useMembers } from '@/hooks/api/useMembers';
 import { useVisibleMembers } from '@/hooks/useVisibleMembers';
 import { addDays } from 'date-fns';
@@ -26,14 +27,15 @@ export default function CalendarPage() {
   const calendarRef = useRef<FullCalendar>(null);
   const calendarContainerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize client colors early for reactivity with admin panel
+  // Initialize all colors early for reactivity with admin panel
   useClientColors();
+  const { getColorForTask, allColorsLoaded } = useTaskColors();
 
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
 
-  // Get sidebar state from filter store
-  const { isPanelOpen } = useFilterStore();
+  // Get sidebar state and color mode from filter store
+  const { isPanelOpen, colorMode } = useFilterStore();
 
   // Get calendar configuration
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
@@ -68,6 +70,9 @@ export default function CalendarPage() {
 
   // Apply filters to tasks
   const filteredTasks = useFilteredTasks(tasks);
+
+  // Apply dynamic colors based on color mode
+  const { tasks: tasksWithColors } = useTasksWithColors(filteredTasks);
 
   // Use calendar hooks with blacklist support for delete operations
   const { selectedTask, setSelectedTask, sheetOpen, setSheetOpen } = useCalendarTaskManagement(
@@ -146,7 +151,7 @@ export default function CalendarPage() {
 
   // Convert tasks to calendar events with view configuration
   const events = useMemo(() => {
-    if (filteredTasks && filteredTasks.length > 0) {
+    if (tasksWithColors && tasksWithColors.length > 0) {
       let viewConfig = undefined;
       if (calendarConfig) {
         switch (currentView) {
@@ -161,17 +166,17 @@ export default function CalendarPage() {
             break;
         }
       }
-      return tasksToCalendarEvents(filteredTasks, viewConfig);
+      return tasksToCalendarEvents(tasksWithColors, viewConfig);
     }
     return [];
-  }, [filteredTasks, calendarConfig, currentView]);
+  }, [tasksWithColors, calendarConfig, currentView]);
 
   // Extract members from tasks for DayView
   const members: Member[] = useMemo(() => {
     const memberMap = new Map<string, Member>();
     const allTeamsMap = new Map<string, string>();
 
-    filteredTasks.forEach(task => {
+    tasksWithColors.forEach(task => {
       if (task.teamsData) {
         task.teamsData.forEach(team => {
           allTeamsMap.set(team.id, team.name);
@@ -184,7 +189,7 @@ export default function CalendarPage() {
       }
     });
 
-    filteredTasks.forEach(task => {
+    tasksWithColors.forEach(task => {
       if (task.assignedMembersData) {
         task.assignedMembersData.forEach(memberData => {
           if (!memberMap.has(memberData.id)) {
@@ -207,7 +212,7 @@ export default function CalendarPage() {
     });
 
     return Array.from(memberMap.values());
-  }, [filteredTasks]);
+  }, [tasksWithColors]);
 
   // Filter visible members for DayView based on active filters
   const visibleMembers = useVisibleMembers(members, allMembers);
@@ -343,7 +348,7 @@ export default function CalendarPage() {
           <CalendarLayout
             controls={
               <CalendarControls
-                tasksCount={filteredTasks.length}
+                tasksCount={tasksWithColors.length}
                 isLoadingBackground={isLoadingBackground}
                 hasPendingLocalUpdates={taskUpdate.hasPendingUpdates}
                 lastRefresh={lastRefresh}
@@ -364,7 +369,7 @@ export default function CalendarPage() {
             <div ref={calendarContainerRef} className='h-full'>
               <CalendarContent
                 isInitialLoad={isInitialLoad}
-                tasks={filteredTasks}
+                tasks={tasksWithColors}
                 error={error}
                 currentView={currentView}
                 currentDate={currentDate}
@@ -414,7 +419,7 @@ export default function CalendarPage() {
           setSelectedTask(null);
           setCreateMode(null);
         }}
-        tasks={filteredTasks}
+        tasks={tasksWithColors}
         setTasks={setTasks}
         initialDates={createMode?.initialDates}
         initialMember={createMode?.initialMember}

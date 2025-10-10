@@ -1,10 +1,6 @@
 import {
   Sidebar,
   SidebarContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
 } from './FilterSidebarFull';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -12,6 +8,7 @@ import { TeamToggles } from './TeamToggles';
 import { MemberMultiSelect } from './MemberMultiSelect';
 import { ClientMultiSelect } from './ClientMultiSelect';
 import { ProjectMultiSelect } from './ProjectMultiSelect';
+import { VisualizationToggles } from './VisualizationToggles';
 
 /**
  * FilterPanel - Left sidebar with calendar filtering controls
@@ -26,7 +23,7 @@ import { ProjectMultiSelect } from './ProjectMultiSelect';
  */
 export function FilterPanel() {
   return (
-    <Sidebar className='border-r'>
+    <Sidebar className='border-r bg-background'>
       {/* Header */}
 
       {/* Scrollable content */}
@@ -52,6 +49,11 @@ export function FilterPanel() {
 
               {/* Project filter */}
               <ProjectMultiSelect />
+
+              <Separator />
+
+              {/* Visualization toggles */}
+              <VisualizationToggles />
             </div>
 
             <Separator />

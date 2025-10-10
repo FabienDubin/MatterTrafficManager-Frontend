@@ -127,5 +127,40 @@ export const configService = {
       console.error('Error updating teams display config:', error);
       throw error;
     }
+  },
+
+  // Client colors methods moved to clientsService to avoid duplication
+
+  /**
+   * Get task status colors configuration
+   */
+  async getTaskStatusColors(): Promise<{
+    not_started: string;
+    in_progress: string;
+    completed: string;
+  }> {
+    try {
+      const response = await apiClient.get('/config/task-status-colors');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching task status colors:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Update task status colors configuration
+   */
+  async updateTaskStatusColors(colors: {
+    not_started: string;
+    in_progress: string;
+    completed: string;
+  }): Promise<void> {
+    try {
+      await apiClient.put('/config/task-status-colors', colors);
+    } catch (error) {
+      console.error('Error updating task status colors:', error);
+      throw error;
+    }
   }
 };
