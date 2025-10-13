@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import { Plus, Loader2, Save } from 'lucide-react';
 import { useConfigStore, TeamConfig } from '@/store/config.store';
@@ -37,6 +38,7 @@ export function ConfigTab() {
   const [localTeams, setLocalTeams] = useState<TeamConfig[]>([]);
   const [showWeekends, setShowWeekends] = useState(true);
   const [showHolidays, setShowHolidays] = useState(true);
+  const [dailyWorkingHours, setDailyWorkingHours] = useState(8);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<TeamConfig | null>(null);
   const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function ConfigTab() {
     if (calendarConfig) {
       setShowWeekends(calendarConfig.showWeekends ?? true);
       setShowHolidays(calendarConfig.showHolidays ?? true);
+      setDailyWorkingHours(calendarConfig.dailyWorkingHours ?? 8);
     }
   }, [calendarConfig]);
 
@@ -156,9 +159,9 @@ export function ConfigTab() {
       }));
       await updateDisplayedTeams(teamsToSave);
 
-      // Save weekends and holidays config
+      // Save weekends, holidays and daily working hours config
       if (calendarConfig) {
-        const updatedConfig = { ...calendarConfig, showWeekends, showHolidays };
+        const updatedConfig = { ...calendarConfig, showWeekends, showHolidays, dailyWorkingHours };
         useCalendarConfigStore.setState({ config: updatedConfig });
         await saveCalendarConfig();
       }
@@ -176,6 +179,7 @@ export function ConfigTab() {
     setLocalTeams(displayedTeams);
     setShowWeekends(calendarConfig?.showWeekends ?? true);
     setShowHolidays(calendarConfig?.showHolidays ?? true);
+    setDailyWorkingHours(calendarConfig?.dailyWorkingHours ?? 8);
     toast.info('Modifications annulées');
   };
 
@@ -183,7 +187,8 @@ export function ConfigTab() {
     JSON.stringify(localTeams.map(t => ({ id: t.id, icon: t.icon, color: t.color, order: t.order }))) !==
     JSON.stringify(displayedTeams.map(t => ({ id: t.id, icon: t.icon, color: t.color, order: t.order }))) ||
     showWeekends !== (calendarConfig?.showWeekends ?? true) ||
-    showHolidays !== (calendarConfig?.showHolidays ?? true);
+    showHolidays !== (calendarConfig?.showHolidays ?? true) ||
+    dailyWorkingHours !== (calendarConfig?.dailyWorkingHours ?? 8);
 
   if (!isTeamsLoaded || !calendarConfig) {
     return (
@@ -203,20 +208,44 @@ export function ConfigTab() {
             Paramètres globaux d'affichage du calendrier
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-3">
-            <Switch
-              id="show-weekends"
-              checked={showWeekends}
-              onCheckedChange={setShowWeekends}
-            />
-            <Label htmlFor="show-weekends" className="cursor-pointer">
-              Afficher les weekends
-            </Label>
+        <CardContent className="space-y-6">
+          <div>
+            <div className="flex items-center space-x-3">
+              <Switch
+                id="show-weekends"
+                checked={showWeekends}
+                onCheckedChange={setShowWeekends}
+              />
+              <Label htmlFor="show-weekends" className="cursor-pointer">
+                Afficher les weekends
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Affiche ou masque les samedis et dimanches dans les vues semaine et mois
+            </p>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Affiche ou masque les samedis et dimanches dans les vues semaine et mois
-          </p>
+          
+          <div>
+            <Label htmlFor="daily-working-hours" className="text-base font-medium">
+              Heures quotidiennes de travail
+            </Label>
+            <div className="flex items-center space-x-3 mt-2">
+              <Input
+                id="daily-working-hours"
+                type="number"
+                min="1"
+                max="24"
+                step="0.5"
+                value={dailyWorkingHours}
+                onChange={(e) => setDailyWorkingHours(parseFloat(e.target.value) || 8)}
+                className="w-20"
+              />
+              <span className="text-sm text-muted-foreground">heures par jour</span>
+            </div>
+            <p className="text-sm text-muted-foreground mt-2">
+              Utilisé pour calculer les taux d'occupation des membres (défaut: 8h)
+            </p>
+          </div>
         </CardContent>
       </Card>
 

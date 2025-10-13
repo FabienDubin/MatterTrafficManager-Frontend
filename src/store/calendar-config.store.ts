@@ -25,6 +25,7 @@ interface CalendarConfig {
   monthView: CalendarViewConfig;
   showWeekends: boolean;
   showHolidays: boolean;
+  dailyWorkingHours: number;
 }
 
 interface CalendarConfigState {
@@ -54,6 +55,7 @@ const DEFAULT_CONFIG: CalendarConfig = {
   },
   showWeekends: true,
   showHolidays: true,
+  dailyWorkingHours: 8,
 };
 
 export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => ({
@@ -65,7 +67,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
     set({ isLoading: true, error: null });
     try {
       // Fetch all calendar config keys in parallel
-      const [dayFields, weekFields, monthFields, dayMaxLength, weekMaxLength, monthMaxLength, showWeekends, showHolidays] = 
+      const [dayFields, weekFields, monthFields, dayMaxLength, weekMaxLength, monthMaxLength, showWeekends, showHolidays, dailyWorkingHours] = 
         await Promise.allSettled([
           configService.getConfig('CALENDAR_DAY_VIEW_FIELDS'),
           configService.getConfig('CALENDAR_WEEK_VIEW_FIELDS'),
@@ -75,6 +77,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
           configService.getConfig('CALENDAR_TITLE_MAX_LENGTH_MONTH'),
           configService.getConfig('SHOW_WEEKENDS'),
           configService.getConfig('SHOW_HOLIDAYS'),
+          configService.getConfig('DAILY_WORKING_HOURS'),
         ]);
 
       // Helper function to parse value - handles both string and object
@@ -155,6 +158,11 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
         showHolidays: showHolidays.status === 'fulfilled' && showHolidays.value
           ? showHolidays.value.value === true || showHolidays.value.value === 'true'
           : DEFAULT_CONFIG.showHolidays,
+        dailyWorkingHours: dailyWorkingHours.status === 'fulfilled' && dailyWorkingHours.value
+          ? typeof dailyWorkingHours.value.value === 'string'
+            ? parseInt(dailyWorkingHours.value.value, 10)
+            : dailyWorkingHours.value.value
+          : DEFAULT_CONFIG.dailyWorkingHours,
       };
 
       set({ config, isLoading: false });
@@ -195,6 +203,7 @@ export const useCalendarConfigStore = create<CalendarConfigState>((set, get) => 
         CALENDAR_TITLE_MAX_LENGTH_MONTH: String(config.monthView.maxTitleLength || 15),
         SHOW_WEEKENDS: config.showWeekends,
         SHOW_HOLIDAYS: config.showHolidays,
+        DAILY_WORKING_HOURS: String(config.dailyWorkingHours),
       });
 
       set({ isLoading: false });
