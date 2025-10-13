@@ -3,6 +3,7 @@ import { tasksService } from '@/services/api/tasks.service';
 import { Task } from '@/types/task.types';
 import { format, addDays } from 'date-fns';
 import { toast } from 'sonner';
+import { useCalendarStore } from '@/store/calendar.store';
 
 interface UseProgressiveCalendarTasksOptions {
   enablePolling?: boolean;
@@ -39,6 +40,9 @@ export function useProgressiveCalendarTasks(
     enablePolling = true,
     pollingInterval = 2 * 60 * 1000 // Default: 2 minutes when active
   } = options;
+
+  // Get current date from calendar store instead of using new Date()
+  const { currentDate } = useCalendarStore();
 
   // Polling intervals
   const ACTIVE_INTERVAL = pollingInterval; // 2 minutes when active
@@ -264,18 +268,19 @@ export function useProgressiveCalendarTasks(
 
   /**
    * Initial load: Progressive strategy for fast UX
-   * Phase 1: Load ±7 days immediately (fast display)
+   * Phase 1: Load ±7 days from currentDate (not today!) - displayed immediately
    * Phase 2: Load extended ranges in background (smooth navigation)
    */
   useEffect(() => {
-    const now = new Date();
+    // Use currentDate from store instead of new Date() - this respects user's last position
+    const baseDate = currentDate;
     const startTime = performance.now();
 
-    // Phase 1: Fast initial load (±7 days) - displayed immediately
-    const quickStart = addDays(now, -7);
-    const quickEnd = addDays(now, 7);
+    // Phase 1: Fast initial load (±7 days from currentDate) - displayed immediately
+    const quickStart = addDays(baseDate, -7);
+    const quickEnd = addDays(baseDate, 7);
 
-    console.log('⚡ [Progressive] Phase 1: Loading visible period (±7 days)...');
+    console.log(`⚡ [Progressive] Phase 1: Loading visible period (±7 days from ${format(baseDate, 'yyyy-MM-dd')})...`);
     const phase1Start = performance.now();
 
     fetchAdditionalRange(quickStart, quickEnd).then(() => {
@@ -283,9 +288,9 @@ export function useProgressiveCalendarTasks(
       const totalElapsed = performance.now() - startTime;
       console.log(`✅ [Progressive] Phase 1: Complete! Calendar ready in ${phase1Duration.toFixed(0)}ms (total: ${totalElapsed.toFixed(0)}ms)`);
 
-      // Phase 2a: Load past data (-30 to -7 days) in background
-      const pastStart = addDays(now, -30);
-      const pastEnd = addDays(now, -7);
+      // Phase 2a: Load past data (-30 to -7 days from currentDate) in background
+      const pastStart = addDays(baseDate, -30);
+      const pastEnd = addDays(baseDate, -7);
 
       console.log('🔄 [Progressive] Phase 2a: Loading past data (-30 to -7 days) in background...');
       const phase2aStart = performance.now();
@@ -295,9 +300,9 @@ export function useProgressiveCalendarTasks(
         const totalElapsed = performance.now() - startTime;
         console.log(`✅ [Progressive] Phase 2a: Past data loaded in ${phase2aDuration.toFixed(0)}ms (total: ${totalElapsed.toFixed(0)}ms)`);
 
-        // Phase 2b: Load future data (+7 to +60 days) in background
-        const futureStart = addDays(now, 7);
-        const futureEnd = addDays(now, 60);
+        // Phase 2b: Load future data (+7 to +60 days from currentDate) in background
+        const futureStart = addDays(baseDate, 7);
+        const futureEnd = addDays(baseDate, 60);
 
         console.log('🔄 [Progressive] Phase 2b: Loading future data (+7 to +60 days) in background...');
         const phase2bStart = performance.now();
@@ -315,7 +320,7 @@ export function useProgressiveCalendarTasks(
         });
       });
     });
-  }, []); // Run once on mount
+  }, [currentDate, fetchAdditionalRange, scheduleNextPoll, enablePolling]); // Re-run when currentDate changes from store
   
   /**
    * Cleanup polling on unmount
