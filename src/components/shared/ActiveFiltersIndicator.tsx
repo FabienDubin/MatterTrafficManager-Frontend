@@ -27,6 +27,10 @@ export function ActiveFiltersIndicator() {
     setSelectedClients,
     selectedProjects,
     setSelectedProjects,
+    showAvailability,
+    setShowAvailability,
+    colorMode,
+    setColorMode,
     resetFilters,
   } = useFilterStore();
 
@@ -75,7 +79,9 @@ export function ActiveFiltersIndicator() {
     selectedTeams.length > 0 ||
     selectedMembers.length > 0 ||
     selectedClients.length > 0 ||
-    selectedProjects.length > 0;
+    selectedProjects.length > 0 ||
+    showAvailability ||
+    colorMode === 'taskStatus';
 
   if (!hasActiveFilters) {
     return null;
@@ -144,6 +150,28 @@ export function ActiveFiltersIndicator() {
           </Badge>
         );
       })}
+
+      {/* Mode disponibilité badge */}
+      {showAvailability && (
+        <Badge variant="default" className="gap-1">
+          Mode disponibilité activé
+          <X
+            className="h-3 w-3 cursor-pointer hover:text-destructive"
+            onClick={() => setShowAvailability(false)}
+          />
+        </Badge>
+      )}
+
+      {/* Mode couleurs par statut badge */}
+      {colorMode === 'taskStatus' && (
+        <Badge variant="secondary" className="gap-1">
+          Couleurs par statut
+          <X
+            className="h-3 w-3 cursor-pointer hover:text-destructive"
+            onClick={() => setColorMode('client')}
+          />
+        </Badge>
+      )}
 
       {/* Clear all button */}
       <Button

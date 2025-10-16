@@ -42,12 +42,21 @@ export function CalendarControls({
   onNavigate,
 }: CalendarControlsProps) {
   // Check if filters are active
-  const { selectedTeams, selectedMembers, selectedClients, selectedProjects } = useFilterStore();
+  const { 
+    selectedTeams, 
+    selectedMembers, 
+    selectedClients, 
+    selectedProjects, 
+    showAvailability, 
+    colorMode 
+  } = useFilterStore();
   const hasActiveFilters =
     selectedTeams.length > 0 ||
     selectedMembers.length > 0 ||
     selectedClients.length > 0 ||
-    selectedProjects.length > 0;
+    selectedProjects.length > 0 ||
+    showAvailability ||
+    colorMode === 'taskStatus';
 
   // Check if any alert badge is active (same logic as SyncIndicator line 65)
   const { isSyncing: localSyncing, hasErrors: localErrors } = useGlobalSyncState();

@@ -6,7 +6,7 @@ import { CalendarLayout } from '@/layouts/CalendarLayout';
 import { TaskEditSheet } from '@/components/calendar/TaskEditSheet';
 import { useCalendarStore } from '@/store/calendar.store';
 import { useCalendarConfigStore } from '@/store/calendar-config.store';
-import { useClientColors, useTaskColors } from '@/store/config.store';
+import { useClientColors, useTaskColors, useDisplayedTeams } from '@/store/config.store';
 import { useFilterStore } from '@/store/filter.store';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
@@ -34,11 +34,20 @@ export default function CalendarPage() {
   // Use calendar store instead of local state
   const { currentView, currentDate, setCurrentView, setCurrentDate } = useCalendarStore();
 
-  // Get sidebar state and color mode from filter store
-  const { isPanelOpen, colorMode } = useFilterStore();
+  // Get sidebar state, color mode and availability mode from filter store
+  const { 
+    isPanelOpen, 
+    colorMode, 
+    showAvailability, 
+    showAvailabilityUserPreference,
+    setShowAvailability 
+  } = useFilterStore();
 
   // Get calendar configuration
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
+
+  // Get teams configuration for availability view
+  const { displayedTeams } = useDisplayedTeams();
 
   // Période actuellement visible dans le calendrier (pour debug seulement)
   const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
@@ -127,6 +136,17 @@ export default function CalendarPage() {
       fetchConfig();
     }
   }, [calendarConfig, fetchConfig]);
+
+  // Synchronization logic for showAvailability based on currentView
+  useEffect(() => {
+    if (currentView === 'week') {
+      // Restaurer la préférence utilisateur quand on revient en vue semaine
+      setShowAvailability(showAvailabilityUserPreference);
+    } else {
+      // Désactiver quand on quitte la vue semaine (mais garder la préférence)
+      setShowAvailability(false);
+    }
+  }, [currentView, showAvailabilityUserPreference, setShowAvailability]);
 
   // Sync FullCalendar with store on mount and when view/date changes
   useEffect(() => {
@@ -384,6 +404,8 @@ export default function CalendarPage() {
                 }
                 events={events}
                 members={currentView === 'day' ? visibleMembers : members}
+                showAvailability={showAvailability}
+                teams={displayedTeams}
                 onDateClick={handleDateClick}
                 onEventClick={handleEventClick}
                 onEventDrop={handleEventDrop}

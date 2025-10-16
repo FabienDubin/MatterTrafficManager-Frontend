@@ -26,17 +26,13 @@ export interface TeamOccupationData {
 
 /**
  * Hook pour calculer les taux d'occupation des membres pour une journée donnée
- * 
+ *
  * @param date - Date à analyser
  * @param tasks - Liste des tâches (déjà filtrées pour la journée)
  * @param dailyWorkingHours - Nombre d'heures de travail quotidiennes (défaut: 8)
  * @returns Map avec les données d'occupation par membre
  */
-export function useOccupationRates(
-  date: Date,
-  tasks: Task[],
-  dailyWorkingHours: number = 8
-) {
+export function useOccupationRates(date: Date, tasks: Task[], dailyWorkingHours: number = 8) {
   return useMemo(() => {
     const occupationByMember = new Map<string, OccupationData>();
 
@@ -53,12 +49,14 @@ export function useOccupationRates(
       }
 
       try {
-        const startDate = typeof task.workPeriod.startDate === 'string' 
-          ? parseISO(task.workPeriod.startDate) 
-          : task.workPeriod.startDate;
-        const endDate = typeof task.workPeriod.endDate === 'string' 
-          ? parseISO(task.workPeriod.endDate) 
-          : task.workPeriod.endDate;
+        const startDate =
+          typeof task.workPeriod.startDate === 'string'
+            ? parseISO(task.workPeriod.startDate)
+            : task.workPeriod.startDate;
+        const endDate =
+          typeof task.workPeriod.endDate === 'string'
+            ? parseISO(task.workPeriod.endDate)
+            : task.workPeriod.endDate;
 
         if (!isValid(startDate) || !isValid(endDate)) {
           return 0;
@@ -76,16 +74,23 @@ export function useOccupationRates(
     // Fonction pour obtenir l'emoji correspondant au type de tâche
     const getStatusEmoji = (taskType: string): string => {
       switch (taskType) {
-        case 'holiday': return '🏖️';
-        case 'school': return '📚';
-        case 'remote': return '🏠';
-        default: return '';
+        case 'holiday':
+          return '🏖️';
+        case 'school':
+          return '📚';
+        case 'remote':
+          return '🏠';
+        default:
+          return '';
       }
     };
 
     // Étape 1: Identifier d'abord les membres avec des statuts spéciaux (holiday/school/remote)
-    const membersWithSpecialStatus = new Map<string, { taskType: string; emoji: string; excludeFromTeam: boolean }>();
-    
+    const membersWithSpecialStatus = new Map<
+      string,
+      { taskType: string; emoji: string; excludeFromTeam: boolean }
+    >();
+
     const specialTasks = tasks.filter(task =>
       ['holiday', 'school', 'remote'].includes(task.taskType || '')
     );
@@ -100,7 +105,7 @@ export function useOccupationRates(
         membersWithSpecialStatus.set(member.id, {
           taskType,
           emoji: getStatusEmoji(taskType),
-          excludeFromTeam: taskType === 'holiday' || taskType === 'school'
+          excludeFromTeam: taskType === 'holiday' || taskType === 'school',
         });
       });
     });
@@ -115,7 +120,7 @@ export function useOccupationRates(
 
     allMembers.forEach(memberId => {
       const specialStatus = membersWithSpecialStatus.get(memberId);
-      
+
       occupationByMember.set(memberId, {
         occupationHours: 0,
         occupationPercentage: 0,
@@ -129,8 +134,8 @@ export function useOccupationRates(
     // Étape 3: Calculer les heures d'occupation SEULEMENT pour les membres non-holiday/non-school
     // Les membres holiday/school restent à 0 heures
     // Les membres remote sont traités normalement (leurs autres tâches comptent)
-    const workingTasks = tasks.filter(task =>
-      !['holiday', 'remote', 'school'].includes(task.taskType || 'task')
+    const workingTasks = tasks.filter(
+      task => !['holiday', 'remote', 'school'].includes(task.taskType || 'task')
     );
 
     workingTasks.forEach(task => {
@@ -143,9 +148,12 @@ export function useOccupationRates(
 
       task.assignedMembersData.forEach(member => {
         const specialStatus = membersWithSpecialStatus.get(member.id);
-        
+
         // Si le membre est en holiday ou school, il ne compte AUCUNE heure (même les autres tâches)
-        if (specialStatus && (specialStatus.taskType === 'holiday' || specialStatus.taskType === 'school')) {
+        if (
+          specialStatus &&
+          (specialStatus.taskType === 'holiday' || specialStatus.taskType === 'school')
+        ) {
           return; // Skip - membre indisponible
         }
 
@@ -157,7 +165,7 @@ export function useOccupationRates(
     });
 
     // Étape 4: Calculer les pourcentages d'occupation
-    occupationByMember.forEach((data) => {
+    occupationByMember.forEach(data => {
       data.occupationPercentage = (data.occupationHours / dailyWorkingHours) * 100;
       // Note: Le pourcentage peut dépasser 100% en cas de surcharge
       // Exemple: isAllDay (8h) + tâche 2h = 10h / 8h = 125%
@@ -169,7 +177,7 @@ export function useOccupationRates(
 
 /**
  * Hook pour calculer les données d'occupation par équipe
- * 
+ *
  * @param occupationData - Données d'occupation par membre (depuis useOccupationRates)
  * @param members - Liste de tous les membres avec leurs équipes
  * @param teams - Liste des équipes configurées
@@ -177,17 +185,25 @@ export function useOccupationRates(
  */
 export function useTeamOccupationData(
   occupationData: Map<string, OccupationData>,
-  members: Array<{ id: string; name: string; teams?: string[] }>,
+  members: Array<{ id: string; name: string; teams?: string[] | Array<{ id: string; name: string }> }>,
   teams: Array<{ id: string; name: string }>
 ): TeamOccupationData[] {
   return useMemo(() => {
     const teamData: TeamOccupationData[] = [];
 
     teams.forEach(team => {
-      // Filtrer les membres de cette équipe
-      const teamMembers = members.filter(member => 
-        member.teams?.includes(team.id)
-      );
+      // Filtrer les membres de cette équipe - gérer les deux formats de teams
+      const teamMembers = members.filter(member => {
+        if (!member.teams) return false;
+        
+        // Si teams est un array de strings (noms ou IDs)
+        if (typeof member.teams[0] === 'string') {
+          return (member.teams as string[]).includes(team.id) || (member.teams as string[]).includes(team.name);
+        }
+        
+        // Si teams est un array d'objets {id, name}
+        return member.teams.some(t => typeof t === 'object' && (t.id === team.id || t.name === team.name));
+      });
 
       // Calculer les données pour chaque membre de l'équipe
       const membersWithData = teamMembers.map(member => {
@@ -207,13 +223,13 @@ export function useTeamOccupationData(
 
       // Calculer le pourcentage global de l'équipe
       // Exclure les membres holiday/school, inclure les membres remote
-      const activeMembers = membersWithData.filter(m => 
-        !m.data.excludeFromTeamCalculation
-      );
+      const activeMembers = membersWithData.filter(m => !m.data.excludeFromTeamCalculation);
 
-      const globalPercentage = activeMembers.length > 0
-        ? activeMembers.reduce((sum, member) => sum + member.data.occupationPercentage, 0) / activeMembers.length
-        : 0;
+      const globalPercentage =
+        activeMembers.length > 0
+          ? activeMembers.reduce((sum, member) => sum + member.data.occupationPercentage, 0) /
+            activeMembers.length
+          : 0;
 
       // Trier les membres par ordre alphabétique
       membersWithData.sort((a, b) => a.name.localeCompare(b.name));

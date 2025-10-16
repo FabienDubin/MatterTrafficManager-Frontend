@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import { CalendarViewType } from '@/components/calendar/ViewSwitcher';
 
 interface FilterState {
   isPanelOpen: boolean;
@@ -19,7 +20,11 @@ interface FilterState {
   setSelectedProjects: (projects: string[]) => void;
 
   showAvailability: boolean;
+  showAvailabilityUserPreference: boolean;
   toggleShowAvailability: () => void;
+  setShowAvailability: (enabled: boolean) => void;
+  setShowAvailabilityUserPreference: (enabled: boolean) => void;
+  canEnableAvailability: (currentView: CalendarViewType) => boolean;
 
   colorMode: 'client' | 'taskStatus';
   setColorMode: (mode: 'client' | 'taskStatus') => void;
@@ -61,7 +66,21 @@ export const useFilterStore = create<FilterState>()(
         setSelectedProjects: (projects) => set({ selectedProjects: ensureArray(projects) }),
 
         showAvailability: false,
-        toggleShowAvailability: () => set((state) => ({ showAvailability: !state.showAvailability })),
+        showAvailabilityUserPreference: false,
+        
+        toggleShowAvailability: () => set((state) => {
+          const newValue = !state.showAvailability;
+          return { 
+            showAvailability: newValue,
+            showAvailabilityUserPreference: newValue  // Sauvegarder la préférence
+          };
+        }),
+        
+        setShowAvailability: (enabled) => set({ showAvailability: enabled }),
+        
+        setShowAvailabilityUserPreference: (enabled) => set({ showAvailabilityUserPreference: enabled }),
+        
+        canEnableAvailability: (currentView) => currentView === 'week',
 
         colorMode: 'client',
         setColorMode: (mode) => set({ colorMode: mode }),
@@ -72,6 +91,7 @@ export const useFilterStore = create<FilterState>()(
           selectedClients: [],
           selectedProjects: [],
           showAvailability: false,
+          showAvailabilityUserPreference: false,
           colorMode: 'client',
         }),
       }),
@@ -84,6 +104,7 @@ export const useFilterStore = create<FilterState>()(
           selectedClients: state.selectedClients,
           selectedProjects: state.selectedProjects,
           showAvailability: state.showAvailability,
+          showAvailabilityUserPreference: state.showAvailabilityUserPreference,
           colorMode: state.colorMode,
         }),
         // Migrate/validate persisted data to ensure arrays

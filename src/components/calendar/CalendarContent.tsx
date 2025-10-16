@@ -1,5 +1,6 @@
 import { RefObject, useEffect, useRef } from 'react';
 import { CalendarView } from '@/components/calendar/CalendarView';
+import { AvailabilityWeekView } from '@/components/calendar/AvailabilityWeekView';
 import { DayView } from '@/components/calendar/DayView';
 import { CalendarViewType } from '@/components/calendar/ViewSwitcher';
 import { Calendar } from 'lucide-react';
@@ -24,6 +25,10 @@ interface CalendarContentProps {
   // Calendar events
   events: EventInput[];
   members: Member[];
+
+  // Availability mode (utilisé seulement pour la logique conditionnelle)
+  showAvailability?: boolean;
+  teams?: any[];
 
   // Event handlers - FullCalendar
   onDateClick: (arg: any) => void;
@@ -62,6 +67,8 @@ export function CalendarContent({
   viewConfig,
   events,
   members,
+  showAvailability = false,
+  teams = [],
   onDateClick,
   onEventClick,
   onEventDrop,
@@ -155,7 +162,23 @@ export function CalendarContent({
     );
   }
 
-  // Render CalendarView (week/month)
+  // Render AvailabilityWeekView if in availability mode
+  if (showAvailability && currentView === 'week') {
+    return (
+      <div ref={containerRef} className='h-full overflow-hidden'>
+        <AvailabilityWeekView
+          currentDate={currentDate}
+          tasks={tasks}
+          allMembers={members}
+          teams={teams}
+          showWeekends={showWeekends}
+          onNavLinkDayClick={onNavLinkDayClick}
+        />
+      </div>
+    );
+  }
+
+  // Render CalendarView (week/month) - mode normal
   return (
     <div ref={containerRef} className='h-full'>
       <CalendarView

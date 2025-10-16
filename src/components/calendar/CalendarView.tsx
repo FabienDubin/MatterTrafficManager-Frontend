@@ -350,7 +350,7 @@ export const CalendarView = forwardRef<FullCalendar, CalendarViewProps>(
             setResizeTooltip(null);
           }}
           eventDisplay='block'
-          // Rendu personnalisé des events avec TaskCard - À améliorer pour week/month views
+          // Rendu personnalisé des events avec TaskCard
           eventContent={eventInfo =>
             createElement(FullCalendarTaskCard, {
               eventInfo,

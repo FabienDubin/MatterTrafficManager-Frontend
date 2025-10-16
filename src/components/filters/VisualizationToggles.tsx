@@ -1,9 +1,10 @@
 import { useFilterStore } from '@/store/filter.store';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { useCalendarStore } from '@/store/calendar.store';
+import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { CheckCircle, Building2 } from 'lucide-react';
-import type { ColorMode } from '@/store/config.store';
+import { Button } from '@/components/ui/button';
+import { CheckCircle, Building2, Users, UserCheck } from 'lucide-react';
 
 /**
  * VisualizationToggles - Contrôles pour les options de visualisation
@@ -15,56 +16,126 @@ import type { ColorMode } from '@/store/config.store';
  * - Application immédiate des changements
  */
 export function VisualizationToggles() {
-  const { colorMode, setColorMode } = useFilterStore();
+  const {
+    colorMode,
+    setColorMode,
+    showAvailability,
+    toggleShowAvailability,
+    canEnableAvailability,
+  } = useFilterStore();
+  const { currentView } = useCalendarStore();
+
+  const isWeekView = canEnableAvailability(currentView);
 
   return (
-    <div className='space-y-3'>
-      <div className='flex items-center justify-between'>
-        <Label className='text-sm font-medium'>Couleurs par</Label>
+    <div className='space-y-4'>
+      {/* Toggle Vue Disponibilité */}
+      <div className='space-y-3'>
+        <div className='flex items-center justify-between'>
+          <Label className='text-sm font-medium'>Mode disponibilité</Label>
+        </div>
+
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={showAvailability ? 'default' : 'outline'}
+                disabled={!isWeekView}
+                onClick={toggleShowAvailability}
+                aria-label='Vue disponibilité'
+                className={`h-10 w-full justify-start gap-2 ${
+                  !isWeekView ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                {showAvailability ? (
+                  <UserCheck className='h-4 w-4' />
+                ) : (
+                  <Users className='h-4 w-4' />
+                )}
+                <span className='text-sm'>
+                  {showAvailability
+                    ? 'Désactiver le mode disponibilité'
+                    : 'Activer le mode disponibilité'}
+                </span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {!isWeekView
+                  ? 'Disponible uniquement en vue semaine'
+                  : showAvailability
+                    ? 'Revenir à la vue tâches'
+                    : 'Afficher la disponibilité des membres'}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
 
-      <TooltipProvider>
-        <ToggleGroup
-          type='single'
-          value={colorMode}
-          onValueChange={value => {
-            if (value) {
-              setColorMode(value as ColorMode);
-            }
-          }}
-          className='border rounded-md h-10 bg-white'
-        >
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem
-                value='client'
-                aria-label='Couleurs par client'
-                className='h-9 px-3 flex-1 bg-white hover:bg-gray-50 aria-[checked=true]:bg-black aria-[checked=true]:text-white'
-              >
-                <Building2 className='h-4 w-4' />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Couleurs par client</p>
-            </TooltipContent>
-          </Tooltip>
+      <Separator />
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <ToggleGroupItem
-                value='taskStatus'
-                aria-label='Couleurs par statut'
-                className='h-9 px-3 flex-1 bg-white hover:bg-gray-50 aria-[checked=true]:bg-black aria-[checked=true]:text-white'
-              >
-                <CheckCircle className='h-4 w-4' />
-              </ToggleGroupItem>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Couleurs par statut des tâches</p>
-            </TooltipContent>
-          </Tooltip>
-        </ToggleGroup>
-      </TooltipProvider>
+      {/* Couleurs par (désactivé en mode disponibilité) */}
+      <div className='space-y-3'>
+        <div className='flex items-center justify-between'>
+          <Label
+            className={`text-sm font-medium ${showAvailability ? 'text-muted-foreground' : ''}`}
+          >
+            Couleurs par
+          </Label>
+        </div>
+
+        <div
+          className={`flex border rounded-md bg-muted p-1 gap-1 ${showAvailability ? 'opacity-50' : ''}`}
+        >
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={colorMode === 'client' ? 'default' : 'ghost'}
+                  size='sm'
+                  onClick={() => setColorMode('client')}
+                  disabled={showAvailability}
+                  aria-label='Couleurs par client'
+                  className='flex-1 gap-2 border-0'
+                >
+                  <Building2 className='h-4 w-4' />
+                  <span className='text-xs'>Client</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {showAvailability ? 'Indisponible en mode disponibilité' : 'Couleurs par client'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={colorMode === 'taskStatus' ? 'default' : 'ghost'}
+                  size='sm'
+                  onClick={() => setColorMode('taskStatus')}
+                  disabled={showAvailability}
+                  aria-label='Couleurs par statut'
+                  className='flex-1 gap-2 border-0'
+                >
+                  <CheckCircle className='h-4 w-4' />
+                  <span className='text-xs'>Statut</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {showAvailability
+                    ? 'Indisponible en mode disponibilité'
+                    : 'Couleurs par statut des tâches'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
     </div>
   );
 }
