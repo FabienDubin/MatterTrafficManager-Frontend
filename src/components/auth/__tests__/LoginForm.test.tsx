@@ -40,7 +40,7 @@ describe('LoginForm', () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Connexion à MatterTraffic')).toBeInTheDocument();
+    expect(screen.getByText('Connexion au Traffic Manager')).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/mot de passe/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /se connecter/i })).toBeInTheDocument();
@@ -174,14 +174,14 @@ describe('LoginForm', () => {
     expect(passwordInput).toBeDisabled();
   });
 
-  it('displays test credentials', () => {
+  it('displays placeholder text for email', () => {
     render(
       <BrowserRouter>
         <LoginForm />
       </BrowserRouter>
     );
 
-    expect(screen.getByText('Utilisateur de test:')).toBeInTheDocument();
-    expect(screen.getByText('admin@mattertraffic.fr / dev123')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('admin@mattertraffic.fr')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
   });
 });
