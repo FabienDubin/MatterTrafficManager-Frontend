@@ -1,7 +1,4 @@
-import {
-  Sidebar,
-  SidebarContent,
-} from './FilterSidebarFull';
+import { Sidebar, SidebarContent } from './FilterSidebarFull';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { TeamToggles } from './TeamToggles';
@@ -54,15 +51,6 @@ export function FilterPanel() {
 
               {/* Visualization toggles */}
               <VisualizationToggles />
-            </div>
-
-            <Separator />
-
-            {/* Section: Tabs (bottom) - Task 6 */}
-            <div>
-              <p className='text-sm text-muted-foreground'>
-                Tabs (Filtres avancés / Tâches non planifiées) - À implémenter (Task 6)
-              </p>
             </div>
           </div>
         </ScrollArea>
