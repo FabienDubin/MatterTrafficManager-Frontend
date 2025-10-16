@@ -17,6 +17,7 @@ export function DayView({
   tasks,
   members,
   viewConfig,
+  focusMemberId,
   onTaskClick,
   onTimeSlotClick,
   onTimeSlotSelect,
@@ -24,7 +25,10 @@ export function DayView({
   onTaskResize,
 }: DayViewProps) {
   const hourGridRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState(0);
+  const [isHighlightActive, setIsHighlightActive] = useState(false);
+  const lastFocusMemberRef = useRef<string | undefined>(undefined);
 
   // Hook pour détecter les jours fériés
   const holidays = useHolidays({
@@ -159,6 +163,65 @@ export function DayView({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Activer highlight lors de nouvelle navigation vers membre focusé
+  useEffect(() => {
+    if (focusMemberId && focusMemberId !== lastFocusMemberRef.current) {
+      lastFocusMemberRef.current = focusMemberId;
+      setIsHighlightActive(true);
+    } else if (!focusMemberId) {
+      setIsHighlightActive(false);
+      lastFocusMemberRef.current = undefined;
+    }
+  }, [focusMemberId]);
+
+  // Scroll automatique vers membre focusé depuis availability
+  useEffect(() => {
+    if (!focusMemberId || !scrollAreaRef.current) return;
+    
+    // Trouver l'index du membre dans la liste alphabétique
+    const memberIndex = members.findIndex(m => m.id === focusMemberId);
+    if (memberIndex === -1) return;
+    
+    // Calculer position scroll (largeur colonne * index)
+    const columnWidth = 200; // min-w-[200px] de MemberColumn
+    const scrollPosition = memberIndex * columnWidth;
+    
+    // Timer pour laisser le DOM se stabiliser après navigation
+    const timer = setTimeout(() => {
+      const scrollElement = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTo({
+          left: scrollPosition,
+          behavior: 'smooth'
+        });
+      }
+    }, 200);
+    
+    return () => clearTimeout(timer);
+  }, [focusMemberId, members]);
+
+  // Désactiver highlight lors d'interactions utilisateur (clic, drag, resize)
+  useEffect(() => {
+    const handleInteraction = () => {
+      if (isHighlightActive) {
+        setIsHighlightActive(false);
+      }
+    };
+
+    // Écouter plusieurs types d'interactions
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('mousedown', handleInteraction); // Pour drag
+    document.addEventListener('dragstart', handleInteraction); // Pour drag de tâches
+    document.addEventListener('pointerdown', handleInteraction); // Pour resize
+    
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('mousedown', handleInteraction);
+      document.removeEventListener('dragstart', handleInteraction);
+      document.removeEventListener('pointerdown', handleInteraction);
+    };
+  }, [isHighlightActive]);
+
   // Message si aucune donnée à afficher
   if (members.length === 0) {
     return (
@@ -201,7 +264,7 @@ export function DayView({
             </div>
 
             {/* Scrollable columns container */}
-            <ScrollArea className='flex-1'>
+            <ScrollArea ref={scrollAreaRef} className='flex-1'>
               <div className='flex min-h-full'>
                 {/* Member columns */}
                 {members.map(member => (
@@ -216,6 +279,7 @@ export function DayView({
                     date={date}
                     viewConfig={viewConfig}
                     hourGridHeight={gridHeight}
+                    isFocused={member.id === focusMemberId && isHighlightActive}
                     onTaskClick={onTaskClick}
                     onTimeSlotClick={withHolidayAlert((date, hour) => onTimeSlotClick?.(member, date, hour))}
                     onTimeSlotSelect={withHolidayAlert((m, startDate, endDate) =>

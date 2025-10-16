@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Accordion,
@@ -13,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { useOccupationRates, useTeamOccupationData } from '@/hooks/useOccupationRates';
 import { useCalendarConfigStore } from '@/store/calendar-config.store';
 import { useFilterStore } from '@/store/filter.store';
+import { useCalendarStore } from '@/store/calendar.store';
 import { Task } from '@/types/task.types';
 import { Member } from '@/types/calendar.types';
 
@@ -111,8 +111,14 @@ export function AvailabilityCard({
 
   // Navigation vers DayView avec membre sélectionné
   const handleMemberClick = (memberId: string) => {
-    const dateParam = format(date, 'yyyy-MM-dd');
-    navigate(`/calendar/day?date=${dateParam}&member=${memberId}`);
+    // Même logique que onNavLinkDayClick : modifier le store au lieu du router
+    const { setCurrentView, setCurrentDate } = useCalendarStore.getState();
+    
+    setCurrentView('day');
+    setCurrentDate(date);
+    
+    // Query params pour focusMember
+    navigate(`/calendar?focusMember=${memberId}`);
   };
 
   return (

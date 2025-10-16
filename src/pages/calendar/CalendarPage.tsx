@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useCallback, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { CalendarHeader } from '@/components/calendar/CalendarHeader';
 import { CalendarControls } from '@/components/calendar/CalendarControls';
 import { CalendarContent } from '@/components/calendar/CalendarContent';
@@ -48,6 +49,10 @@ export default function CalendarPage() {
 
   // Get teams configuration for availability view
   const { displayedTeams } = useDisplayedTeams();
+
+  // Get focus member from URL params for intelligent DayView navigation
+  const [searchParams] = useSearchParams();
+  const focusMemberId = searchParams.get('focusMember') || undefined;
 
   // Période actuellement visible dans le calendrier (pour debug seulement)
   const [, setVisiblePeriod] = useState<{ start: Date; end: Date } | null>(null);
@@ -234,8 +239,13 @@ export default function CalendarPage() {
     return Array.from(memberMap.values());
   }, [tasksWithColors]);
 
+  // Sort members alphabetically (ordre maintenu, scroll automatique vers focusé)
+  const sortedMembers = useMemo(() => {
+    return members.sort((a, b) => a.name.localeCompare(b.name));
+  }, [members]);
+
   // Filter visible members for DayView based on active filters
-  const visibleMembers = useVisibleMembers(members, allMembers);
+  const visibleMembers = useVisibleMembers(sortedMembers, allMembers);
 
   const handleDateClick = (arg: any) => {
     console.log('Date clicked:', arg.dateStr);
@@ -406,6 +416,7 @@ export default function CalendarPage() {
                 members={currentView === 'day' ? visibleMembers : members}
                 showAvailability={showAvailability}
                 teams={displayedTeams}
+                focusMemberId={focusMemberId}
                 onDateClick={handleDateClick}
                 onEventClick={handleEventClick}
                 onEventDrop={handleEventDrop}

@@ -26,6 +26,7 @@ export function MemberColumn({
   date,
   viewConfig,
   hourGridHeight,
+  isFocused = false,
   onTaskClick,
   onTimeSlotClick,
   onTimeSlotSelect,
@@ -91,10 +92,11 @@ export function MemberColumn({
 
   // 6. Column styling based on member status
   const columnClassName = cn(
-    'flex-1 min-w-[200px] border-r flex flex-col',
+    'flex-1 min-w-[200px] border-r flex flex-col transition-all duration-300 ease-out', // Transition smooth
     holidayTask && 'bg-muted/80',
     schoolTask && 'bg-blue-50/80 dark:bg-blue-950/20',
-    publicHolidayTask && 'bg-muted/80' // Fond gris pour jour férié
+    publicHolidayTask && 'bg-muted/80', // Fond gris pour jour férié
+    isFocused && 'ring-2 ring-primary ring-inset rounded-md' // Highlight membre focusé avec transition
   );
 
   // 7. Selection overlay

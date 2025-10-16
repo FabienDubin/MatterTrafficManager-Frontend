@@ -35,6 +35,7 @@ export interface DayViewProps {
   tasks: Task[];
   members: Member[];
   viewConfig?: ViewConfig;
+  focusMemberId?: string;
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (member: Member | null, date: Date, hour: number) => void;
   onTimeSlotSelect?: (member: Member | null, startDate: Date, endDate: Date) => void;
@@ -48,6 +49,7 @@ export interface MemberColumnProps {
   date: Date;
   viewConfig?: ViewConfig;
   hourGridHeight: number; // Hauteur mesurée de la grille des heures
+  isFocused?: boolean; // Highlight si membre focusé depuis availability
   onTaskClick?: (task: Task) => void;
   onTimeSlotClick?: (date: Date, hour: number) => void;
   onTimeSlotSelect?: (member: Member, startDate: Date, endDate: Date) => void;

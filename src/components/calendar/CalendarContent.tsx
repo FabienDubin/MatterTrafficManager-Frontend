@@ -30,6 +30,9 @@ interface CalendarContentProps {
   showAvailability?: boolean;
   teams?: any[];
 
+  // Focus member for DayView navigation
+  focusMemberId?: string;
+
   // Event handlers - FullCalendar
   onDateClick: (arg: any) => void;
   onEventClick: (info: any) => void;
@@ -69,6 +72,7 @@ export function CalendarContent({
   members,
   showAvailability = false,
   teams = [],
+  focusMemberId,
   onDateClick,
   onEventClick,
   onEventDrop,
@@ -152,6 +156,7 @@ export function CalendarContent({
           tasks={tasks}
           members={members}
           viewConfig={viewConfig}
+          focusMemberId={focusMemberId}
           onTaskClick={onTaskClick}
           onTimeSlotClick={onTimeSlotClick}
           onTimeSlotSelect={onTimeSlotSelect}
