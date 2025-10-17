@@ -7,7 +7,7 @@ import { CalendarLayout } from '@/layouts/CalendarLayout';
 import { TaskEditSheet } from '@/components/calendar/TaskEditSheet';
 import { useCalendarStore } from '@/store/calendar.store';
 import { useCalendarConfigStore } from '@/store/calendar-config.store';
-import { useClientColors, useTaskColors, useDisplayedTeams } from '@/store/config.store';
+import { useClientColors, useTaskColors, useDisplayedTeams, useConfigStore } from '@/store/config.store';
 import { useFilterStore } from '@/store/filter.store';
 import { useProgressiveCalendarTasks } from '@/hooks/useProgressiveCalendarTasks';
 import { useOptimisticTaskUpdate } from '@/hooks/useOptimisticTaskUpdate';
@@ -48,7 +48,15 @@ export default function CalendarPage() {
   const { config: calendarConfig, fetchConfig } = useCalendarConfigStore();
 
   // Get teams configuration for availability view
-  const { displayedTeams } = useDisplayedTeams();
+  const { displayedTeams, isTeamsLoaded } = useDisplayedTeams();
+
+  // Force load teams when availability mode is activated (ensure teams are loaded)
+  useEffect(() => {
+    if (showAvailability && (!isTeamsLoaded || displayedTeams.length === 0)) {
+      const configStore = useConfigStore.getState();
+      configStore.loadDisplayedTeams();
+    }
+  }, [showAvailability, isTeamsLoaded, displayedTeams.length]);
 
   // Get focus member from URL params for intelligent DayView navigation
   const [searchParams] = useSearchParams();
@@ -415,7 +423,7 @@ export default function CalendarPage() {
                 events={events}
                 members={currentView === 'day' ? visibleMembers : members}
                 showAvailability={showAvailability}
-                teams={displayedTeams}
+                teams={isTeamsLoaded ? displayedTeams : []}
                 focusMemberId={focusMemberId}
                 onDateClick={handleDateClick}
                 onEventClick={handleEventClick}
