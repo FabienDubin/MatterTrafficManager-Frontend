@@ -57,7 +57,7 @@ export function TaskEditSheet({
   setTasks,
   initialDates,
   initialMember,
-  initialMembers
+  initialMembers,
 }: TaskEditSheetProps) {
   const isCreateMode = !task;
   const { user } = useAuth();
@@ -91,24 +91,15 @@ export function TaskEditSheet({
     initialDates,
     initialMember,
     initialMembers,
-    form
+    form,
   });
 
   // 4. Optimistic mutations hooks
-  const { mutate: createTask, isPending: isCreating } = useOptimisticTaskCreate(
-    tasks,
-    setTasks
-  );
+  const { mutate: createTask, isPending: isCreating } = useOptimisticTaskCreate(tasks, setTasks);
 
-  const { mutate: updateTask, isPending: isUpdating } = useOptimisticTaskUpdate(
-    tasks,
-    setTasks
-  );
+  const { mutate: updateTask, isPending: isUpdating } = useOptimisticTaskUpdate(tasks, setTasks);
 
-  const { mutate: deleteTask, isPending: isDeleting } = useOptimisticTaskDelete(
-    tasks,
-    setTasks
-  );
+  const { mutate: deleteTask, isPending: isDeleting } = useOptimisticTaskDelete(tasks, setTasks);
 
   // 5. Form submission
   const onSubmit = (data: TaskEditFormData) => {
@@ -135,7 +126,7 @@ export function TaskEditSheet({
         formData: data,
         originalTask: task,
         projects,
-        members
+        members,
       });
 
       // Nothing changed
@@ -163,7 +154,7 @@ export function TaskEditSheet({
   useTaskFormKeyboardShortcuts({
     enabled: open,
     onSubmit: form.handleSubmit(onSubmit),
-    onClose
+    onClose,
   });
 
   // 8. Computed values
@@ -177,21 +168,14 @@ export function TaskEditSheet({
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className='w-[400px] sm:w-[540px] flex flex-col'>
         <SheetHeader>
-          <SheetTitle>
-            {isCreateMode ? 'Créer une tâche' : 'Modifier la tâche'}
-          </SheetTitle>
+          <SheetTitle>{isCreateMode ? 'Créer une tâche' : 'Modifier la tâche'}</SheetTitle>
           <SheetDescription>
-            {isCreateMode
-              ? 'Créez une nouvelle tâche'
-              : 'Modifiez les informations de la tâche'}
+            {isCreateMode ? 'Créez une nouvelle tâche' : 'Modifiez les informations de la tâche'}
           </SheetDescription>
         </SheetHeader>
 
         <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className='flex flex-col flex-1 min-h-0'
-          >
+          <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col flex-1 min-h-0'>
             <ScrollArea className='flex-1 pr-4'>
               <div className='space-y-6 py-6'>
                 {/* Section 1: Main info */}
@@ -218,10 +202,7 @@ export function TaskEditSheet({
                 <TaskFormAdvancedSection form={form} readOnly={isReadOnly} />
 
                 {/* Section 4: History (edit mode only) */}
-                <TaskFormHistorySection
-                  task={task}
-                  isCreateMode={isCreateMode}
-                />
+                <TaskFormHistorySection task={task} isCreateMode={isCreateMode} />
               </div>
             </ScrollArea>
 

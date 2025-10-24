@@ -27,10 +27,7 @@ export interface TaskFormAdvancedSectionProps {
 /**
  * Advanced options section of task form: accordion with calendar checkbox and notes
  */
-export function TaskFormAdvancedSection({
-  form,
-  readOnly
-}: TaskFormAdvancedSectionProps) {
+export function TaskFormAdvancedSection({ form, readOnly }: TaskFormAdvancedSectionProps) {
   return (
     <Accordion type='single' collapsible>
       <AccordionItem value='advanced-options'>
@@ -44,7 +41,11 @@ export function TaskFormAdvancedSection({
               render={({ field }) => (
                 <FormItem className='flex flex-row items-start space-x-3 space-y-0'>
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={readOnly} />
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={readOnly}
+                    />
                   </FormControl>
                   <div className='space-y-1 leading-none'>
                     <FormLabel>Ajouter au Calendrier Notion</FormLabel>
@@ -70,7 +71,7 @@ export function TaskFormAdvancedSection({
                     />
                   </FormControl>
                   <FormDescription className='text-right'>
-                    {field.value?.length || 0}/500 caractères
+                    {field.value?.length || 0}/2000 caractères
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
